@@ -1,0 +1,16 @@
+# 系统 / 编辑器
+Thumbs.db
+desktop.ini
+.DS_Store
+.vscode/
+.idea/
+
+# 依赖与构建产物（当前项目为纯静态，无构建步骤）
+node_modules/
+dist/
+
+# 本地工作区数据（WorkBuddy 内部文件，不需要上传）
+.workbuddy/
+
+# 日志
+*.log
