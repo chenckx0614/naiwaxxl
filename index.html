@@ -448,8 +448,8 @@ let actx = null, sfxGain = null;
 /* 外部音频文件 */
 const bgmAudio    = new Audio('bgm/bgm.mp3');
 bgmAudio.loop = true; bgmAudio.volume = 0.5;
-const comboAudios = [1,2,3,4,5].map(i => { const a = new Audio(`bgm/合成${i}.mp3`); a.volume = 0.7; return a; });
-const endAudio    = new Audio('bgm/结束.mp3');
+const comboAudios = [1,2,3,4,5].map(i => { const a = new Audio(`bgm/combo${i}.mp3`); a.volume = 0.7; return a; });
+const endAudio    = new Audio('bgm/end.mp3');
 endAudio.volume = 0.8;
 
 function initAudio(){
