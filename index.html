@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>消消乐</title>
+<title>奶蛙消消乐</title>
 <style>
   * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; user-select:none; }
   html,body { height:100%; }
@@ -14,7 +14,10 @@
     min-height:100%; overflow-x:hidden;
   }
 
-  #app { width:min(460px, 100vw); padding:14px 12px 24px; display:flex; flex-direction:column; align-items:center; gap:14px; }
+  /* min-height:100% + justify-content:center：内容比视口矮时上下均分留白（原来是顶部对齐，
+     高屏手机上棋盘下方会空出一大片）。内容高于视口时 min-height 不生效，顶部不会被裁。 */
+  #app { width:min(460px, 100vw); padding:14px 12px 24px; display:flex; flex-direction:column; align-items:center; gap:14px;
+         min-height:100%; justify-content:center; }
 
   /* ---------- 顶部信息栏 ---------- */
   #topbar { display:flex; align-items:center; gap:8px; width:100%; justify-content:space-between; }
@@ -29,7 +32,7 @@
   .stat-panel .value { font-size:26px; font-weight:900; line-height:1.05; text-shadow:0 2px 2px rgba(0,0,0,.2); }
 
   #goal-panel {
-    flex:1; background:#fdf6e3; border:3px solid #6ea7ec; border-radius:16px;
+    flex:1; min-width:0; background:#fdf6e3; border:3px solid #6ea7ec; border-radius:16px;
     padding:6px 12px; align-self:center; min-height:54px;
     box-shadow: 0 3px 0 #b98f4e33, inset 0 0 0 2px #fff, 0 3px 6px rgba(50,90,160,.25);
     display:flex; align-items:center; gap:10px;
@@ -39,8 +42,11 @@
     padding:5px 10px; border-radius:999px; border:2px solid #3f6fc0; flex-shrink:0;
     box-shadow:0 2px 0 #35609f; text-shadow:0 1px 1px rgba(0,0,0,.25);
   }
-  #goals { flex:1; display:flex; justify-content:space-evenly; align-items:center; }
+  /* min-width:0 + overflow-x 让目标不够放时横向滚动，而不是把右侧「关卡 / 齿轮」挤出屏幕 */
+  #goals { flex:1; min-width:0; display:flex; justify-content:space-evenly; align-items:center; overflow-x:auto; }
+  #goals::-webkit-scrollbar { display:none; }
   .goal-item {
+    flex:0 0 auto;
     display:flex; align-items:center; gap:5px;
     background:rgba(255,255,255,.75); border-radius:999px; padding:3px 10px 3px 6px;
     box-shadow:inset 0 1px 3px rgba(160,120,60,.18);
@@ -59,11 +65,30 @@
   }
   #gear-btn:active { transform:scale(.92); }
 
+  /* 顶栏紧凑档：容器 #app 上限 460px（顶栏实际 <=436px），
+     所以不能按视口宽度做断点，直接按窄屏尺寸定死，「步数/目标/关卡/齿轮」才都进得来 */
+  #topbar { gap:5px; }
+  .stat-panel { min-width:44px; padding:4px 6px; }
+  .stat-panel .label { font-size:12px; }
+  .stat-panel .value { font-size:22px; }
+  #goal-panel { padding:5px 8px; gap:6px; }
+  #goal-panel .goal-tab { font-size:12px; padding:4px 8px; }
+  .goal-item { padding:2px 6px 2px 4px; gap:4px; }
+  .goal-item .g-icon { width:20px; height:20px; }
+  .goal-item .g-num { font-size:14px; min-width:12px; }
+  #gear-btn { width:40px; height:40px; font-size:19px; }
+
+  /* 极窄屏（<=420）：先隐藏装饰性的「目标」标签，把空间让给三个目标图标 */
+  @media (max-width:420px) {
+    #goal-panel .goal-tab { display:none; }
+  }
+
   /* ---------- 棋盘 ---------- */
   #board-wrap {
     width:100%; background:rgba(255,255,255,.35);
     border:3px solid #6ea7ec; border-radius:18px; padding:8px;
     box-shadow: inset 0 2px 8px rgba(60,100,170,.25), 0 4px 10px rgba(60,100,170,.2);
+    overflow:hidden; /* 新棋子从棋盘上沿落入时，裁掉棋盘外的部分 */
   }
   #board { position:relative; width:100%; aspect-ratio:1/1; touch-action:none; }
   .cell-bg {
@@ -73,48 +98,128 @@
   .tile {
     position:absolute; display:flex; align-items:center; justify-content:center;
     font-size:0; cursor:pointer; border-radius:10px;
-    transition:transform .22s ease;
-    will-change:transform;
+    /* 位移由 Web Animations 的显式关键帧负责（见 moveTileTo）。
+       这里刻意不写 transition / will-change：will-change 会把过渡交给合成器线程，
+       而新建图层那一帧的起始 transform 可能退化成 none，导致棋子从棋盘左上角飞入。 */
   }
   .tile .face {
     width:100%; height:100%; display:flex; align-items:center; justify-content:center;
     pointer-events:none; transition:transform .15s;
   }
   .tile .face img { width:88%; height:88%; object-fit:contain; display:block; filter:drop-shadow(0 2px 2px rgba(0,0,0,.25)); }
+  /* 设置里关闭「动画」时全局禁用过渡 */
+  .no-anim .tile, .no-anim .tile .face { transition:none !important; }
+  /* 跟手拖动中：抬起放大 + 置于最上层。位移仍由 JS 直接写 transform，
+     这里绝对不能加 transition（会退回合成器线程竞态） */
+  .tile.dragging { z-index:7; }
+  .tile.dragging .face { transform:scale(1.12); }
   .tile.selected .face { animation:bounce .45s infinite alternate; }
   .tile.selected { z-index:5; }
   .tile.selected::after {
     content:""; position:absolute; inset:-3px; border-radius:12px;
     border:3px solid #ffb400; box-shadow:0 0 10px #ffd54d;
   }
-  .tile.clearing .face { animation:pop .28s forwards; }
+  /* 消除收缩：时长与 app.js 的 POP_MS 保持一致（下落会在这段时间的前半程就开始） */
+  .tile.clearing .face { animation:pop .2s forwards; }
   .tile.hint .face { animation:bounce .5s infinite alternate; }
   @keyframes pop {
-    0% { transform:scale(1); opacity:1; }
-    60% { transform:scale(1.35); opacity:.9; }
-    100% { transform:scale(0); opacity:0; }
+    0%   { transform:scale(1) rotate(0deg); opacity:1; }
+    42%  { transform:scale(1.30) rotate(-7deg); opacity:1; }
+    72%  { transform:scale(.80) rotate(6deg); opacity:.85; }
+    100% { transform:scale(0) rotate(14deg); opacity:0; }
   }
+  /* 消除粒子碎片：JS 动态生成，飞散后立刻移除（见 burst） */
+  .shard { position:absolute; border-radius:2px; pointer-events:none; z-index:6; }
   @keyframes bounce { from { transform:scale(1);} to { transform:scale(1.18);} }
 
-  /* ---------- 底部道具栏 ---------- */
-  #boosters { display:flex; gap:18px; margin-top:4px; }
+  /* ---------- 底部道具栏 ----------
+     圆钮造型参考 Uiverse.io（GitHub: uiverse-io/galaxy，MIT）里的
+     拟物/新拟态圆形按钮：糖果立体感 = 硬厚度阴影 + 顶部弧形高光 + 按下整体下沉。
+     图标为 Microsoft Fluent Emoji 3D（MIT，GitHub: microsoft/fluentui-emoji）
+     转出的本地 WebP：同一套 3D 渲染风格，避免各端 emoji 字体渲染不一致。 */
+  #boosters {
+    display:flex; align-items:center; justify-content:space-around;
+    margin-top:6px; padding:9px 6px;
+    background:linear-gradient(#f3f8ff,#dbe8ff);
+    border:2px solid #a9c8f0; border-radius:22px;
+    box-shadow:inset 0 2px 0 rgba(255,255,255,.95), inset 0 -4px 8px rgba(90,130,200,.18), 0 4px 10px rgba(60,100,170,.16);
+  }
+
   .booster {
-    width:64px; height:64px; border-radius:50%;
-    background:radial-gradient(circle at 35% 30%, #ffffff, #dbe7fa 75%);
-    border:3px solid #9fc0ee; position:relative; cursor:pointer;
-    box-shadow:0 4px 6px rgba(60,100,170,.3), inset 0 -3px 5px rgba(120,160,220,.3);
-    display:flex; align-items:center; justify-content:center; font-size:30px;
-    transition:transform .1s, box-shadow .15s;
+    position:relative; width:62px; height:62px; border-radius:50%;
+    border:none; padding:0; cursor:pointer; overflow:visible;
+    display:flex; align-items:center; justify-content:center;
+    background:linear-gradient(165deg,#ffffff 0%,#eaf2ff 46%,#c8dcf8 100%);
+    box-shadow:
+      0 5px 0 #8db2e4,
+      0 9px 12px rgba(50,90,160,.28),
+      inset 0 2px 2px rgba(255,255,255,.95),
+      inset 0 -3px 7px rgba(110,150,210,.35);
+    transition:transform .09s ease, box-shadow .09s ease, filter .2s ease, opacity .2s ease;
   }
-  .booster:active { transform:scale(.9); }
-  .booster.armed { box-shadow:0 0 0 4px #ffb400, 0 0 14px #ffd54d; }
-  .booster .count {
-    position:absolute; right:-4px; bottom:-4px; min-width:22px; height:22px;
-    background:linear-gradient(#6ea7ec,#4f87d8); color:#fff; font-size:13px; font-weight:900;
-    border-radius:999px; border:2px solid #3f6fc0; display:flex; align-items:center; justify-content:center;
-    padding:0 4px; text-shadow:0 1px 1px rgba(0,0,0,.3);
+  .booster::before {                 /* 顶部弧形高光：糖果釉面 */
+    content:""; position:absolute; left:12%; top:7%; width:76%; height:42%;
+    border-radius:50%; pointer-events:none;
+    background:radial-gradient(ellipse at 50% 25%, rgba(255,255,255,.98), rgba(255,255,255,.3) 58%, rgba(255,255,255,0) 78%);
   }
-  .booster.empty { opacity:.45; filter:grayscale(.6); }
+  .booster img { width:60%; height:60%; display:block; pointer-events:none; filter:drop-shadow(0 2px 2px rgba(40,70,130,.3)); }
+  .booster:active {                  /* 按下：整体下沉，厚度阴影收薄 */
+    transform:translateY(5px);
+    box-shadow:0 1px 0 #8db2e4, 0 2px 4px rgba(50,90,160,.28),
+               inset 0 2px 2px rgba(255,255,255,.9), inset 0 -2px 6px rgba(110,150,210,.45);
+  }
+  .booster:active img { transform:scale(.94); }
+  .booster.armed {                   /* 已选中待用（小锤 / 炸弹瞄准中） */
+    background:linear-gradient(165deg,#fffdf3 0%,#ffe9a8 55%,#ffcf5c 100%);
+    box-shadow:0 5px 0 #d99a15, 0 9px 14px rgba(180,120,0,.35),
+               inset 0 2px 2px rgba(255,255,255,.95), inset 0 -3px 7px rgba(200,140,20,.4);
+  }
+  .booster.armed::after {
+    content:""; position:absolute; top:-6px; right:-6px; bottom:-6px; left:-6px;
+    border-radius:50%; border:3px solid #ffb400; box-shadow:0 0 12px rgba(255,200,60,.9);
+    animation:armedRing .9s ease-in-out infinite alternate;
+  }
+  @keyframes armedRing { from { transform:scale(.97); opacity:.7; } to { transform:scale(1.06); opacity:1; } }
+  .booster .count {                  /* 右下角数量徽章 */
+    position:absolute; right:-5px; bottom:-3px; min-width:24px; height:24px; padding:0 5px;
+    border-radius:999px; border:2px solid #fff;
+    background:linear-gradient(#82b6f5,#4a83d6); color:#fff;
+    font-size:13px; font-weight:900;
+    display:flex; align-items:center; justify-content:center;
+    box-shadow:0 2px 0 #34619f, 0 3px 6px rgba(30,60,120,.35), inset 0 1px 0 rgba(255,255,255,.55);
+    text-shadow:0 1px 1px rgba(0,0,0,.32);
+  }
+  .booster.empty {                   /* 用完：去色 + 压平 */
+    filter:grayscale(.7); opacity:.5;
+    box-shadow:0 5px 0 #b9c6d8, 0 7px 9px rgba(50,90,160,.2), inset 0 2px 2px rgba(255,255,255,.9);
+  }
+
+  /* 得分飘字：外层只负责居中定位，内层 span 负责位移淡出 */
+  .score-float { position:absolute; pointer-events:none; z-index:8; transform:translate(-50%,-50%); }
+  .score-float span {
+    display:block; font-size:17px; font-weight:900; color:#fff; white-space:nowrap;
+    text-shadow:0 2px 0 #e08700, 0 0 8px rgba(255,190,60,.85), 0 1px 3px rgba(0,0,0,.4);
+  }
+
+  /* 音量滑块 */
+  .vol {
+    -webkit-appearance:none; appearance:none; width:72px; height:8px; border-radius:999px;
+    background:linear-gradient(#9ec6f5,#cfe3fb); outline:none; cursor:pointer; flex-shrink:0;
+    box-shadow:inset 0 1px 3px rgba(60,100,170,.4);
+  }
+  .vol::-webkit-slider-thumb {
+    -webkit-appearance:none; appearance:none; width:20px; height:20px; border-radius:50%;
+    background:linear-gradient(#ffffff,#d8e8fb); border:2px solid #6ea7ec;
+    box-shadow:0 2px 4px rgba(50,90,160,.45);
+  }
+
+  /* 运行时错误兜底条 */
+  #crash-bar {
+    position:fixed; left:14px; right:14px; bottom:14px; z-index:9999;
+    padding:12px 14px; border-radius:12px; text-align:center; cursor:pointer;
+    background:#FCEBEB; color:#791F1F; border:1px solid #F09595;
+    font-size:13px; font-weight:500; line-height:1.4;
+  }
 
   /* ---------- 通用按钮 ---------- */
   .btn {
@@ -132,12 +237,14 @@
   /* ---------- 弹窗 ---------- */
   .overlay {
     position:fixed; inset:0; background:rgba(40,70,120,.45); backdrop-filter:blur(2px);
-    display:none; align-items:center; justify-content:center; z-index:200; padding:16px;
+    display:none; align-items:center; justify-content:center; z-index:200;
+    padding:44px 16px 24px;   /* 上边 44px 是给面板标题留的位置（标题定位在 top:-24px） */
+    overflow-y:auto;          /* 面板比视口高时可滚 —— 否则小屏上顶部标题和底部按钮都会被裁掉 */
   }
   .overlay.show { display:flex; }
   .panel {
     width:min(400px, 94vw); background:#f2f8ff; border:4px solid #6ea7ec; border-radius:22px;
-    padding:44px 18px 18px; position:relative;
+    padding:44px 18px 18px; position:relative; margin:auto;   /* 矮内容居中，高内容从顶部排、可滚 */
     box-shadow:0 8px 24px rgba(30,60,120,.4), inset 0 0 0 2px #fff;
     animation:panelIn .25s ease;
   }
@@ -185,15 +292,24 @@
   .switch.on { background:linear-gradient(#a4e05c,#5cb82e); }
   .switch.on::after { left:29px; }
 
-  /* 计数器 */
-  .stepper { display:flex; align-items:center; gap:8px; }
-  .stepper button {
-    width:30px; height:30px; border-radius:9px; border:none; color:#fff; font-size:18px; font-weight:900;
-    cursor:pointer; box-shadow:0 2px 0 rgba(0,0,0,.25), inset 0 2px 2px rgba(255,255,255,.5);
+  /* 语言切换：分段控件（当前项高亮，点击即切） */
+  .seg { display:flex; align-items:center; gap:3px; background:#e8eff9; border-radius:999px; padding:3px; flex-shrink:0; box-shadow:inset 0 2px 4px rgba(80,120,190,.25); }
+  .seg-btn {
+    border:none; cursor:pointer; font-family:inherit; font-weight:900; font-size:13px;
+    color:#7f93ad; background:transparent; border-radius:999px; padding:6px 13px;
+    transition:background .15s, color .15s, box-shadow .15s;
   }
-  .stepper .minus { background:linear-gradient(#7cc4f7,#3d9be9); }
-  .stepper .plus  { background:linear-gradient(#a4e05c,#5cb82e); }
-  .stepper .num { font-size:18px; font-weight:900; color:#8a5a1e; min-width:22px; text-align:center; }
+  .seg-btn.on { color:#fff; background:linear-gradient(#7cc4f7,#3d9be9); box-shadow:0 2px 0 #2470b8; text-shadow:0 1px 1px rgba(0,0,0,.25); }
+
+  /* 英文文案普遍比中文宽，逐处收一档字号/字距，避免按钮和标题溢出 */
+  html[lang="en"] #home-sub { letter-spacing:3px; font-size:16px; }
+  html[lang="en"] #btn-start { font-size:24px; letter-spacing:3px; padding:18px 46px; }
+  html[lang="en"] #btn-levels { font-size:17px; letter-spacing:2px; padding:11px 34px; }
+  html[lang="en"] .panel-title { font-size:22px; padding:6px 24px; }
+  html[lang="en"] #result-text { font-size:16px; }
+  html[lang="en"] #result-score { font-size:13px; }
+  html[lang="en"] #btn-levels, html[lang="en"] #home-best { font-size:13px; }
+  html[lang="en"] .link-row .btn { font-size:15px; }
 
   .link-row { display:flex; gap:12px; margin-top:8px; }
   .link-row .btn { flex:1; font-size:16px; padding:9px 0; display:flex; align-items:center; justify-content:center; gap:4px; }
@@ -205,6 +321,13 @@
   #result-stars { text-align:center; font-size:44px; margin:6px 0 2px; letter-spacing:6px; }
   #result-stars .dim { filter:grayscale(1); opacity:.35; }
   #result-text { text-align:center; font-size:18px; font-weight:900; color:#8a5a1e; margin-bottom:4px; }
+  #result-level { text-align:center; font-size:13px; font-weight:800; color:#b08b4f; margin-top:-2px; }
+  #result-score { text-align:center; font-size:15px; font-weight:900; color:#e07a1f; margin-top:6px; }
+  #home-best { margin-top:8px; font-size:14px; font-weight:800; color:#7a5a2a; letter-spacing:1px; }
+  #home-best:empty { display:none; }
+  /* 加分时顶栏数字弹一下 */
+  #score-num.bump { animation:scoreBump .34s ease; }
+  @keyframes scoreBump { 0%{transform:scale(1);} 45%{transform:scale(1.3); color:#ff6b00;} 100%{transform:scale(1);} }
 
   /* 浮动提示 */
   #toast {
@@ -260,21 +383,24 @@
 
   #home-logo { display:flex; gap:4px; margin-bottom:8px; z-index:2; }
   #home-logo span {
-    font-size:clamp(54px, 15vw, 78px); font-weight:900; font-family:"PingFang SC","Microsoft YaHei",sans-serif;
+    font-size:clamp(44px, 13vw, 68px); font-weight:900; font-family:"PingFang SC","Microsoft YaHei",sans-serif;
     -webkit-text-stroke:3px #fff; paint-order:stroke fill;
     text-shadow:0 4px 0 rgba(0,0,0,.18), 0 8px 14px rgba(0,0,0,.2);
     animation:logoBounce 1.6s ease-in-out infinite;
   }
-  #home-logo span:nth-child(1){ color:#ff9d1b; transform:rotate(-7deg); }
-  #home-logo span:nth-child(2){ color:#5cb82e; animation-delay:.12s; }
-  #home-logo span:nth-child(3){ color:#ff5c9e; transform:rotate(6deg); animation-delay:.24s; }
+  /* 「奶蛙」= 品牌绿，「消消乐」= 三色糖果 */
+  #home-logo span:nth-child(1){ color:#5cb82e; transform:rotate(-6deg); }
+  #home-logo span:nth-child(2){ color:#5cb82e; transform:rotate(-2deg); animation-delay:.1s; }
+  #home-logo span:nth-child(3){ color:#ff9d1b; transform:rotate(1deg); animation-delay:.2s; }
+  #home-logo span:nth-child(4){ color:#ff5c9e; transform:rotate(3deg); animation-delay:.3s; }
+  #home-logo span:nth-child(5){ color:#3d9be9; transform:rotate(6deg); animation-delay:.4s; }
   @keyframes logoBounce { 0%,100%{ margin-top:0;} 50%{ margin-top:-10px;} }
   #home-sub {
     color:#fff; font-weight:900; font-size:17px; letter-spacing:4px; z-index:2;
     text-shadow:0 2px 3px rgba(40,90,160,.5); margin-bottom:44px;
   }
   #home-level-tag {
-    z-index:2; margin-top:26px; background:rgba(255,255,255,.85); color:#2f6fd0; font-weight:900;
+    z-index:2; margin-top:18px; background:rgba(255,255,255,.85); color:#2f6fd0; font-weight:900;
     padding:6px 22px; border-radius:999px; font-size:16px; box-shadow:0 3px 6px rgba(60,100,170,.25);
   }
   #btn-start {
@@ -289,6 +415,44 @@
   }
   #btn-start:active { transform:scale(.94); animation:none; }
   @keyframes startPulse { 0%,100%{ transform:scale(1);} 50%{ transform:scale(1.05);} }
+  /* 「选择关卡」次级按钮：比开始游戏小一号，颜色也让位（蓝色系） */
+  #btn-levels {
+    z-index:2; margin-top:16px; border:none; cursor:pointer; font-family:inherit;
+    font-size:19px; font-weight:900; color:#fff; letter-spacing:3px;
+    padding:11px 40px; border-radius:999px;
+    background:linear-gradient(#7db4f2,#5793e0);
+    box-shadow:0 5px 0 #35609f, inset 0 2px 3px rgba(255,255,255,.55), 0 8px 16px rgba(50,90,160,.3);
+    text-shadow:0 2px 3px rgba(40,80,150,.45);
+    transition:transform .1s;
+  }
+  #btn-levels:active { transform:scale(.95); box-shadow:0 2px 0 #35609f; }
+
+  /* ---------- 关卡选择面板 ---------- */
+  #level-grid { display:flex; flex-wrap:wrap; margin:6px -6px 0; }
+  .lv-node {
+    width:calc(33.333% - 12px); margin:6px; padding:12px 4px 8px;
+    border-radius:16px; border:3px solid #6ea7ec; cursor:pointer; font-family:inherit;
+    background:linear-gradient(#fff,#e8f2ff);
+    box-shadow:0 4px 0 #a9c8ef, inset 0 2px 3px #fff;
+    display:flex; flex-direction:column; align-items:center;
+    transition:transform .1s;
+  }
+  .lv-node:active { transform:translateY(3px); box-shadow:0 1px 0 #a9c8ef; }
+  .lv-node .lv-no { font-size:26px; font-weight:900; color:#2f6fd0; line-height:1.15; text-shadow:0 2px 0 #fff; }
+  .lv-node .lv-sub { font-size:14px; margin-top:2px; height:18px; letter-spacing:0; }
+  .lv-node .lv-sub i { font-style:normal; color:#d8e3f2; }
+  .lv-node .lv-sub i.on { color:#ffb400; text-shadow:0 1px 1px rgba(150,90,0,.35); }
+  /* 当前关：金色描边 */
+  .lv-node.current { border-color:#ffb400; box-shadow:0 4px 0 #d98c00, 0 0 0 3px rgba(255,200,80,.45); }
+  /* 已解锁但还没打：稍微淡一点 */
+  .lv-node.locked { filter:grayscale(.45); opacity:.8; }
+  /* 素材还没做的关卡 */
+  .lv-node.soon {
+    background:linear-gradient(#f3f6fa,#e4e9f0); border-color:#c2cbd8; box-shadow:0 4px 0 #cbd3de;
+  }
+  .lv-node.soon .lv-no { color:#a8b3c2; font-size:20px; }
+  .lv-node.soon .lv-sub { color:#a8b3c2; font-size:12px; }
+  #level-tip { text-align:center; color:#7f93ad; font-size:13px; font-weight:700; margin-top:12px; }
   #home-hill {
     position:absolute; bottom:-60px; left:-10%; width:120%; height:180px; border-radius:50% 50% 0 0;
     background:linear-gradient(#8fce6e,#69b44b);
@@ -306,7 +470,7 @@
 <body>
 <!-- 开始页 -->
 <div id="home">
-  <button id="home-gear" title="设置">⚙️</button>
+  <button id="home-gear" title="设置" data-i18n-title="settings">⚙️</button>
   <div class="cloud c1"></div><div class="cloud c2"></div><div class="cloud c3"></div>
   <div id="home-hill"></div>
   <span class="home-bubble" style="top:20%;left:12%;"><img src="naiwa/1/b.png" alt=""></span>
@@ -314,28 +478,30 @@
   <span class="home-bubble" style="top:58%;left:9%;animation-delay:1.1s;"><img src="naiwa/1/f.png" alt=""></span>
   <span class="home-bubble" style="top:48%;right:10%;animation-delay:.3s;"><img src="naiwa/1/g.png" alt=""></span>
   <span class="home-bubble" style="bottom:16%;left:20%;animation-delay:1.5s;"><img src="naiwa/1/i.png" alt=""></span>
-  <div id="home-logo"><span>消</span><span>消</span><span>乐</span></div>
-  <div id="home-sub">滑 动 消 除 · 轻 松 一 夏</div>
-  <button id="btn-start">开始游戏</button>
-  <div id="home-level-tag">当前进度：第 <span id="home-level">18</span> 关</div>
+  <div id="home-logo"><span>奶</span><span>蛙</span><span>消</span><span>消</span><span>乐</span></div>
+  <div id="home-sub" data-i18n="home_sub">滑 动 消 除 · 轻 松 一 夏</div>
+  <button id="btn-start" data-i18n="start">开始游戏</button>
+  <button id="btn-levels" onclick="openLevels()" data-i18n="pick_level">选择关卡</button>
+  <div id="home-level-tag"><span id="home-level-pre">当前进度：第 </span><span id="home-level">1</span><span id="home-level-post"> 关</span></div>
+  <div id="home-best"></div>
 </div>
 
 <div id="app">
   <!-- 顶部栏 -->
   <div id="topbar">
     <div class="stat-panel">
-      <div class="label">步数</div>
+      <div class="label" data-i18n="moves">步数</div>
       <div class="value" id="moves-num">25</div>
     </div>
     <div id="goal-panel">
-      <div class="goal-tab">目标</div>
+      <div class="goal-tab" data-i18n="goals">目标</div>
       <div id="goals"></div>
     </div>
     <div class="stat-panel">
-      <div class="label">关卡</div>
-      <div class="value" id="level-num">18</div>
+      <div class="label" data-i18n="score">分数</div>
+      <div class="value" id="score-num">0</div>
     </div>
-    <button id="gear-btn" title="设置">⚙️</button>
+    <button id="gear-btn" title="设置" data-i18n-title="settings">⚙️</button>
   </div>
 
   <!-- 棋盘 -->
@@ -343,63 +509,99 @@
 
   <!-- 道具栏 -->
   <div id="boosters">
-    <button class="booster" data-b="hammer" title="小锤：消除1个">🔨<span class="count">3</span></button>
-    <button class="booster" data-b="bomb" title="炸弹：消除3×3">💥<span class="count">3</span></button>
-    <button class="booster" data-b="shuffle" title="刷新：重排棋盘">🔀<span class="count">3</span></button>
-    <button class="booster" data-b="moves" title="魔法棒：+5步">🪄<span class="count">3</span></button>
+    <button class="booster" data-b="hammer" title="小锤：消除1个" data-i18n-title="hammer_t"><img src="./icons/hammer.webp" alt="小锤" data-i18n-alt="hammer_t" draggable="false"><span class="count">3</span></button>
+    <button class="booster" data-b="bomb" title="炸弹：消除3×3" data-i18n-title="bomb_t"><img src="./icons/bomb.webp" alt="炸弹" data-i18n-alt="bomb_t" draggable="false"><span class="count">3</span></button>
+    <button class="booster" data-b="shuffle" title="刷新：重排棋盘" data-i18n-title="shuffle_t"><img src="./icons/shuffle.webp" alt="刷新" data-i18n-alt="shuffle_t" draggable="false"><span class="count">3</span></button>
+    <button class="booster" data-b="moves" title="星星：+5步" data-i18n-title="moves_t"><img src="./icons/moves.webp" alt="星星" data-i18n-alt="moves_t" draggable="false"><span class="count">3</span></button>
   </div>
 </div>
 
 <!-- 设置弹窗 -->
 <div class="overlay" id="settings-overlay">
   <div class="panel">
-    <div class="panel-title"><span class="star">⭐</span>设置<span class="star">⭐</span></div>
+    <div class="panel-title"><span class="star">⭐</span><span data-i18n="settings">设置</span><span class="star">⭐</span></div>
     <button class="panel-close" data-close="settings-overlay">✕</button>
 
-    <div class="sec-title">音效设置</div>
+    <div class="sec-title" data-i18n="sec_audio">音效设置</div>
     <div class="set-card">
       <div class="set-row">
-        <div class="s-icon">🎵</div><div class="s-name">背景音乐</div>
+        <div class="s-icon">🎵</div><div class="s-name" data-i18n="bgm">背景音乐</div>
+        <input class="vol" type="range" min="0" max="100" step="5" value="100" data-vol="music" aria-label="music volume">
         <button class="switch on" data-set="music"></button>
       </div>
       <div class="set-row">
-        <div class="s-icon">🔊</div><div class="s-name">音效</div>
+        <div class="s-icon">🔊</div><div class="s-name" data-i18n="sfx">音效</div>
+        <input class="vol" type="range" min="0" max="100" step="5" value="100" data-vol="sfx" aria-label="sound volume">
         <button class="switch on" data-set="sfx"></button>
       </div>
     </div>
 
-    <div class="sec-title">游戏设置</div>
+    <div class="sec-title" data-i18n="sec_game">游戏设置</div>
     <div class="set-card">
       <div class="set-row">
-        <div class="s-icon">💡</div><div class="s-name">提示</div>
+        <div class="s-icon">💡</div><div class="s-name" data-i18n="hint">提示</div>
         <button class="switch on" data-set="hint"></button>
       </div>
       <div class="set-row">
-        <div class="s-icon" style="background:radial-gradient(circle at 35% 30%, #ffb1d0, #ff5c9e);">❤️</div>
-        <div class="s-name">生命值上限</div>
-        <div class="stepper">
-          <button class="minus" id="hp-minus">−</button>
-          <span class="num" id="hp-num">5</span>
-          <button class="plus" id="hp-plus">＋</button>
-        </div>
+        <div class="s-icon" style="background:radial-gradient(circle at 35% 30%, #d9a7ff, #9b4edd);">🎬</div>
+        <div class="s-name" data-i18n="anim">关卡动画</div>
+        <button class="switch on" data-set="anim"></button>
       </div>
       <div class="set-row">
-        <div class="s-icon" style="background:radial-gradient(circle at 35% 30%, #d9a7ff, #9b4edd);">🎬</div>
-        <div class="s-name">关卡动画</div>
-        <button class="switch on" data-set="anim"></button>
+        <div class="s-icon" style="background:radial-gradient(circle at 35% 30%, #ffd28a, #f5a623);">📳</div>
+        <div class="s-name" data-i18n="vibe">震动</div>
+        <button class="switch on" data-set="vibe"></button>
       </div>
     </div>
 
-    <div class="sec-title">其他设置</div>
+    <div class="sec-title" data-i18n="sec_other">其他设置</div>
+    <div class="set-card">
+      <div class="set-row">
+        <div class="s-icon" style="background:radial-gradient(circle at 35% 30%, #a9d8ff, #3d9be9);">🌐</div>
+        <div class="s-name" data-i18n="language">语言</div>
+        <div class="seg" id="lang-seg">
+          <button class="seg-btn on" type="button" data-lang="zh">中文</button>
+          <button class="seg-btn" type="button" data-lang="en">English</button>
+        </div>
+      </div>
+    </div>
+
     <div class="link-row">
-      <button class="btn btn-blue" onclick="toast('语言：简体中文')">语言&nbsp;›</button>
-      <button class="btn btn-blue" onclick="toast('客服邮箱：support@example.com')">联系客服&nbsp;›</button>
+      <button class="btn btn-blue" onclick="showAuthor()"><span data-i18n="author">作者</span>&nbsp;›</button>
     </div>
 
     <div class="panel-btns">
-      <button class="btn btn-purple" onclick="closeOverlay('settings-overlay'); goHome();">返回大厅</button>
-      <button class="btn btn-green" onclick="closeOverlay('settings-overlay'); restart();">重新开始</button>
-      <button class="btn btn-orange" onclick="closeOverlay('settings-overlay')">继续游戏</button>
+      <button class="btn btn-purple" onclick="closeOverlay('settings-overlay'); goHome();" data-i18n="home">返回大厅</button>
+      <button class="btn btn-green" onclick="closeOverlay('settings-overlay'); restart();" data-i18n="restart">重新开始</button>
+      <button class="btn btn-orange" onclick="closeOverlay('settings-overlay')" data-i18n="resume">继续游戏</button>
+    </div>
+  </div>
+</div>
+
+<!-- 关卡选择弹窗 -->
+<div class="overlay" id="levels-overlay">
+  <div class="panel">
+    <div class="panel-title"><span class="star">⭐</span><span data-i18n="levels_title">选择关卡</span><span class="star">⭐</span></div>
+    <button class="panel-close" data-close="levels-overlay">✕</button>
+    <div id="level-grid"></div>
+    <div id="level-tip" data-i18n="levels_tip">素材还在做，更多关卡敬请期待 🐸</div>
+  </div>
+</div>
+
+<!-- 作者弹窗 -->
+<div class="overlay" id="author-overlay">
+  <div class="panel">
+    <div class="panel-title"><span class="star">⭐</span><span data-i18n="author">作者</span><span class="star">⭐</span></div>
+    <button class="panel-close" data-close="author-overlay">✕</button>
+    <div class="author-card">
+      <div class="author-avatar">🐸</div>
+      <div class="author-name">奶蛙消消乐</div>
+      <div class="author-label" data-i18n="contact_email">联系邮箱</div>
+      <div class="author-mail" id="author-mail">chenckx@qq.com</div>
+    </div>
+    <div class="panel-btns">
+      <button class="btn btn-blue" onclick="copyMail()" data-i18n="copy_email">复制邮箱</button>
+      <button class="btn btn-orange" onclick="closeOverlay('author-overlay')" data-i18n="close">关闭</button>
     </div>
   </div>
 </div>
@@ -408,11 +610,13 @@
 <div class="overlay" id="result-overlay">
   <div class="panel">
     <div class="panel-title" id="result-title"><span class="star">⭐</span>胜利<span class="star">⭐</span></div>
+    <div id="result-level"></div>
     <div id="result-stars"></div>
     <div id="result-text"></div>
+    <div id="result-score"></div>
     <div class="panel-btns">
-      <button class="btn btn-blue" onclick="closeOverlay('result-overlay'); restart();">重新开始</button>
-      <button class="btn btn-orange" id="next-level-btn" onclick="nextLevel()">下一关</button>
+      <button class="btn btn-blue" onclick="closeOverlay('result-overlay'); restart();" data-i18n="restart">重新开始</button>
+      <button class="btn btn-orange" id="next-level-btn" data-i18n="next_level" onclick="nextLevel()">下一关</button>
     </div>
   </div>
 </div>
@@ -427,16 +631,179 @@
  * ============================================================ */
 const COLS = 7, ROWS = 7;
 
-/* 第一关图标（PNG 图片）。替换关卡素材时改这里 + renderTileFace() */
-const TYPES = [
-  { key:'b', img:'naiwa/1/b.png', color:'#7ec3f5' },
-  { key:'d', img:'naiwa/1/d.png', color:'#ff9d1b' },
-  { key:'f', img:'naiwa/1/f.png', color:'#ffd54d' },
-  { key:'g', img:'naiwa/1/g.png', color:'#c98ff5' },
-  { key:'i', img:'naiwa/1/i.png', color:'#7ed957' },
+/* ============================================================
+ * 关卡表 —— 加新关卡只改这里
+ *   每关字段：
+ *     no    关卡号（同时是素材目录名，素材放 naiwa/<no>/）
+ *     moves 步数
+ *     types 该关的消除图标
+ *     needs 三个目标各自需要消除的数量（对应当前关 types 里随机抽出的 3 种）
+ *   关卡选择面板、进度存档都从这张表读，不必再改 UI 代码。
+ *   素材还没做的关卡不要写进来，面板会自动补成「敬请期待」的锁定格。
+ * ============================================================ */
+const LEVELS = [
+  {
+    no: 1,
+    moves: 25,
+    needs: [15, 12, 10],
+    types: [
+      { key:'b', img:'naiwa/1/b.png', color:'#7ec3f5' },
+      { key:'d', img:'naiwa/1/d.png', color:'#ff9d1b' },
+      { key:'f', img:'naiwa/1/f.png', color:'#ffd54d' },
+      { key:'g', img:'naiwa/1/g.png', color:'#c98ff5' },
+      { key:'i', img:'naiwa/1/i.png', color:'#7ed957' },
+    ],
+  },
 ];
 
-const settings = { music:true, sfx:true, hint:true, anim:true, hp:5 };
+/* 关卡选择面板至少铺这么多格，超出的格子显示为「敬请期待」 */
+const LEVEL_SLOTS = 9;
+
+/* 当前关的图标。startLevel() 时随关卡切换，其余逻辑一律读这个变量 */
+let TYPES = LEVELS[0].types;
+
+const settings = { music:true, sfx:true, hint:true, anim:true, vibe:true };
+
+/* ============================================================
+ * 多语言（简体中文 / English）
+ *   静态文案写在 HTML 上：data-i18n=正文、data-i18n-title=title、data-i18n-alt=alt；
+ *   脚本里的动态文案（toast、结算面板、关卡格）统一走 T()。两条路都指向这张表，
+ *   所以加文案只改这里一处，不用满仓库找字符串。
+ *   占位符写法 {n} / {s}，用 T('key', { n: 3 }) 替换。
+ * ============================================================ */
+const LANG_KEY = 'naiwa-xxl-lang-v1';
+let lang = 'zh';
+
+const I18N = {
+  zh: {
+    title:'奶蛙消消乐',
+    settings:'设置',
+    sec_audio:'音效设置', bgm:'背景音乐', sfx:'音效',
+    sec_game:'游戏设置', hint:'提示', anim:'关卡动画', vibe:'震动',
+    sec_other:'其他设置', language:'语言', author:'作者',
+    home:'返回大厅', restart:'重新开始', resume:'继续游戏',
+    start:'开始游戏', pick_level:'选择关卡',
+    home_sub:'滑 动 消 除 · 轻 松 一 夏',
+    progress_pre:'当前进度：第 ', progress_post:' 关',
+    moves:'步数', level:'关卡', goals:'目标', score:'分数',
+    levels_title:'选择关卡', coming_soon:'敬请期待',
+    levels_tip:'素材还在做，更多关卡敬请期待 🐸',
+    contact_email:'联系邮箱', copy_email:'复制邮箱', close:'关闭',
+    victory:'胜利', failure:'失败', next_level:'下一关', go_home:'返回首页',
+    hammer_t:'小锤：消除1个', bomb_t:'炸弹：消除3×3',
+    shuffle_t:'刷新：重排棋盘', moves_t:'星星：+5步',
+    no_match:'无法消除',
+    auto_shuffle:'没有可消除的移动，自动重排',
+    booster_empty:'道具用完啦',
+    plus_moves:'+5 步！',
+    aim_hammer:'点击要敲掉的棋子',
+    aim_bomb:'点击爆炸中心（3×3）',
+    reshuffled:'棋盘已重排',
+    level_wip:'第 {n} 关还在制作中，敬请期待',
+    copied:'已复制：{s}',
+    email_is:'邮箱：{s}',
+    win_text:'剩余 {n} 步，太棒了！',
+    lose_text:'步数用完了，再试一次吧',
+    level_no:'第 {n} 关',
+    result_score:'本局 {n} 分 · 最高 {s} 分',
+    revive:'复活 +5 步',
+    revived:'复活成功，加油！',
+    home_best:'最高分 {n}',
+    lang_now:'语言：简体中文',
+    vol_music:'音乐音量', vol_sfx:'音效音量',
+    crash_tip:'出了点小问题，点这里重新加载',
+  },
+  en: {
+    title:'Milk Frog Match',
+    settings:'Settings',
+    sec_audio:'Audio', bgm:'Music', sfx:'Sound',
+    sec_game:'Gameplay', hint:'Hints', anim:'Animations', vibe:'Vibration',
+    sec_other:'More', language:'Language', author:'Author',
+    home:'Home', restart:'Restart', resume:'Resume',
+    start:'Start Game', pick_level:'Levels',
+    home_sub:'Swipe · Match · Relax',
+    progress_pre:'Level ', progress_post:' · Current Progress',
+    moves:'Moves', level:'Level', goals:'Goals', score:'Score',
+    levels_title:'Select Level', coming_soon:'Coming soon',
+    levels_tip:'More levels are on the way 🐸',
+    contact_email:'Contact Email', copy_email:'Copy Email', close:'Close',
+    victory:'Victory', failure:'Out of Moves', next_level:'Next Level', go_home:'Home',
+    hammer_t:'Hammer: remove 1 tile', bomb_t:'Bomb: clear a 3×3 area',
+    shuffle_t:'Shuffle: reshuffle the board', moves_t:'Star: +5 moves',
+    no_match:'No match there',
+    auto_shuffle:'No moves left — reshuffling',
+    booster_empty:'No boosters left',
+    plus_moves:'+5 moves!',
+    aim_hammer:'Tap a tile to smash it',
+    aim_bomb:'Tap the center of a 3×3 blast',
+    reshuffled:'Board reshuffled',
+    level_wip:'Level {n} is still in the works',
+    copied:'Copied: {s}',
+    email_is:'Email: {s}',
+    win_text:'{n} moves left — great job!',
+    lose_text:'Out of moves — give it another try',
+    level_no:'Level {n}',
+    result_score:'This run {n} · Best {s}',
+    revive:'Revive +5',
+    revived:'Revived — keep going!',
+    home_best:'Best {n}',
+    lang_now:'Language: English',
+    vol_music:'Music volume', vol_sfx:'Sound volume',
+    crash_tip:'Something went wrong. Tap to reload',
+  },
+};
+
+/* 取文案；缺项自动回退中文，再缺就返回 key 本身（不会出现 undefined） */
+function T(key, vars){
+  const pack = I18N[lang] || I18N.zh;
+  let s = pack[key];
+  if(s === undefined) s = I18N.zh[key];
+  if(s === undefined) s = key;
+  if(vars) for(const k in vars) s = s.split('{' + k + '}').join(vars[k]);
+  return s;
+}
+
+function loadLang(){
+  try{
+    const v = localStorage.getItem(LANG_KEY);
+    if(v === 'zh' || v === 'en') lang = v;
+  }catch(e){}
+}
+
+/* 把当前语言铺到整个界面：静态文案 + 分段控件高亮 + 动态区域重绘 */
+function applyLang(){
+  const isZh = (lang !== 'en');
+  document.documentElement.setAttribute('lang', isZh ? 'zh-CN' : 'en');
+  document.title = T('title');
+  document.querySelectorAll('[data-i18n]').forEach(el=>{
+    el.textContent = T(el.getAttribute('data-i18n'));
+  });
+  document.querySelectorAll('[data-i18n-title]').forEach(el=>{
+    el.setAttribute('title', T(el.getAttribute('data-i18n-title')));
+  });
+  document.querySelectorAll('[data-i18n-alt]').forEach(el=>{
+    el.setAttribute('alt', T(el.getAttribute('data-i18n-alt')));
+  });
+  document.querySelectorAll('#lang-seg .seg-btn').forEach(b=>{
+    b.className = 'seg-btn' + (b.getAttribute('data-lang') === lang ? ' on' : '');
+  });
+  document.querySelectorAll('.vol').forEach(el=>{
+    el.setAttribute('aria-label', T(el.dataset.vol === 'music' ? 'vol_music' : 'vol_sfx'));
+  });
+  refreshHome();
+  renderHud();
+  paintResult();
+  try{ localStorage.setItem(LANG_KEY, lang); }catch(e){}
+}
+
+function setLang(v){
+  if(v !== 'zh' && v !== 'en') return;
+  if(v === lang) return;
+  lang = v;
+  applyLang();
+  SFX.click();
+  toast(T('lang_now'));
+}
 
 /* ============================================================
  * 音频引擎
@@ -452,16 +819,54 @@ const comboAudios = [1,2,3,4,5].map(i => { const a = new Audio(`bgm/combo${i}.mp
 const endAudio    = new Audio('bgm/end.mp3');
 endAudio.volume = 0.8;
 
+/* 音量：0~1 的倍数，分别乘到各条音频链的基准值上。
+   两条链路基准不同（BGM 文件 0.5 / 合成音效 0.5 / combo 文件 0.7 / 结算文件 0.8），
+   所以按链路各自换算 —— 滑到 100 就是改版前的音量。 */
+const VOL_KEY = 'naiwa-xxl-vol-v1';
+const VOL_BASE = { music:0.5, sfx:0.5 };
+const VOL_SFX_FILE = { combo:0.7, end:0.8 };
+let volumes = { music:1, sfx:1 };
+
+function loadVolumes(){
+  try{
+    const o = JSON.parse(localStorage.getItem(VOL_KEY) || '{}');
+    for(const k in VOL_BASE){
+      const v = parseFloat(o[k]);
+      if(isFinite(v)) volumes[k] = Math.max(0, Math.min(1, v));
+    }
+  }catch(e){}
+}
+function saveVolumes(){ try{ localStorage.setItem(VOL_KEY, JSON.stringify(volumes)); }catch(e){} }
+function applyVolumes(){
+  bgmAudio.volume = VOL_BASE.music * volumes.music;
+  if(sfxGain) sfxGain.gain.value = VOL_BASE.sfx * volumes.sfx;
+  comboAudios.forEach(a=>{ a.volume = VOL_SFX_FILE.combo * volumes.sfx; });
+  endAudio.volume = VOL_SFX_FILE.end * volumes.sfx;
+  document.querySelectorAll('.vol').forEach(el=>{
+    const v = volumes[el.dataset.vol];
+    if(v !== undefined) el.value = Math.round(v * 100);
+  });
+}
+
 function initAudio(){
   if(!actx){
     actx = new (window.AudioContext || window.webkitAudioContext)();
-    sfxGain = actx.createGain(); sfxGain.gain.value = 0.5; sfxGain.connect(actx.destination);
+    sfxGain = actx.createGain(); sfxGain.connect(actx.destination);
+    applyVolumes();                      /* 按存档音量初始化 */
   } else if(actx.state === 'suspended'){
     actx.resume();
   }
   if(settings.music) tryPlayBgm();
 }
-window.addEventListener('pointerdown', initAudio, { once:false });
+/* ---- 浏览器自动播放策略 ----
+   手势之前 <audio>.play() 会被拒（NotAllowedError），所以「打开网页就自动响」
+   在页面上做不到，只能一有手势立刻解锁 —— 也就是现在这个「点一下才出声」的表现，
+   属于平台规则而非 bug。多挂几种事件：pointerdown 覆盖鼠标/触摸，touchend / click
+   兜底 iOS Safari（历史上只认 click / touchend 作为媒体播放授权手势），keydown 覆盖键盘。
+   下一行的载入尝试只在浏览器放行自动播放时才成功。 */
+['pointerdown','touchend','click','keydown'].forEach(ev=>{
+  window.addEventListener(ev, initAudio, { once:false, passive:true });
+});
 window.addEventListener('DOMContentLoaded', ()=>{ if(settings.music) tryPlayBgm(); });
 
 function tryPlayBgm(){ if(!settings.music) return; bgmAudio.play().catch(()=>{}); }
@@ -497,26 +902,158 @@ const SFX = {
   end:     () => { endAudio.currentTime = 0; endAudio.play().catch(()=>{}); },
 };
 
-let level = 18, moves = 25;
+let level = 1, moves = 25, score = 0;
+let reviveUsed = false;    /* 本局是否已用过复活，restart 时重置 */
 let goals = [];            // [{type, need, got}]
 let board = [];            // board[r][c] = {type, el} | null
 let cell = 0, gap = 6;     // 像素尺寸，init 时计算
 let selected = null;       // {r,c}
 let busy = false;          // 动画/连锁中锁输入
 let boosterMode = null;    // 'hammer' | 'bomb' | null
-let boosters = { hammer:3, bomb:3, shuffle:3, moves:3 };
+/* 每关道具的初始数量。restart() 会按这份模板复原 ——
+   之前只在初始化时赋过一次值，用掉的道具重开 / 切关都不会回来，
+   玩家玩几局后道具就永久耗尽，必须刷新页面才能恢复。 */
+const BOOSTER_MAX = { hammer:3, bomb:3, shuffle:3, moves:3 };
+let boosters = Object.assign({}, BOOSTER_MAX);
 let hintTimer = null;
 
 const boardEl = document.getElementById('board');
+
+/* ---------- 进度存档 ----------
+   localStorage 不可用时（隐私模式等）读写全部降级为内存进度，不影响游玩。
+   unlocked 的含义是「已解锁到第几关」，也就是开始页显示的「当前进度」。 */
+const SAVE_KEY = 'naiwa-xxl-progress-v1';
+const save = { unlocked:1, stars:{}, best:{} };
+
+function loadSave(){
+  try{
+    const raw = localStorage.getItem(SAVE_KEY);
+    if(!raw) return;
+    const o = JSON.parse(raw);
+    if(!o || typeof o !== 'object') return;
+    const u = parseInt(o.unlocked, 10);
+    if(u > 0) save.unlocked = u;
+    if(o.stars && typeof o.stars === 'object'){
+      for(const k in o.stars){
+        const n = parseInt(o.stars[k], 10);
+        if(n > 0) save.stars[k] = Math.min(3, n);
+      }
+    }
+    if(o.best && typeof o.best === 'object'){
+      for(const k in o.best){
+        const n = parseInt(o.best[k], 10);
+        if(n > 0) save.best[k] = n;
+      }
+    }
+  }catch(e){}
+}
+function persist(){
+  try{ localStorage.setItem(SAVE_KEY, JSON.stringify(save)); }catch(e){}
+}
+function starsOf(no){ return Math.min(3, parseInt(save.stars[no], 10) || 0); }
+function bestOf(no){ return Math.max(0, parseInt(save.best[no], 10) || 0); }
+/* 已解锁到第几关；上限 = 关卡表长度，不会超出 */
+function unlockedMax(){ return Math.max(1, Math.min(LEVELS.length, save.unlocked)); }
 
 /* ---------- 工具 ---------- */
 const rand = n => Math.floor(Math.random()*n);
 const sleep = ms => new Promise(r=>setTimeout(r,ms));
 const $ = s => document.querySelector(s);
 
+/* ---------- 分数 ----------
+   每消除一格 10 分，连锁第 n 段 ×n 倍率；道具消除传 combo=0，只算基础分。 */
+function addScore(n){
+  score += n;
+  const el = document.getElementById('score-num');
+  if(!el) return;
+  el.textContent = score;
+  if(settings.anim){ el.classList.remove('bump'); void el.offsetWidth; el.classList.add('bump'); }
+}
+
+/* ---------- 消除粒子 ----------
+   和下落动画同一套 Web Animations 显式关键帧。这里刻意不写 will-change /
+   transition：will-change 会把动画提升到合成器线程，而新建图层那一帧可能拿不到
+   起始位置快照（之前下落偏移的根因就是这个），粒子会从棋盘左上角飞出来。 */
+const PARTICLE_MAX = 140;
+let liveParticles = 0;
+
+function burst(r, c, color){
+  if(!settings.anim || liveParticles >= PARTICLE_MAX) return;
+  const p = pos(r, c);
+  const cx = p.x + cell/2, cy = p.y + cell/2;
+  for(let i=0;i<4;i++){
+    if(liveParticles >= PARTICLE_MAX) return;
+    const sz = 5 + rand(4);
+    const d = document.createElement('div');
+    d.className = 'shard';
+    d.style.width  = sz + 'px';
+    d.style.height = sz + 'px';
+    d.style.left   = (cx - sz/2) + 'px';
+    d.style.top    = (cy - sz/2) + 'px';
+    d.style.background = color || '#ffffff';
+    boardEl.appendChild(d);
+    liveParticles++;
+    const ang  = (Math.PI * 2 * i / 4) + Math.random() * 1.1;
+    const dist = 24 + rand(26);
+    const dx = Math.cos(ang) * dist, dy = Math.sin(ang) * dist - 6;
+    const dur = 360 + rand(180);
+    const anim = d.animate([
+      { transform:'translate(0,0) scale(1)', opacity:1 },
+      { transform:'translate(' + dx + 'px,' + dy + 'px) scale(.3)', opacity:0 }
+    ], { duration: dur, easing:'cubic-bezier(.2,.7,.4,1)' });
+    /* 正常路径由 onfinish 回收。但页面切到后台时 Web Animations 会整体暂停，
+       onfinish 要等回到前台才来 —— 这段时间粒子节点会一直挂着，
+       所以再加一个 setTimeout 兜底（虚拟时间下也会推进），保证节点不堆积。 */
+    const kill = function(){
+      if(d.__dead) return;
+      d.__dead = true;
+      liveParticles--;
+      if(d.parentNode) d.parentNode.removeChild(d);
+    };
+    anim.onfinish = kill;
+    setTimeout(kill, dur + 400);
+  }
+}
+
+/* ---------- 震动反馈 ----------
+   iOS Safari 没有 navigator.vibrate，受限 WebView 也可能禁用它，
+   所以一律 try 包住静默失败 —— 震不了不能影响游戏。 */
+function buzz(p){
+  if(!settings.vibe) return;
+  try{ if(navigator.vibrate) navigator.vibrate(p); }catch(e){}
+}
+
 function toast(msg){
   const t = $('#toast'); t.textContent = msg; t.classList.add('show');
   clearTimeout(t._h); t._h = setTimeout(()=>t.classList.remove('show'), 1600);
+}
+
+/* ---------- 作者信息 ---------- */
+const AUTHOR_MAIL = 'chenckx@qq.com';
+function showAuthor(){
+  if(typeof SFX !== 'undefined') SFX.click();
+  $('#author-overlay').classList.add('show');
+}
+/* 复制文本：老 WebView 没有 navigator.clipboard，用选中 + execCommand 兜底 */
+function copyMail(){
+  let ok = false;
+  try{
+    const ta = document.createElement('textarea');
+    ta.value = AUTHOR_MAIL;
+    ta.setAttribute('readonly','readonly');
+    ta.style.position = 'fixed'; ta.style.top = '-1000px'; ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select(); ta.setSelectionRange(0, AUTHOR_MAIL.length);
+    ok = document.execCommand('copy');
+    document.body.removeChild(ta);
+  }catch(e){ ok = false; }
+  toast(ok ? T('copied', { s:AUTHOR_MAIL }) : T('email_is', { s:AUTHOR_MAIL }));
+}
+
+/* 设置里的「动画」开关：关闭时全局去掉 transform 过渡，进入无动画模式 */
+function applyAnimSetting(){
+  document.documentElement.className = document.documentElement.className
+    .replace(/\s*no-anim/, '') + (settings.anim ? '' : ' no-anim');
 }
 
 /* ---------- 初始化 ---------- */
@@ -540,7 +1077,76 @@ function renderTileFace(t){
   t.el.firstChild.innerHTML = `<img src="${TYPES[t.type].img}" alt="" draggable="false">`;
 }
 
-function makeTile(r, c, type, spawnOffset=0){
+/* ---------- 位移 ----------
+   为什么位移不再用 CSS transition：
+   .tile 上原来挂着 will-change:transform，transform 过渡因此被交给合成器线程执行。
+   而一枚棋子「第一次」产生位移的那一帧，合成器的图层才刚建立、手上还没有它的位置
+   快照，起始 transform 就退化成 none —— 棋子于是有概率从棋盘左上角飞出来、滑到一半
+   才归位，看起来像"错位了一下又回到该在的位置"。这个时序取决于主线程提交与合成器
+   建层谁先谁后，所以只「有概率」复现，且真机（真 GPU 合成）比调试环境更容易中招。
+   现在改用 Web Animations 的显式关键帧：起止值是一份明确的数据，随动画一起提交给
+   合成器，不需要向元素当前渲染状态做快照，从根上避开这个竞态。
+   同时元素的 inline transform 永远等于它「该在的格子」，动画只是叠加在上面的表现层，
+   所以哪怕动画本身出任何岔子，落点也依然是准的。 */
+/* ---------- 下落节奏 ----------
+   一格落差用多少毫秒、落差大时追加多少。
+   旧实现是固定 220ms：掉 1 格像慢动作，掉 4 格像瞬移 —— 节奏和「重量」都对不上，
+   落差越大越显得那一格是"跳"过去的。现在按落差行数给时长并封顶，
+   连锁时再乘 dropSpeed(k) 加速。 */
+const DROP_BASE_MS = 130, DROP_PER_ROW_MS = 44, DROP_MAX_MS = 380;
+function dropDur(rows, k){
+  const d = (DROP_BASE_MS + Math.max(1, rows) * DROP_PER_ROW_MS) * (k || 1);
+  return Math.round(Math.min(DROP_MAX_MS, d));
+}
+
+/* 位移曲线。原来用 ease —— 它最慢的一段恰好是起步（前 30% 只走掉 8% 的路程），
+   于是「上方棋子开始下落」的第一印象是"没动"；这段迟滞再和消除的收尾叠在一起，
+   主观上就成了「卡一下」。换成前段就冲出去的 ease-out：启动即时、落格减速收住。 */
+const MOVE_MS = 220, MOVE_EASE = 'cubic-bezier(.22,.9,.28,1)';
+
+/* 同一枚棋子上正在跑的位移动画。两个用途：
+   (a) 判断要不要去读它的实时位移；
+   (b) 新动画顶掉旧动画，避免两段叠着算、合成器上的动画对象越堆越多。 */
+const TILE_ANIM = new WeakMap();
+
+/* 读元素当前的实际位移。动画进行中拿到的是插值后的当前位置，
+   等价于 CSS transition「从当前位置接着走」的打断行为。 */
+function readTranslate(el, fallback){
+  /* 只有动画正在跑时才需要向渲染层要实时值 —— 静止的棋子直接用它的逻辑位置。
+     这里省掉的每一次 getComputedStyle 都是一次强制同步布局：浏览器必须先把
+     待处理的样式变更全部 flush 掉，才能回答「你现在在哪」。一轮下落里问十几次，
+     既没有意义，本身就是掉帧的来源。 */
+  const a = TILE_ANIM.get(el);
+  if(!a || (a.playState !== 'running' && a.playState !== 'paused')) return fallback;
+  const s = getComputedStyle(el).transform;
+  if(!s || s === 'none') return fallback;
+  const m = /matrix\(([^)]+)\)/.exec(s);
+  if(!m) return fallback;
+  const p = m[1].split(',');
+  if(p.length < 6) return fallback;
+  const x = parseFloat(p[4]), y = parseFloat(p[5]);
+  return (isNaN(x) || isNaN(y)) ? fallback : { x: x, y: y };
+}
+
+/* 位移到目标点。from 传 null 表示不播动画、直接到位。
+   无 Web Animations（老 WebView）时同样直接到位 —— 宁可没有动画，也不能错位。 */
+function moveTileTo(el, from, to, dur){
+  const toXY = `translate(${to.x}px, ${to.y}px)`;
+  el.style.transform = toXY;
+  /* 先把上一段动画停掉。注意顺序：readTranslate 必须先读到旧动画的实时位置，
+     才能实现「从当前位置接着走」的打断语义，所以 cancel 只能发生在这之后。 */
+  const prev = TILE_ANIM.get(el);
+  TILE_ANIM['delete'](el);
+  if(prev && prev.playState !== 'finished' && prev.playState !== 'idle') prev.cancel();
+  if(!from || !settings.anim || !el.animate) return;
+  TILE_ANIM.set(el, el.animate(
+    [{ transform: `translate(${from.x}px, ${from.y}px)` }, { transform: toXY }],
+    { duration: dur || MOVE_MS, easing: MOVE_EASE }
+  ));
+}
+
+/* 新建棋子。spawnRows > 0 表示这枚棋子从棋盘上方 spawnRows 行处落下。 */
+function makeTile(r, c, type, spawnRows=0, dur){
   const el = document.createElement('div');
   el.className = 'tile';
   el.style.width = el.style.height = cell + 'px';
@@ -549,22 +1155,37 @@ function makeTile(r, c, type, spawnOffset=0){
   el.appendChild(face);
   const t = { type, el, r, c };
   renderTileFace(t);
-  const p = pos(r - spawnOffset, c);
-  el.style.transform = `translate(${p.x}px, ${p.y}px)`;
   el.addEventListener('pointerdown', e => {
     e.preventDefault();
     /* 注意：必须记录棋子对象本身，运行时读取 t.r/t.c。
        用闭包里的 r/c 会在棋子移动后指向旧格子（滑动错位的根因）。 */
-    drag = { t, x: e.clientX, y: e.clientY, used: false };
+    /* 按下先把 transform 钉到当前格子的落点：上一段位移动画可能还在跑，
+       跟手位移需要一个确定的基准，否则会叠在动画的中间值上 */
+    const base = pos(t.r, t.c);
+    el.style.transform = `translate(${base.x}px, ${base.y}px)`;
+    el.classList.add('dragging');
+    drag = { t, x: e.clientX, y: e.clientY, base, used: false };
   });
+  const end = pos(r, c);
+  el.style.transform = `translate(${end.x}px, ${end.y}px)`;   /* 基础位置 = 落点 */
   boardEl.appendChild(el);
+  if(spawnRows > 0) moveTileTo(el, pos(r - spawnRows, c), end, dur);
   return t;
 }
 
-function placeTile(t, r, c){
+function placeTile(t, r, c, dur){
+  const from = readTranslate(t.el, pos(t.r, t.c));
   t.r = r; t.c = c;
-  const p = pos(r, c);
-  t.el.style.transform = `translate(${p.x}px, ${p.y}px)`;
+  moveTileTo(t.el, from, pos(r, c), dur);
+}
+
+/* 落定校正：一轮下落结束后，把所有棋子的 transform 与所属格子强制对齐一次。
+   动画本该已经收尾，这里只是兜住任何残留偏差。 */
+function settleBoard(){
+  for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++){
+    const t = board[r][c];
+    if(t) t.el.style.transform = `translate(${pos(r,c).x}px, ${pos(r,c).y}px)`;
+  }
 }
 
 function newBoard(){
@@ -581,17 +1202,20 @@ function newBoard(){
 }
 
 /* ---------- 目标 / 顶部栏 ---------- */
+function currentLevelDef(){ return LEVELS[level-1] || LEVELS[0]; }
+
 function initGoals(){
-  const idx = [...TYPES.keys()].sort(()=>Math.random()-.5).slice(0,3);
-  const needs = [15,12,10];
-  goals = idx.map((t,i)=>({ type:t, need:needs[i], got:0 }));
-  moves = 25;
+  const def = currentLevelDef();
+  const idx = [...def.types.keys()].sort(()=>Math.random()-.5).slice(0,3);
+  const needs = def.needs || [15,12,10];
+  goals = idx.map((t,i)=>({ type:t, need:needs[i] || 10, got:0 }));
+  moves = def.moves || 25;
   renderHud();
 }
 
 function renderHud(){
   $('#moves-num').textContent = moves;
-  $('#level-num').textContent = level;
+  $('#score-num').textContent = score;
   const g = $('#goals'); g.innerHTML = '';
   goals.forEach(gl=>{
     const left = Math.max(0, gl.need - gl.got);
@@ -643,10 +1267,24 @@ function findMove(){
   return null;
 }
 
-/* ---------- 消除流程 ---------- */
+/* ---------- 消除流程 ----------
+   节奏：旧实现里这段是三拍严格串行的 ——
+     ① 被消除的棋子播 280ms 的 pop 收缩动画（await 到底）
+     ② 元素从 DOM 移除
+     ③ 上方的棋子这才开始下落
+   问题是 ① 播到 200ms 左右棋子已经看不见了，屏幕上却还有 80ms 谁也不动；接着
+   ③ 用的又是起步最慢的 ease。这两段合起来，就是主观上的「卡一下」。
+   现在把 ① 和 ③ 叠成同一段时间：标记消除的同时就把格子数据清空、让上方开始下落，
+   被消除的棋子留在原地把 pop 播完再由定时器收走。屏幕上始终有东西在动。 */
+const POP_MS = 200;         /* 与 CSS 里 .tile.clearing .face 的动画时长保持一致 */
+const DROP_LEAD_MS = 110;   /* 标记消除后多久开始下落：让 pop 先爆开到最大再掉 */
 async function clearSet(hit, combo){
   SFX.clear(combo);
   if(combo>1) showCombo(combo);
+  const gained = hit.size * 10 * Math.max(1, combo);
+  addScore(gained);
+  showScore(hit, gained);
+  buzz(combo > 1 ? 22 : 12);
   // 收集目标
   hit.forEach(i=>{
     const r=(i/COLS)|0, c=i%COLS, t=board[r][c];
@@ -657,34 +1295,64 @@ async function clearSet(hit, combo){
   renderHud();
   hit.forEach(i=>{
     const r=(i/COLS)|0, c=i%COLS, t=board[r][c];
-    if(t){ t.el.classList.add('clearing'); }
+    if(!t) return;
+    t.el.classList.add('clearing');
+    const def = TYPES[t.type];
+    if(def) burst(r, c, def.color);
+    /* 格子数据立刻清空，上方棋子马上就能往下走；DOM 留在原地把 pop 播完再自己
+       收走。消除的收缩与上方的下落因此重叠在一起，中间不留空档。
+       无动画模式下没有 pop 可播，直接移除。 */
+    board[r][c] = null;
+    if(settings.anim){
+      setTimeout(function(){ if(t.el.parentNode) t.el.parentNode.removeChild(t.el); }, POP_MS + 80);
+    } else {
+      t.el.remove();
+    }
   });
-  await sleep(settings.anim ? 280 : 60);
-  hit.forEach(i=>{
-    const r=(i/COLS)|0, c=i%COLS, t=board[r][c];
-    if(t){ t.el.remove(); board[r][c]=null; }
-  });
+  /* 只让出 pop 的前半程就返回，不等它播完 —— 等到底就会在下落前留出一段空档 */
+  if(settings.anim) await sleep(DROP_LEAD_MS);
 }
 
-async function dropAndFill(){
+/* 连锁越深落得越快：第 1 段 1.0 倍，之后每段递减 15%，最快 0.55 倍 */
+function dropSpeed(combo){
+  return Math.max(0.55, 1 - ((combo || 1) - 1) * 0.15);
+}
+
+async function dropAndFill(combo){
+  const k = dropSpeed(combo);
+  let wait = 0;
   for(let c=0;c<COLS;c++){
-    let write = ROWS-1;
+    /* 先把这一列的压实方案一次算完，再统一播动画。
+       两种写法视觉相同，但边扫边写会让「读实时位移」和「改样式」交替发生，
+       每一轮交替都可能逼浏览器做一次同步布局；集中处理就没有这个问题。
+       整列共用同一个时长 —— 落差各不相同，起止时刻必须一致，堆叠间距才不会散。 */
+    const moves = [];
+    let write = ROWS-1, rows = 0;
     for(let r=ROWS-1;r>=0;r--){
       if(board[r][c]){
-        if(write!==r){ board[write][c]=board[r][c]; placeTile(board[write][c], write, c); board[r][c]=null; }
+        if(write!==r){
+          rows = Math.max(rows, write - r);
+          moves.push([board[r][c], write, c]);
+          board[write][c] = board[r][c];
+          board[r][c] = null;
+        }
         write--;
       }
     }
-    let spawn = 1;
+    /* 顶部空格补新棋子：整列新棋子一起从棋盘上方整体下落，
+       保持彼此的堆叠间距（旧算法每枚错开 2 行，最下面那枚会从棋盘内部凭空冒出） */
+    const spawnRows = settings.anim ? write + 1 : 0;
+    rows = Math.max(rows, spawnRows);
+    const dur = settings.anim ? dropDur(rows, k) : 0;
+    moves.forEach(function(m){ placeTile(m[0], m[1], m[2], dur); });
     for(let r=write;r>=0;r--){
-      const t = makeTile(r, c, rand(TYPES.length), settings.anim ? (write - r + 1) : 0);
-      board[r][c] = t;
-      // 强制回流后落到目标位置
-      requestAnimationFrame(()=>placeTile(t, r, c));
-      spawn++;
+      board[r][c] = makeTile(r, c, rand(TYPES.length), spawnRows, dur);
     }
+    if(dur > wait) wait = dur;
   }
-  await sleep(settings.anim ? 260 : 40);
+  /* 多给 30ms 兜住计时器误差，别让下一轮在位移还没落定时就开跑 */
+  await sleep(settings.anim ? wait + 30 : 40);
+  settleBoard();
 }
 
 async function resolveBoard(){
@@ -695,10 +1363,10 @@ async function resolveBoard(){
     combo++;
     busy = true;
     await clearSet(hit, combo);
-    await dropAndFill();
+    await dropAndFill(combo);
   }
   busy = false;
-  if(!findMove()){ toast('没有可消除的移动，自动重排'); shuffleBoard(true); }
+  if(!findMove()){ toast(T('auto_shuffle')); shuffleBoard(true); }
   scheduleHint();
   checkEnd();
 }
@@ -709,6 +1377,38 @@ function showCombo(n){
   d.style.left = '50%'; d.style.top = '40%'; d.style.transform = 'translateX(-50%)';
   boardEl.appendChild(d);
   setTimeout(()=>d.remove(), 850);
+}
+
+/* 消除处的得分飘字，位置取这组消除的重心。
+   和粒子同一套规矩：WAAPI 显式关键帧，回收用 onfinish + setTimeout 双保险。 */
+function showScore(hit, gained){
+  if(!settings.anim || !gained) return;
+  let sx = 0, sy = 0, n = 0;
+  hit.forEach(i=>{
+    const r = (i/COLS)|0, c = i%COLS;
+    if(r < 0 || r >= ROWS || c < 0 || c >= COLS) return;
+    const p = pos(r, c);
+    sx += p.x + cell/2; sy += p.y + cell/2; n++;
+  });
+  if(!n) return;
+  const d = document.createElement('div');
+  d.className = 'score-float';
+  const sp = document.createElement('span');
+  sp.textContent = '+' + gained;
+  d.appendChild(sp);
+  d.style.left = Math.round(sx/n) + 'px';
+  d.style.top  = Math.round(sy/n) + 'px';
+  boardEl.appendChild(d);
+  const kill = ()=>{ if(d.parentNode) d.parentNode.removeChild(d); };
+  if(sp.animate){
+    const a = sp.animate([
+      { transform:'translateY(0) scale(.55)',      opacity:0 },
+      { transform:'translateY(-16px) scale(1.16)', opacity:1, offset:.32 },
+      { transform:'translateY(-46px) scale(1)',    opacity:0 }
+    ], { duration:760, easing:'ease-out' });
+    a.onfinish = kill;
+  }
+  setTimeout(kill, 1200);   /* 切后台时 WAAPI 暂停，onfinish 不来，兜底回收 */
 }
 
 /* ---------- 交互 ---------- */
@@ -723,13 +1423,13 @@ async function trySwap(a, b){
   await sleep(230);
   if(findMatches().size===0){
     swapTiles(a, b);              // 换回
-    SFX.invalid();
-    toast('无法消除');
+    SFX.invalid(); buzz(30);
+    toast(T('no_match'));
     await sleep(230);
     busy = false;
     scheduleHint();
   } else {
-    moves--; renderHud();
+    moves--; renderHud(); buzz(10);
     busy = false;
     await resolveBoard();
   }
@@ -748,27 +1448,55 @@ async function onTapSelect(r, c){
   await trySwap(a, cur);
 }
 
-/* 滑动手势：按下后朝某方向滑过阈值即交换 */
+/* 滑动手势：按住后棋子跟着手指走（只沿主轴、限幅一格），
+   越过阈值立即判定交换；没越过就弹回原格，并当作点按处理。 */
 let drag = null;
+
+/* 把棋子从当前跟手位置动画送回它所属的格子 */
+function returnTile(d){
+  const t = d.t;
+  t.el.classList.remove('dragging');
+  const to = pos(t.r, t.c);
+  moveTileTo(t.el, readTranslate(t.el, to), to);
+}
+
 window.addEventListener('pointermove', e => {
   if(!drag || drag.used || busy || boosterMode) return;
   const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
-  if(Math.hypot(dx, dy) < cell * 0.35) return;
+  if(Math.hypot(dx, dy) < cell * 0.35){
+    /* 跟手预览：只沿位移更大的那个轴移动，且不超过一格 ——
+       否则斜着拖会让棋子飘到不相干的格子上 */
+    let ox = 0, oy = 0;
+    if(Math.abs(dx) >= Math.abs(dy)) ox = Math.max(-cell, Math.min(cell, dx));
+    else oy = Math.max(-cell, Math.min(cell, dy));
+    drag.t.el.style.transform = `translate(${drag.base.x + ox}px, ${drag.base.y + oy}px)`;
+    return;
+  }
   drag.used = true;
+  drag.t.el.classList.remove('dragging');
   deselect();
   const [dr, dc] = Math.abs(dx) > Math.abs(dy) ? [0, Math.sign(dx)] : [Math.sign(dy), 0];
   const a = { r: drag.t.r, c: drag.t.c };
   const b = { r: a.r + dr, c: a.c + dc };
-  if(b.r < 0 || b.r >= ROWS || b.c < 0 || b.c >= COLS) return;
+  if(b.r < 0 || b.r >= ROWS || b.c < 0 || b.c >= COLS){ returnTile(drag); drag.used = true; return; }
   clearHint();
+  /* 刻意不先归位：trySwap 内部按当前 transform 读动画起点，衔接才连续 */
   trySwap(a, b);
 });
 window.addEventListener('pointerup', () => {
   if(!drag) return;
-  if(!drag.used) onTapSelect(drag.t.r, drag.t.c);
+  const d = drag;
   drag = null;
+  if(d.used) return;
+  returnTile(d);
+  onTapSelect(d.t.r, d.t.c);
 });
-window.addEventListener('pointercancel', () => { drag = null; });
+window.addEventListener('pointercancel', () => {
+  if(!drag) return;
+  const d = drag;
+  drag = null;
+  if(!d.used) returnTile(d);
+});
 
 function swapTiles(a, b){
   const ta = board[a.r][a.c], tb = board[b.r][b.c];
@@ -804,14 +1532,14 @@ document.querySelectorAll('.booster').forEach(b=>{
   b.addEventListener('click', async ()=>{
     if(busy) return;
     const k = b.dataset.b;
-    if(boosters[k]<=0){ toast('道具用完啦'); return; }
+    if(boosters[k]<=0){ toast(T('booster_empty')); return; }
     if(k==='shuffle'){ boosters[k]--; renderHud(); SFX.booster(); shuffleBoard(true); return; }
-    if(k==='moves'){ boosters[k]--; moves+=5; renderHud(); SFX.booster(); toast('+5 步！'); return; }
+    if(k==='moves'){ boosters[k]--; moves+=5; renderHud(); SFX.booster(); toast(T('plus_moves')); return; }
     SFX.click();
     // hammer / bomb 进入选择模式
     boosterMode = (boosterMode===k) ? null : k;
     document.querySelectorAll('.booster').forEach(x=>x.classList.toggle('armed', x.dataset.b===boosterMode));
-    toast(k==='hammer' ? '点击要敲掉的棋子' : '点击爆炸中心（3×3）');
+    toast(k==='hammer' ? T('aim_hammer') : T('aim_bomb'));
   });
 });
 
@@ -820,7 +1548,7 @@ async function useBoosterOn(r, c){
   boosterMode = null;
   document.querySelectorAll('.booster').forEach(x=>x.classList.remove('armed'));
   boosters[k]--; renderHud();
-  SFX.booster();
+  SFX.booster(); buzz(18);
   const hit = new Set();
   if(k==='hammer') hit.add(r*COLS+c);
   else for(let dr=-1;dr<=1;dr++) for(let dc=-1;dc<=1;dc++){
@@ -829,7 +1557,7 @@ async function useBoosterOn(r, c){
   }
   busy = true;
   await clearSet(hit, 0);
-  await dropAndFill();
+  await dropAndFill(1);
   busy = false;
   await resolveBoard();
 }
@@ -844,7 +1572,7 @@ function shuffleBoard(animate){
     for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++){ board[r][c].type = types[i++]; renderTileFace(board[r][c]); }
     tries++;
   } while((findMatches().size>0 || !findMove()) && tries<50);
-  if(animate) toast('棋盘已重排');
+  if(animate) toast(T('reshuffled'));
   scheduleHint();
 }
 
@@ -859,27 +1587,102 @@ function checkEnd(){
   }
 }
 
-function showResult(win, stars){
-  $('#result-title').innerHTML = win ? '<span class="star">⭐</span>胜利<span class="star">⭐</span>'
-                                     : '<span class="star">💧</span>失败<span class="star">💧</span>';
-  $('#result-stars').innerHTML = win
-    ? [1,2,3].map(i=>`<span class="${i<=stars?'':'dim'}">⭐</span>`).join('')
+/* 结算面板的文案状态：切语言时按这份状态重绘，不必重跑结算逻辑 */
+let resultState = null;
+
+function paintResult(){
+  if(!resultState) return;
+  const st = resultState;
+  const mark = st.win ? '⭐' : '💧';
+  $('#result-title').innerHTML = '<span class="star">' + mark + '</span>' + (st.win ? T('victory') : T('failure'))
+                               + '<span class="star">' + mark + '</span>';
+  $('#result-level').textContent = T('level_no', { n: st.level });
+  $('#result-stars').innerHTML = st.win
+    ? [1,2,3].map(i=>`<span class="${i<=st.stars?'':'dim'}">⭐</span>`).join('')
     : '<span class="dim">⭐⭐⭐</span>';
-  $('#result-text').textContent = win ? `剩余 ${moves} 步，太棒了！` : '步数用完了，再试一次吧';
-  $('#next-level-btn').style.display = win ? '' : 'none';
+  /* 文案在重绘这一刻才取，不缓存字符串 —— 结算面板开着切语言也能立刻跟着变 */
+  $('#result-text').textContent = st.win ? T('win_text', { n:st.movesLeft }) : T('lose_text');
+  $('#result-score').textContent = T('result_score', { n: st.score, s: st.best });
+  /* 第二个按钮：赢了 → 下一关 / 返回首页；输了 → 复活（本局没用过才有），
+     复活用掉之后失败结算就只剩「重新开始」 */
+  const nx = $('#next-level-btn');
+  if(st.win){
+    nx.style.display = '';
+    nx.textContent = T(st.next);
+    nx.setAttribute('onclick', st.next === 'next_level' ? 'nextLevel()' : 'goHome()');
+  } else if(!reviveUsed){
+    nx.style.display = '';
+    nx.textContent = T('revive');
+    nx.setAttribute('onclick', 'doRevive()');
+  } else {
+    /* 隐藏时也把文案写回默认值，避免残留上一局的按钮文字 */
+    nx.style.display = 'none';
+    nx.textContent = T('revive');
+  }
+}
+
+function showResult(win, stars){
+  /* 最高分：不分胜负都记，开局就有分数也能留档 */
+  const prevBest = bestOf(level);
+  if(score > prevBest) save.best[level] = score;
+  /* 记录本次结算状态；第二个按钮由 paintResult() 按胜负决定 */
+  resultState = {
+    win: win,
+    stars: win ? stars : 0,
+    movesLeft: moves,
+    level: level,
+    score: score,
+    best: Math.max(prevBest, score),
+    next: win ? (level < LEVELS.length ? 'next_level' : 'go_home') : 'none',
+  };
+  paintResult();
+  if(win){
+    /* 记进度：星星保留历史最好成绩，并解锁下一关（不会超出关卡表） */
+    save.stars[level] = Math.max(starsOf(level), stars);
+    save.unlocked = Math.max(save.unlocked, Math.min(LEVELS.length, level + 1));
+  }
+  persist();
   setTimeout(()=>{
     $('#result-overlay').classList.add('show');
     if(win && settings.sfx) SFX.end();
+    buzz(win ? [20,40,20] : [40,60,40]);
   }, 500);
 }
 
-function nextLevel(){
+/* 步数用完后的一次复活：本局限一次，棋盘 / 分数 / 目标进度全部保留 */
+function doRevive(){
+  if(reviveUsed) return;
+  reviveUsed = true;
+  moves += 5;
   closeOverlay('result-overlay');
-  level++;
+  resultState = null;
+  busy = false;
+  renderHud();
+  SFX.booster(); buzz(18);
+  toast(T('revived'));
+  scheduleHint();
+}
+
+/* 进入指定关卡（关卡表里没有的关不进来，走 toast 提示那条分支） */
+function startLevel(no){
+  const def = LEVELS[no-1];
+  if(!def){ toast(T('level_wip', { n:no })); return; }
+  level = def.no;
+  TYPES = def.types;
+  document.querySelectorAll('.overlay').forEach(o=>o.classList.remove('show'));
+  $('#home').classList.add('hide');
+  refreshHome();
   restart();
 }
 
+function nextLevel(){
+  if(level >= LEVELS.length){ goHome(); return; }
+  startLevel(level + 1);
+}
+
 function restart(){
+  score = 0; reviveUsed = false;
+  boosters = Object.assign({}, BOOSTER_MAX);   /* 道具每关复原 */
   deselect(); boosterMode = null;
   document.querySelectorAll('.booster').forEach(x=>x.classList.remove('armed'));
   initGoals();
@@ -891,15 +1694,71 @@ function restart(){
 /* ---------- 弹窗 ---------- */
 function closeOverlay(id){ document.getElementById(id).classList.remove('show'); }
 
+/* ---------- 关卡选择 ----------
+   格子数 = max(LEVEL_SLOTS, 关卡表长度)：关卡表里没有素材的编号一律渲染成
+   T('coming_soon') 锁定格，所以以后往 LEVELS 里追加一条，这里的锁定格会自动减少。 */
+function renderLevelSelect(){
+  const grid = $('#level-grid');
+  if(!grid) return;
+  grid.innerHTML = '';
+  const total = Math.max(LEVEL_SLOTS, LEVELS.length);
+  const max = unlockedMax();
+  for(let i=1;i<=total;i++){
+    const def = LEVELS[i-1];
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'lv-node';
+    b.dataset.level = i;
+    if(!def){
+      b.className += ' soon';
+      b.innerHTML = '<span class="lv-no">🔒</span><span class="lv-sub">' + T('coming_soon') + '</span>';
+    } else {
+      const st = starsOf(i);
+      if(i > max) b.className += ' locked';
+      if(i === level) b.className += ' current';
+      b.innerHTML = '<span class="lv-no">' + i + '</span>'
+                  + '<span class="lv-sub">'
+                  + [0,1,2].map(k => `<i class="${k < st ? 'on' : ''}">★</i>`).join('')
+                  + '</span>';
+    }
+    grid.appendChild(b);
+  }
+}
+
+/* 开始页文案 + 关卡面板同步刷新（回首页 / 结算 / 切关 / 切语言后都调一次） */
+function refreshHome(){
+  $('#home-level-pre').textContent = T('progress_pre');
+  $('#home-level').textContent = unlockedMax();
+  $('#home-level-post').textContent = T('progress_post');
+  /* 开始页的最高分取所有关卡里最好的那一次；一次都没打完过就不显示 */
+  let top = 0;
+  LEVELS.forEach(function(l){ top = Math.max(top, bestOf(l.no)); });
+  const hb = $('#home-best');
+  if(hb) hb.textContent = top > 0 ? T('home_best', { n: top }) : '';
+  renderLevelSelect();
+}
+
+function openLevels(){ SFX.click(); renderLevelSelect(); $('#levels-overlay').classList.add('show'); }
+
 /* ---------- 开始页 ---------- */
 function goHome(){
-  $('#home-level').textContent = level;
+  document.querySelectorAll('.overlay').forEach(o=>o.classList.remove('show'));
+  refreshHome();
   $('#home').classList.remove('hide');
 }
+/* 「开始游戏」直接进当前进度关（已解锁的最新一关） */
 $('#btn-start').addEventListener('click', ()=>{
   initAudio(); SFX.click();
-  $('#home').classList.add('hide');
-  restart();
+  startLevel(unlockedMax());
+});
+/* 关卡格：点已做的关卡进游戏，点锁定格给提示 */
+$('#level-grid').addEventListener('click', e=>{
+  let node = e.target;
+  while(node && node !== e.currentTarget && !(node.dataset && node.dataset.level)) node = node.parentNode;
+  if(!node || node === e.currentTarget) return;
+  const no = parseInt(node.dataset.level, 10);
+  if(LEVELS[no-1]) startLevel(no);
+  else { SFX.invalid(); toast(T('level_wip', { n:no })); }
 });
 $('#gear-btn').addEventListener('click', ()=>{ SFX.click(); $('#settings-overlay').classList.add('show'); });
 $('#home-gear').addEventListener('click', ()=>{ SFX.click(); $('#settings-overlay').classList.add('show'); });
@@ -913,17 +1772,70 @@ document.querySelectorAll('.switch').forEach(sw=>{
     SFX.click();
     if(sw.dataset.set==='hint'){ clearHint(); if(settings.hint) scheduleHint(); }
     if(sw.dataset.set==='music'){ settings.music ? startBgm() : stopBgm(); }
+    if(sw.dataset.set==='anim'){ applyAnimSetting(); }
   });
 });
-$('#hp-minus').addEventListener('click', ()=>{ settings.hp=Math.max(1,settings.hp-1); $('#hp-num').textContent=settings.hp; });
-$('#hp-plus').addEventListener('click',  ()=>{ settings.hp=Math.min(99,settings.hp+1); $('#hp-num').textContent=settings.hp; });
+/* 语言切换：中文 / English，选择存 localStorage，下次进来还是上次那档 */
+document.querySelectorAll('#lang-seg .seg-btn').forEach(b=>{
+  b.addEventListener('click', ()=>setLang(b.dataset.lang));
+});
+
+/* ---------- 运行时错误兜底 ----------
+   线上没法看 console，出错必须给用户一个可点的出口；只提示一次，避免连锁错误刷屏。 */
+let crashShown = false;
+function reportCrash(what){
+  try{
+    window.__xxlLastError = what;
+    if(crashShown) return;
+    crashShown = true;
+    const bar = document.createElement('div');
+    bar.id = 'crash-bar';
+    bar.textContent = T('crash_tip');
+    bar.addEventListener('click', ()=>{ try{ location.reload(); }catch(e){} });
+    document.body.appendChild(bar);
+  }catch(e){}
+}
+window.addEventListener('error', e=>reportCrash(e.message || 'error'));
+window.addEventListener('unhandledrejection', e=>reportCrash((e.reason && e.reason.message) || 'rejection'));
+
+/* 切回前台自愈：后台时 Web Animations 会整体暂停，若卡在动画中间，
+   busy 会一直锁着输入，回来点哪都没反应。 */
+document.addEventListener('visibilitychange', function(){
+  if(document.hidden || !busy) return;
+  setTimeout(function(){
+    if(!busy) return;
+    const anims = document.getAnimations ? document.getAnimations() : null;
+    if(anims && anims.some(a=>a.playState === 'running')) return;
+    busy = false;
+    deselect();
+    settleBoard();
+  }, 450);
+});
+
+/* 音量滑块：拖动实时改增益并落盘，松手时音效试听一下 */
+document.querySelectorAll('.vol').forEach(el=>{
+  el.addEventListener('input', ()=>{
+    volumes[el.dataset.vol] = el.value / 100;
+    applyVolumes();
+    saveVolumes();
+  });
+  el.addEventListener('change', ()=>{
+    if(el.dataset.vol === 'sfx') SFX.click();
+  });
+});
 
 /* ---------- 启动 ---------- */
 window.addEventListener('resize', ()=>{ layoutBoard(); for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++){ const t=board[r]&&board[r][c]; if(t) placeTile(t,r,c); } });
+loadLang();       /* 语言存档要在任何 T() 之前读出来 */
+loadVolumes();
+loadSave();
 initGoals();
 layoutBoard();
+applyAnimSetting();
 newBoard();
 scheduleHint();
+applyLang();     /* 铺文案 + 高亮语言分段控件 + 刷新开始页/关卡面板/顶部栏 */
+applyVolumes();  /* 把存档音量回填到滑块（音频链在 initAudio 里初始化） */
 </script>
 </body>
 </html>

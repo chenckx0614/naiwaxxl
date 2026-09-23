@@ -11,6 +11,17 @@ dist/
 
 # 本地工作区数据（WorkBuddy 内部文件，不需要上传）
 .workbuddy/
+.skill/
+
+# 无头验证探针（调试用临时目录）
+.probe/
+
+# 旧部署方案产物（已弃用，保留在本地）
+deploy/
+
+# 小红书 minitool 合规版：本地交付物，仓库只放线上单文件版
+minitool/
+minitool.zip
 
 # 日志
 *.log
