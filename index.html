@@ -1425,9 +1425,11 @@ async function trySwap(a, b){
     swapTiles(a, b);              // 换回
     SFX.invalid(); buzz(30);
     toast(T('no_match'));
+    moves--; renderHud();         // 无效交换同样消耗一步
     await sleep(230);
     busy = false;
     scheduleHint();
+    checkEnd();                   // 这一步可能把步数用完
   } else {
     moves--; renderHud(); buzz(10);
     busy = false;
