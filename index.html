@@ -149,6 +149,17 @@
   .shard { position:absolute; border-radius:2px; pointer-events:none; z-index:6; }
   @keyframes bounce { from { transform:scale(1);} to { transform:scale(1.18);} }
 
+  /* 滑向不可去的格子（棋盘外 / 菱形缺角 / 牢笼）时的轻反馈。
+     只抖内层 .face —— .tile 的 transform 是 inline 定位，CSS 动画一旦落在 .tile 上
+     会把它整个覆盖，棋子会飞到棋盘左上角。 */
+  .tile .face.bump { animation:faceBump .22s ease; }
+  @keyframes faceBump {
+    0% { transform:translateX(0); }
+    30% { transform:translateX(-4px); }
+    70% { transform:translateX(4px); }
+    100% { transform:translateX(0); }
+  }
+
   /* ---------- 底部道具栏 ----------
      圆钮造型参考 Uiverse.io（GitHub: uiverse-io/galaxy，MIT）里的
      拟物/新拟态圆形按钮：糖果立体感 = 硬厚度阴影 + 顶部弧形高光 + 按下整体下沉。
@@ -1271,7 +1282,7 @@ function makeTile(r, c, type, spawnRows=0, dur){
     const base = pos(t.r, t.c);
     el.style.transform = `translate(${base.x}px, ${base.y}px)`;
     el.classList.add('dragging');
-    drag = { t, x: e.clientX, y: e.clientY, base, used: false };
+    drag = { t, x: e.clientX, y: e.clientY, base, used: false, slid: false };
   });
   const end = pos(r, c);
   el.style.transform = `translate(${end.x}px, ${end.y}px)`;   /* 基础位置 = 落点 */
@@ -1586,6 +1597,19 @@ function returnTile(d){
   moveTileTo(t.el, readTranslate(t.el, to), to);
 }
 
+/* 「这个方向不能走」的轻反馈：抖一下内层 .face。
+   动画必须作用在 .face 而不是 .tile —— .tile 的 transform 是 inline 定位（translate），
+   CSS 关键帧一旦落在 .tile 上会把它整个覆盖掉，棋子会飞到棋盘左上角。 */
+function bumpTile(t){
+  if(!settings.anim) return;
+  const f = t.el.firstChild;
+  if(!f) return;
+  f.classList.remove('bump');
+  void f.offsetWidth;              /* 强制回流，让同名动画能重播 */
+  f.classList.add('bump');
+  setTimeout(()=>f.classList.remove('bump'), 240);
+}
+
 window.addEventListener('pointermove', e => {
   if(!drag || drag.used || busy || gameOver || boosterMode) return;
   // 牢笼棋子不能拖动
@@ -1600,13 +1624,25 @@ window.addEventListener('pointermove', e => {
     drag.t.el.style.transform = `translate(${drag.base.x + ox}px, ${drag.base.y + oy}px)`;
     return;
   }
-  drag.used = true;
+  drag.slid = true;                 /* 越过阈值了：松手不再当点选处理 */
   drag.t.el.classList.remove('dragging');
   deselect();
   const [dr, dc] = Math.abs(dx) > Math.abs(dy) ? [0, Math.sign(dx)] : [Math.sign(dy), 0];
   const a = { r: drag.t.r, c: drag.t.c };
   const b = { r: a.r + dr, c: a.c + dc };
-  if(b.r < 0 || b.r >= ROWS || b.c < 0 || b.c >= COLS || !isActive(b.r,b.c) || isCage(b.r,b.c)){ returnTile(drag); drag.used = true; return; }
+  /* 目标格不可去（棋盘外 / 菱形缺角 / 牢笼）：棋子弹回原位，但**这次手势不作废** ——
+     把基准点挪到当前位置，玩家手指不抬起来、接着往别的方向滑仍然生效。
+     旧写法在这里顺手 drag.used = true，结果「朝牢笼滑一下之后整只手势就失灵了」：
+     先右滑撞牢笼、再左滑完全没反应，玩家只能松手重按。
+     菱形棋盘中央紧邻牢笼的那两格最容易踩到这个坑，所以必须先归位再重置基准。 */
+  if(b.r < 0 || b.r >= ROWS || b.c < 0 || b.c >= COLS || !isActive(b.r,b.c) || isCage(b.r,b.c)){
+    returnTile(drag);
+    bumpTile(drag.t);
+    drag.x = e.clientX; drag.y = e.clientY;
+    drag.base = pos(drag.t.r, drag.t.c);
+    return;
+  }
+  drag.used = true;                 /* 真发起交换了，这次手势才就此用掉 */
   clearHint();
   /* 刻意不先归位：trySwap 内部按当前 transform 读动画起点，衔接才连续 */
   trySwap(a, b);
@@ -1617,6 +1653,9 @@ window.addEventListener('pointerup', () => {
   drag = null;
   if(d.used) return;
   returnTile(d);
+  /* 已经滑过了（哪怕因牢笼/缺角没生效）就不再当点选 ——
+     否则"滑一下没滑成、松手反而把棋子选中了"，下一步点哪都变成交换 */
+  if(d.slid) return;
   onTapSelect(d.t.r, d.t.c);
 });
 window.addEventListener('pointercancel', () => {
