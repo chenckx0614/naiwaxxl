@@ -796,6 +796,7 @@ const I18N = {
     aim_hammer:'点击要敲掉的棋子',
     aim_bomb:'点击爆炸中心（3×3）',
     reshuffled:'棋盘已重排',
+    cage_break:'牢笼已破，这一格可以动了！',
     level_wip:'第 {n} 关还在制作中，敬请期待',
     copied:'已复制：{s}',
     email_is:'邮箱：{s}',
@@ -834,6 +835,7 @@ const I18N = {
     aim_hammer:'Tap a tile to smash it',
     aim_bomb:'Tap the center of a 3×3 blast',
     reshuffled:'Board reshuffled',
+    cage_break:'Cage broken — this cell is free!',
     level_wip:'Level {n} is still in the works',
     copied:'Copied: {s}',
     email_is:'Email: {s}',
@@ -1010,6 +1012,10 @@ let gameOver = false;        // 本局已结算，禁止棋盘交互
 let boosterMode = null;    // 'hammer' | 'bomb' | null
 let activeShape = null;    // 当前关卡形状函数 (r,c)=>boolean；null 表示 7×7 全满
 let cagePos = null;        // {r,c} 当前牢笼位置；null 表示无牢笼
+/* 牢笼是否还在。必须和 cagePos 分开记：牢笼只在开局的那一枚棋子上，
+   棋子被消掉之后这一格就该恢复成普通格 —— 如果只按坐标判定（cagePos 永不清空），
+   牢笼被消掉后那一格会永久锁死，左右的棋子永远换不进去。 */
+let cageAlive = false;
 /* 每关道具的初始数量。restart() 会按这份模板复原 ——
    之前只在初始化时赋过一次值，用掉的道具重开 / 切关都不会回来，
    玩家玩几局后道具就永久耗尽，必须刷新页面才能恢复。 */
@@ -1063,7 +1069,8 @@ const $ = s => document.querySelector(s);
 /* 当前格是否在当前关卡棋盘内（激活格） */
 function isActive(r,c){ return r>=0 && r<ROWS && c>=0 && c<COLS && (!activeShape || activeShape(r,c)); }
 /* 当前格是否是牢笼 */
-function isCage(r,c){ return cagePos && cagePos.r===r && cagePos.c===c; }
+/* 当前格是否是牢笼。cageAlive 为假时（牢笼棋子已被消掉）这一格就是普通格 */
+function isCage(r,c){ return cageAlive && cagePos && cagePos.r===r && cagePos.c===c; }
 /* 遍历当前关卡所有激活格 */
 function forEachActive(fn){
   for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++) if(isActive(r,c)) fn(r,c);
@@ -1421,6 +1428,9 @@ async function clearSet(hit, combo){
     t.el.classList.add('clearing');
     const def = TYPES[t.type];
     if(def) burst(r, c, def.color);
+    /* 牢笼棋子被消掉 → 这一格解锁，落下来的新棋子是普通棋子，
+       左右邻居从此可以往这里换。只在开局那一枚上生效，不会重新上锁。 */
+    if(t.caged){ cageAlive = false; toast(T('cage_break')); }
     /* 格子数据立刻清空，上方棋子马上就能往下走；DOM 留在原地把 pop 播完再自己
        收走。消除的收缩与上方的下落因此重叠在一起，中间不留空档。
        无动画模式下没有 pop 可播，直接移除。 */
@@ -1868,6 +1878,7 @@ function startLevel(no){
   TYPES = def.types;
   activeShape = def.shape || null;
   cagePos = def.cage || null;
+  cageAlive = !!cagePos;          /* 进关即重新上锁 */
   document.querySelectorAll('.overlay').forEach(o=>o.classList.remove('show'));
   $('#home').classList.add('hide');
   refreshHome();
@@ -1882,6 +1893,10 @@ function nextLevel(){
 function restart(){
   gameOver = false;
   hideEndFx();
+  /* 重开要把牢笼重新上锁 —— newBoard() 会按 isCage() 决定哪一枚是牢笼，
+     这里漏了的话，被打碎过牢笼之后再点「重新开始」就没有牢笼了。
+     （复活走的是 doRevive()，保留棋盘，所以牢笼保持已破状态。） */
+  cageAlive = !!cagePos;
   score = 0; reviveUsed = false;
   boosters = Object.assign({}, BOOSTER_MAX);   /* 道具每关复原 */
   deselect(); boosterMode = null;
