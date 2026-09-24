@@ -149,6 +149,62 @@
   .shard { position:absolute; border-radius:2px; pointer-events:none; z-index:6; }
   @keyframes bounce { from { transform:scale(1);} to { transform:scale(1.18);} }
 
+  /* ---------- 四连 / 五连的特殊消除 ----------
+     分两层负责：外层 .tile 的螺旋 / 冲击位移由 WAAPI 显式关键帧驱动
+     （CSS 关键帧绝不能落在 .tile 上，会覆盖 inline 定位把棋子甩到棋盘左上角）；
+     这里只管内层 .face 的形变，时长与 FX_QUAD_MS / FX_VORTEX_MS 一致。 */
+  .tile.clearing-quad, .tile.clearing-vortex { z-index:5; }
+
+  /* 四连：被震开再塌缩，幅度比普通 pop 大一档。
+     亮度只提到 1.2 —— 原来写 1.85 会把棋子连人带脸糊成一团白，
+     浅色棋子（比如 1 关的浅蓝 #7ec3f5）在浅蓝底上直接看着像"这一格空了"。 */
+  .tile.clearing-quad .face { animation:popQuad .38s forwards; }
+  @keyframes popQuad {
+    0%   { transform:scale(1) rotate(0deg); filter:brightness(1); }
+    32%  { transform:scale(1.48) rotate(-14deg); filter:brightness(1.2) saturate(1.2); }
+    64%  { transform:scale(.78) rotate(13deg); opacity:.92; filter:brightness(1.08); }
+    100% { transform:scale(.08) rotate(-22deg); opacity:0; }
+  }
+
+  /* 五连：一边高速自转一边被吸走 */
+  .tile.clearing-vortex .face { animation:popVortex .64s forwards; }
+  @keyframes popVortex {
+    0%   { transform:scale(1) rotate(0deg); filter:brightness(1); }
+    22%  { transform:scale(1.26) rotate(-48deg); filter:brightness(1.3) saturate(1.3); }
+    58%  { transform:scale(.82) rotate(-230deg); filter:brightness(1.12); }
+    100% { transform:scale(0) rotate(-520deg); opacity:0; filter:brightness(1.05); }
+  }
+
+  /* 四连冲击波环：白色芯 + 彩色描边 + 彩色辉光。
+     纯彩色环压在浅蓝底上对比度太低（黄色尤其看不清），加白芯才有"炸开"的利落感。
+     描边要够厚 —— 环本身还带 scale(.22)→scale(1.12)，缩到 0.22 时 4px 只剩 1px，等于看不见。 */
+  .fx-wave {
+    position:absolute; border-radius:50%; pointer-events:none; z-index:7;
+    border:6px solid #fff;
+    box-shadow:
+      0 0 0 3px rgba(35,65,110,.32),      /* 深色细描边：浅色棋子 + 浅蓝底也能看清轮廓 */
+      0 0 0 8px currentColor, 0 0 36px currentColor,
+      inset 0 0 0 5px currentColor, inset 0 0 26px currentColor;
+  }
+  /* 中心闪光：background 由 JS 按棋子颜色生成（纯白在浅底上看不见），
+     这里只留一份兜底 + 柔化用的径向形状 */
+  .fx-flash {
+    position:absolute; border-radius:50%; pointer-events:none; z-index:7;
+    background:radial-gradient(circle, rgba(255,255,255,.8) 0%, rgba(255,255,255,.3) 34%, rgba(255,255,255,0) 72%);
+  }
+  /* 五连旋涡盘：锥形渐变 + 径向遮罩（中心留个洞才像漩涡，整体环形柔化边缘） */
+  .fx-vortex {
+    position:absolute; border-radius:50%; pointer-events:none; z-index:7;
+    -webkit-mask-image:radial-gradient(circle, rgba(0,0,0,0) 0%, #000 24%, rgba(0,0,0,.9) 46%, rgba(0,0,0,0) 78%);
+            mask-image:radial-gradient(circle, rgba(0,0,0,0) 0%, #000 24%, rgba(0,0,0,.9) 46%, rgba(0,0,0,0) 78%);
+  }
+  /* 涡轮核心：中心的小实心环，反向自转 */
+  .fx-vortex-core {
+    position:absolute; border-radius:50%; pointer-events:none; z-index:7;
+    border:6px solid currentColor;
+    box-shadow:0 0 0 2px rgba(255,255,255,.85), 0 0 26px currentColor, inset 0 0 20px currentColor;
+  }
+
   /* 滑向不可去的格子（棋盘外 / 菱形缺角 / 牢笼）时的轻反馈。
      只抖内层 .face —— .tile 的 transform 是 inline 定位，CSS 动画一旦落在 .tile 上
      会把它整个覆盖，棋子会飞到棋盘左上角。 */
@@ -227,6 +283,12 @@
   .score-float span {
     display:block; font-size:17px; font-weight:900; color:#fff; white-space:nowrap;
     text-shadow:0 2px 0 #e08700, 0 0 8px rgba(255,190,60,.85), 0 1px 3px rgba(0,0,0,.4);
+  }
+  /* 四连 / 五连的得分更抢眼一点，和特效分量对上 */
+  .score-float.mid span { font-size:20px; }
+  .score-float.big span {
+    font-size:24px; color:#fff8dc;
+    text-shadow:0 2px 0 #c96a00, 0 0 12px rgba(255,200,60,1), 0 0 26px rgba(255,160,20,.9), 0 2px 4px rgba(0,0,0,.45);
   }
 
   /* 音量滑块 */
@@ -1131,6 +1193,296 @@ function burst(r, c, color){
   }
 }
 
+/* ---------- 四连 / 五连的特殊消除特效 ----------
+   和 burst 同一套规矩：WAAPI 显式关键帧 + onfinish/setTimeout 双保险回收。
+   所有棋子位移都在关键帧里写全起点（含 translate(bx,by)）+ `fill:'forwards'` ——
+   `.tile` 的 transform 是 inline 定位，只写终点 / 让 CSS 关键帧接手都会出事
+   （棋子飞向棋盘左上角）。特效节点（环 / 旋涡盘 / 闪光）另挂一层 div，
+   pointer-events:none，不碰任何棋子的定位。
+   时长必须和 CSS 里 `.tile.clearing-quad|vortex .face` 的动画时长一致。 */
+const POP_QUAD_MS   = 380;   /* 四连：重击收缩 */
+const POP_VORTEX_MS = 640;   /* 五连：旋涡卷入 */
+const FX_QUAD_MS = POP_QUAD_MS, FX_VORTEX_MS = POP_VORTEX_MS;
+const QUAD_LEAD_MS   = 380;  /* 四连后多久开始下落（此时棋子已缩到看不见） */
+const VORTEX_LEAD_MS = 620;  /* 五连后多久开始下落 */
+
+/* #rrggbb → rgba(...)，用来给旋涡盘算渐变色 */
+function hexA(hex, a){
+  const h = String(hex || '#ffffff').replace('#','');
+  const full = h.length === 3 ? h.split('').map(x=>x+x).join('') : h;
+  const n = parseInt(full, 16);
+  const v = isNaN(n) ? 0xffffff : n;
+  return 'rgba(' + ((v>>16)&255) + ',' + ((v>>8)&255) + ',' + (v&255) + ',' + a + ')';
+}
+
+/* 旋涡盘：三片扇叶，每片「透明尾 → 实色 → 白色亮前缘」。
+   白色前缘是关键 —— 纯色渐变转起来看不出方向，只有亮边扫过才有"被卷"的感觉。 */
+function conicGrad(color){
+  const clear = hexA(color, 0), hot = hexA(color, .95), w = 'rgba(255,255,255,.9)';
+  const stops = [];
+  [0, 120, 240].forEach(b=>{
+    stops.push([b, clear], [b+30, hot], [b+44, w], [b+74, clear]);
+  });
+  stops.push([360, clear]);
+  return 'conic-gradient(from 0deg,' + stops.map(s=>s[1] + ' ' + s[0] + 'deg').join(',') + ')';
+}
+
+/* 把棋子色提纯成「饱和版」，只给冲击波环 / 涡轮核心这类"线条"用。
+   素材里有一批很浅的颜色（#fff0c2 奶油黄、#7ec3f5 浅蓝、#fff0c2…），
+   直接拿来画圆环，在浅蓝棋盘上几乎看不见（跟类型无关，纯属色相太淡）。
+   统一把饱和度抬到 85% 以上、明度压到 45%~62%，任何棋子色都能画出一圈清楚的边。 */
+function vivid(hex){
+  const h = String(hex || '#ffffff').replace('#','');
+  const full = h.length === 3 ? h.split('').map(x=>x+x).join('') : h;
+  const n = parseInt(full, 16);
+  const v = isNaN(n) ? 0xffffff : n;
+  const r = ((v>>16)&255)/255, g = ((v>>8)&255)/255, b = (v&255)/255;
+  const mx = Math.max(r,g,b), mn = Math.min(r,g,b), d = mx - mn;
+  let hh = 0;
+  if(d > 0){
+    if(mx === r) hh = ((g-b)/d + (g < b ? 6 : 0)) * 60;
+    else if(mx === g) hh = ((b-r)/d + 2) * 60;
+    else hh = ((r-g)/d + 4) * 60;
+  }
+  const ss = Math.max(mx === 0 ? 0 : d/mx, .85);
+  const ll = Math.min(.62, Math.max(.45, (mx+mn)/2));
+  return 'hsl(' + Math.round(hh) + ',' + Math.round(ss*100) + '%,' + Math.round(ll*100) + '%)';
+}
+
+/* 中心闪光：小白芯 + 大圈棋子色光晕。
+   纯白闪光在浅蓝棋盘上等于看不见，而且会把浅色棋子（如浅蓝 #7ec3f5）糊成一片白；
+   带上棋子色之后既压得住底、又能看出消掉的是哪种元素。 */
+function flashGrad(color){
+  return 'radial-gradient(circle, rgba(255,255,255,.85) 0%, ' +
+    hexA(color, .55) + ' 34%, ' + hexA(color, .22) + ' 54%, ' + hexA(color, 0) + ' 76%)';
+}
+
+/* 一次性特效节点：播完就回收（onfinish + setTimeout 兜底，切后台时 WAAPI 不来 onfinish） */
+function fxNode(cls, style, keyframes, opts){
+  const d = document.createElement('div');
+  d.className = cls;
+  Object.keys(style).forEach(k=>{ d.style[k] = style[k]; });
+  boardEl.appendChild(d);
+  const anim = d.animate(keyframes, opts);
+  const kill = ()=>{ if(d.parentNode) d.parentNode.removeChild(d); };
+  anim.onfinish = kill;
+  setTimeout(kill, (opts.duration || 400) + (opts.delay || 0) + 400);
+  return d;
+}
+
+/* 组中心（棋盘坐标系，单位 px） */
+function centroidOf(cells){
+  let sx = 0, sy = 0;
+  cells.forEach(p=>{ const q = pos(p.r, p.c); sx += q.x + cell/2; sy += q.y + cell/2; });
+  return { x: sx/cells.length, y: sy/cells.length };
+}
+/* 整组的最大外接尺寸（含一枚棋子），用来定环 / 旋涡盘的直径 */
+function spanOf(cells){
+  let minx=1e9, maxx=-1e9, miny=1e9, maxy=-1e9;
+  cells.forEach(p=>{
+    const q = pos(p.r, p.c);
+    if(q.x<minx) minx=q.x; if(q.x>maxx) maxx=q.x;
+    if(q.y<miny) miny=q.y; if(q.y>maxy) maxy=q.y;
+  });
+  return Math.max(maxx-minx+cell, maxy-miny+cell);
+}
+
+/* 把一批格子按「同色且四邻相接」聚成组。
+   必须限制同色：一条横线与一条竖线可能贴边但不同色（A A A B / B B 竖着成线），
+   只按相邻合并会把两种颜色混进一组、特效取色就错了。 */
+function clusterCells(cells){
+  const idx = new Map();
+  cells.forEach(p=>idx.set(p.r*COLS+p.c, p));
+  const seen = new Set(), out = [];
+  const nk = (r,c)=>(r<0||r>=ROWS||c<0||c>=COLS) ? -1 : r*COLS+c;
+  cells.forEach(p=>{
+    const k0 = p.r*COLS+p.c;
+    if(seen.has(k0)) return;
+    const stack = [p], comp = [];
+    seen.add(k0);
+    while(stack.length){
+      const q = stack.pop();
+      comp.push(q);
+      [[1,0],[-1,0],[0,1],[0,-1]].forEach(d=>{
+        const k = nk(q.r+d[0], q.c+d[1]);
+        const np = idx.get(k);
+        if(np && !seen.has(k) && np.type === q.type){ seen.add(k); stack.push(np); }
+      });
+    }
+    out.push(comp);
+  });
+  return out;
+}
+
+/* 通用碎片：left/top 定位到中心、keyframes 自带位移。
+   回收走 onfinish + setTimeout 双保险（切后台 WAAPI 整体暂停，onfinish 不会来）。 */
+function addShard(cx, cy, color, sz, keyframes, dur, easing){
+  if(!settings.anim || liveParticles >= PARTICLE_MAX) return;
+  const d = document.createElement('div');
+  d.className = 'shard';
+  d.style.width  = sz + 'px';
+  d.style.height = sz + 'px';
+  d.style.left   = (cx - sz/2) + 'px';
+  d.style.top    = (cy - sz/2) + 'px';
+  d.style.background = color || '#ffffff';
+  boardEl.appendChild(d);
+  liveParticles++;
+  const kill = function(){
+    if(d.__dead) return;
+    d.__dead = true;
+    liveParticles--;
+    if(d.parentNode) d.parentNode.removeChild(d);
+  };
+  const a = d.animate(keyframes, { duration: dur, easing: easing });
+  a.onfinish = kill;
+  setTimeout(kill, dur + 400);
+}
+
+/* 四连：碎片向外炸开 */
+function shardsOut(cx, cy, color, n, dist){
+  for(let i=0;i<n;i++){
+    const ang = Math.PI*2*i/n + Math.random()*0.5;
+    const dd  = dist * (0.7 + Math.random()*0.6);
+    addShard(cx, cy, color, 5+rand(4), [
+      { transform:'translate(0,0) rotate(0deg) scale(1)', opacity:1 },
+      { transform:'translate(' + (Math.cos(ang)*dd) + 'px,' + (Math.sin(ang)*dd) + 'px) rotate(240deg) scale(.25)', opacity:0 }
+    ], 480+rand(220), 'cubic-bezier(.18,.7,.35,1)');
+  }
+}
+/* 五连：碎片沿螺旋被吸进中心 */
+function shardsIn(cx, cy, color, r0, n){
+  for(let i=0;i<n;i++){
+    const a0 = Math.PI*2*i/n + Math.random()*0.6;
+    const rr = r0 * (0.75 + Math.random()*0.5);
+    const frames = [];
+    const steps = 4;
+    for(let k=0;k<=steps;k++){
+      const t = k/steps;
+      const ang = a0 - t * Math.PI * 1.25;      /* 边转边往里收 */
+      const rad = rr * (1 - t);
+      frames.push({
+        offset: t,
+        transform:'translate(' + (Math.cos(ang)*rad) + 'px,' + (Math.sin(ang)*rad) + 'px) rotate(' + (t*-360) + 'deg) scale(' + (1 - t*0.7) + ')',
+        opacity: t < 0.86 ? 1 : 0
+      });
+    }
+    addShard(cx, cy, color, 5+rand(4), frames, FX_VORTEX_MS - 60, 'cubic-bezier(.5,0,.75,1)');
+  }
+}
+
+/* ---- 单枚棋子的特殊收缩（外层 .tile 由 WAAPI 驱动；内层 .face 由 CSS 负责旋转/缩放）---- */
+function tileQuadFx(t, cen){
+  const p = pos(t.r, t.c);
+  const bx = p.x, by = p.y;
+  const base = 'translate(' + bx + 'px,' + by + 'px)';
+  /* 从组中心指向自己的方向 = 被震开的方向；向外弹一下再塌缩，比普通 pop 更有"力道" */
+  let dx = (bx + cell/2) - cen.x, dy = (by + cell/2) - cen.y;
+  const m = Math.hypot(dx, dy) || 1, k = cell * 0.26;
+  dx = dx/m*k; dy = dy/m*k;
+  t.el.animate([
+    { transform: base + ' scale(1) rotate(0deg)', opacity:1 },
+    { transform: 'translate(' + (bx+dx) + 'px,' + (by+dy) + 'px) scale(1.5) rotate(-12deg)', opacity:1, offset:.32 },
+    { transform: 'translate(' + (bx-dx*.45) + 'px,' + (by-dy*.45) + 'px) scale(.74) rotate(12deg)', opacity:.92, offset:.64 },
+    { transform: base + ' scale(0) rotate(-26deg)', opacity:0 }
+    /* 缓动要"接近线性"：原来用 cubic-bezier(.3,.9,.4,1)（y1=0.9）太前倾，
+       0.42 时刻已经走完 87%，整套动作全挤在前 1/4，后半程就是干等。
+       关键帧本身已经写了「弹开→塌缩」的形状，交给它自己分配时间就够。 */
+  ], { duration: FX_QUAD_MS, easing:'cubic-bezier(.42,.12,.52,1)', fill:'forwards' });
+}
+
+function tileVortexFx(t, cen){
+  const p = pos(t.r, t.c);
+  const cx = p.x + cell/2, cy = p.y + cell/2;
+  const r0 = Math.hypot(cx-cen.x, cy-cen.y);
+  const a0 = Math.atan2(cy-cen.y, cx-cen.x);
+  const frames = [];
+  const steps = 5;
+  for(let k=0;k<=steps;k++){
+    const tt = k/steps;
+    const ang = a0 - tt * Math.PI * 1.85;      /* 螺旋约 333°，越转越靠中心 */
+    const rad = r0 * (1 - tt);
+    const x = cen.x - cell/2 + Math.cos(ang)*rad;
+    const y = cen.y - cell/2 + Math.sin(ang)*rad;
+    frames.push({
+      offset: tt,
+      transform: 'translate(' + x + 'px,' + y + 'px) rotate(' + (tt*-720) + 'deg) scale(' + (1 - tt*0.94) + ')',
+      opacity: tt < 0.9 ? 1 : 0
+    });
+  }
+  /* 缓动用温和的加速（不是原来的 cubic-bezier(.55,0,.75,1)）：
+     后者在 0.48 时刻只走完 33%，螺旋位移几乎全压在后半段，前半段看着"没动"。 */
+  t.el.animate(frames, { duration: FX_VORTEX_MS, easing:'cubic-bezier(.5,.08,.72,1)', fill:'forwards' });
+}
+
+/* ---- 整组特效 ---- */
+function fxQuadGroup(cells, color){
+  const cen = centroidOf(cells);
+  const span = spanOf(cells) * 1.45;
+  /* 冲击波环：从中心炸开、越扩越淡 */
+  fxNode('fx-wave', {
+    left:(cen.x - span/2) + 'px', top:(cen.y - span/2) + 'px',
+    width:span + 'px', height:span + 'px', color:vivid(color)
+  }, [
+    { transform:'scale(.22)', opacity:.95 },
+    { transform:'scale(.62)', opacity:.6, offset:.42 },
+    { transform:'scale(1.12)', opacity:0 }
+  ], { duration: 520, easing:'cubic-bezier(.15,.75,.3,1)' });
+
+  /* 中心白光：只做一小团（原来放大到 1.4 倍整组尺寸 + 0.85 不透明度，
+     会把四枚棋子连人带脸糊成一坨白），峰值也压低、往后挪到塌缩那一刻 */
+  fxNode('fx-flash', {
+    left:(cen.x - span*.45) + 'px', top:(cen.y - span*.45) + 'px',
+    width:(span*.9) + 'px', height:(span*.9) + 'px',
+    background: flashGrad(color)
+  }, [
+    { transform:'scale(.3)', opacity:0 },
+    { transform:'scale(.8)', opacity:.7, offset:.42 },
+    { transform:'scale(1.1)', opacity:0 }
+  ], { duration: 440, easing:'ease-out' });
+
+  shardsOut(cen.x, cen.y, color, 12, cell * 1.6);
+}
+
+function fxVortexGroup(cells, color){
+  const cen = centroidOf(cells);
+  const span = spanOf(cells);
+  const R = span * 0.62 + cell * 0.7;              /* 主盘：大致盖住整组 */
+  const box = { left:(cen.x - R) + 'px', top:(cen.y - R) + 'px', width:(2*R) + 'px', height:(2*R) + 'px' };
+
+  /* 主旋涡盘：顺时针高速卷入 + 缩到一点。
+     扇叶用 vivid 提纯色 —— 浅色棋子（浅蓝 / 奶油黄）直接用原色画出来几乎看不出旋转。 */
+  fxNode('fx-vortex', Object.assign({ background: conicGrad(vivid(color)) }, box), [
+    { transform:'rotate(0deg) scale(1.3)', opacity:0 },
+    { transform:'rotate(-140deg) scale(1.02)', opacity:.95, offset:.22 },
+    { transform:'rotate(-430deg) scale(.62)', opacity:.75, offset:.62 },
+    { transform:'rotate(-720deg) scale(.06)', opacity:0 }
+  ], { duration: FX_VORTEX_MS, easing:'cubic-bezier(.4,.05,.55,.95)' });
+
+  /* 涡轮核心：中心一个小的实心环反向转（直径约 2 枚棋子，太大就变成"一个大圆圈"了） */
+  const rc = cell * 1.05;
+  fxNode('fx-vortex-core', {
+    left:(cen.x - rc) + 'px', top:(cen.y - rc) + 'px',
+    width:(2*rc) + 'px', height:(2*rc) + 'px', color:vivid(color)
+  }, [
+    { transform:'rotate(0deg) scale(.4)', opacity:0 },
+    { transform:'rotate(150deg) scale(1)', opacity:.9, offset:.28 },
+    { transform:'rotate(430deg) scale(.5)', opacity:0 }
+  ], { duration: FX_VORTEX_MS, easing:'cubic-bezier(.45,0,.6,1)' });
+
+  /* 收拢瞬间的中心闪光（小一点，别糊住棋子） */
+  fxNode('fx-flash', {
+    left:(cen.x - cell*1.3) + 'px', top:(cen.y - cell*1.3) + 'px',
+    width:(cell*2.6) + 'px', height:(cell*2.6) + 'px',
+    background: flashGrad(color)
+  }, [
+    { transform:'scale(.2)', opacity:0 },
+    { transform:'scale(.9)', opacity:.8, offset:.35 },
+    { transform:'scale(1.25)', opacity:0 }
+  ], { duration: 340, delay: FX_VORTEX_MS - 300, easing:'ease-out' });
+
+  shardsIn(cen.x, cen.y, color, R * 0.9, 16);
+}
+
 /* ---------- 震动反馈 ----------
    iOS Safari 没有 navigator.vibrate，受限 WebView 也可能禁用它，
    所以一律 try 包住静默失败 —— 震不了不能影响游戏。 */
@@ -1359,25 +1711,60 @@ function renderHud(){
 }
 
 /* ---------- 匹配检测 ---------- */
+/* 找出所有 >=3 的同色连线。返回 [{dir, cells:[{r,c,type}]}]。
+   和旧版只返回一个 Set 的区别：这里保留「每条连线有多长」，
+   四连 / 五连的特殊消除特效要靠它分档。 */
+function findRuns(){
+  const runs = [];
+  const scan = (dir, outer, inner, at) => {
+    for(let o=0;o<outer;o++){
+      let i=0;
+      while(i<inner){
+        const a = at(o, i);
+        const t0 = isActive(a.r, a.c) ? board[a.r][a.c] : null;
+        if(!t0){ i++; continue; }
+        let j=i+1;
+        while(j<inner){
+          const p = at(o, j), q = at(o, j-1);
+          if(!isActive(p.r,p.c) || !isActive(q.r,q.c)) break;
+          const tp = board[p.r][p.c], tq = board[q.r][q.c];
+          if(!tp || !tq || tp.type !== t0.type) break;
+          j++;
+        }
+        const len = j - i;
+        if(len >= 3){
+          const cells = [];
+          for(let k=i;k<j;k++){ const p = at(o,k); cells.push({ r:p.r, c:p.c, type:t0.type }); }
+          runs.push({ dir, len, cells });
+        }
+        i = j;
+      }
+    }
+  };
+  scan('h', ROWS, COLS, (r,c)=>({r, c}));
+  scan('v', COLS, ROWS, (c,r)=>({r, c}));
+  return runs;
+}
+
 function findMatches(){
   const hit = new Set();
-  // 横向：只扫激活格；遇到非激活格/边界即截断
-  for(let r=0;r<ROWS;r++){
-    let run=1;
-    for(let c=1;c<=COLS;c++){
-      if(c<COLS && isActive(r,c) && isActive(r,c-1) && board[r][c] && board[r][c-1] && board[r][c].type===board[r][c-1].type) run++;
-      else { if(run>=3) for(let k=c-run;k<c;k++) if(isActive(r,k)) hit.add(r*COLS+k); run=1; }
-    }
-  }
-  // 纵向
-  for(let c=0;c<COLS;c++){
-    let run=1;
-    for(let r=1;r<=ROWS;r++){
-      if(r<ROWS && isActive(r,c) && isActive(r-1,c) && board[r][c] && board[r-1][c] && board[r][c].type===board[r-1][c].type) run++;
-      else { if(run>=3) for(let k=r-run;k<r;k++) if(isActive(k,c)) hit.add(k*COLS+c); run=1; }
-    }
-  }
+  findRuns().forEach(run=>run.cells.forEach(p=>hit.add(p.r*COLS+p.c)));
   return hit;
+}
+
+/* 一次匹配的完整信息：hit 是格子集合（和 findMatches 一致），
+   tier 记录「每个格子所属的最长连线长度」，用来分辨 3 / 4 / 5+ 连。
+   一个格子同时落在横竖两条线上时取较长的那条。 */
+function findMatchInfo(){
+  const runs = findRuns();
+  const hit = new Set(), tier = new Map();
+  runs.forEach(run=>run.cells.forEach(p=>{
+    const i = p.r*COLS+p.c;
+    hit.add(i);
+    const cur = tier.get(i) || 0;
+    if(run.len > cur) tier.set(i, run.len);
+  }));
+  return { hit, tier, runs };
 }
 
 function findMove(){
@@ -1407,13 +1794,36 @@ function findMove(){
    被消除的棋子留在原地把 pop 播完再由定时器收走。屏幕上始终有东西在动。 */
 const POP_MS = 200;         /* 与 CSS 里 .tile.clearing .face 的动画时长保持一致 */
 const DROP_LEAD_MS = 110;   /* 标记消除后多久开始下落：让 pop 先爆开到最大再掉 */
-async function clearSet(hit, combo){
+
+/* 一段消除的分档：
+   0 = 普通（3 连 / 道具），1 = 四连（冲击波），2 = 五连及以上（旋涡）。
+   同一轮里可以同时存在多档（例如一条 5 连 + 一条 3 连），各走各的特效。 */
+function clearTiers(hit, info){
+  const cls = new Map();          /* flatIdx -> 0 | 1 | 2 */
+  if(!info) { hit.forEach(i=>cls.set(i, 0)); return { cls, quad: [], vortex: [] }; }
+  const quad = [], vortex = [];
+  hit.forEach(i=>{
+    const r = (i/COLS)|0, c = i%COLS, t = board[r][c];
+    const len = info.tier.get(i) || 0;
+    const tc = len >= 5 ? 2 : len === 4 ? 1 : 0;
+    cls.set(i, tc);
+    if(!t) return;
+    const p = { r, c, type: t.type };
+    if(tc === 2) vortex.push(p);
+    else if(tc === 1) quad.push(p);
+  });
+  return { cls, quad, vortex };
+}
+
+async function clearSet(hit, combo, info){
   SFX.clear(combo);
   if(combo>1) showCombo(combo);
   const gained = hit.size * 10 * Math.max(1, combo);
   addScore(gained);
-  showScore(hit, gained);
-  buzz(combo > 1 ? 22 : 12);
+  const tiers = clearTiers(hit, info);
+  const topTier = Math.max.apply(null, Array.from(tiers.cls.values()).concat([0]));
+  showScore(hit, gained, topTier);
+  buzz(topTier===2 ? [14,26,14] : topTier===1 ? 26 : (combo > 1 ? 22 : 12));
   // 收集目标
   hit.forEach(i=>{
     const r=(i/COLS)|0, c=i%COLS, t=board[r][c];
@@ -1422,27 +1832,59 @@ async function clearSet(hit, combo){
     if(gl && gl.got<gl.need) gl.got++;
   });
   renderHud();
+  const cleared = [];                 /* 记下被消掉的棋子，特效要用（后面 board 就清空了） */
   hit.forEach(i=>{
     const r=(i/COLS)|0, c=i%COLS, t=board[r][c];
     if(!t) return;
-    t.el.classList.add('clearing');
-    const def = TYPES[t.type];
-    if(def) burst(r, c, def.color);
+    const tc = tiers.cls.get(i) || 0;
+    /* 特殊档位用更长的 face 动画；三层类名要让 CSS 三选一，不能都挂 .clearing */
+    t.el.classList.add(tc===2 ? 'clearing-vortex' : tc===1 ? 'clearing-quad' : 'clearing');
+    /* 普通档位每枚棋子撒一把小碎片；四连 / 五连的碎片交给整组特效统一发，
+       免得两种粒子混在一起看不清队形 */
+    if(tc === 0){
+      const def = TYPES[t.type];
+      if(def) burst(r, c, def.color);
+    }
     /* 牢笼棋子被消掉 → 这一格解锁，落下来的新棋子是普通棋子，
        左右邻居从此可以往这里换。只在开局那一枚上生效，不会重新上锁。 */
     if(t.caged){ cageAlive = false; toast(T('cage_break')); }
-    /* 格子数据立刻清空，上方棋子马上就能往下走；DOM 留在原地把 pop 播完再自己
+    /* 格子数据立刻清空，上方棋子马上就能往下走；DOM 留在原地把动画播完再自己
        收走。消除的收缩与上方的下落因此重叠在一起，中间不留空档。
        无动画模式下没有 pop 可播，直接移除。 */
     board[r][c] = null;
+    cleared.push({ i, r, c, t, tc });
     if(settings.anim){
-      setTimeout(function(){ if(t.el.parentNode) t.el.parentNode.removeChild(t.el); }, POP_MS + 80);
+      const life = tc===2 ? FX_VORTEX_MS + 120 : tc===1 ? FX_QUAD_MS + 120 : POP_MS + 80;
+      setTimeout(function(){ if(t.el.parentNode) t.el.parentNode.removeChild(t.el); }, life);
     } else {
       t.el.remove();
     }
   });
-  /* 只让出 pop 的前半程就返回，不等它播完 —— 等到底就会在下落前留出一段空档 */
-  if(settings.anim) await sleep(DROP_LEAD_MS);
+
+  /* 整组特效：同一档位里可能有好几坨（互不相连的组），每坨各来一套 */
+  if(settings.anim){
+    const byIdx = new Map(cleared.map(e=>[e.i, e]));
+    [[2, tiers.vortex, fxVortexGroup, tileVortexFx],
+     [1, tiers.quad,   fxQuadGroup,   tileQuadFx]].forEach(function(row){
+      clusterCells(row[1]).forEach(function(group){
+        const color = (TYPES[group[0].type] || {}).color || '#ffffff';
+        const cen = centroidOf(group);
+        row[2](group, color);
+        group.forEach(function(p){
+          const e = byIdx.get(p.r*COLS+p.c);
+          if(e) row[3](e.t, cen);
+        });
+      });
+    });
+  }
+
+  /* 让出 pop 的前半程就返回 —— 等到底会在下落前留出空档。
+     四连 / 五连要等特效演完（此时棋子已缩到看不见）再落，不然下落的棋子
+     会从还在旋转的同伴身上穿过去。 */
+  if(settings.anim){
+    const lead = topTier === 2 ? VORTEX_LEAD_MS : topTier === 1 ? QUAD_LEAD_MS : DROP_LEAD_MS;
+    await sleep(lead);
+  }
 }
 
 /* 连锁越深落得越快：第 1 段 1.0 倍，之后每段递减 15%，最快 0.55 倍 */
@@ -1499,11 +1941,11 @@ async function dropAndFill(combo){
 async function resolveBoard(){
   let combo = 0;
   while(true){
-    const hit = findMatches();
-    if(hit.size===0) break;
+    const info = findMatchInfo();
+    if(info.hit.size===0) break;
     combo++;
     busy = true;
-    await clearSet(hit, combo);
+    await clearSet(info.hit, combo, info);
     await dropAndFill(combo);
   }
   busy = false;
@@ -1522,7 +1964,7 @@ function showCombo(n){
 
 /* 消除处的得分飘字，位置取这组消除的重心。
    和粒子同一套规矩：WAAPI 显式关键帧，回收用 onfinish + setTimeout 双保险。 */
-function showScore(hit, gained){
+function showScore(hit, gained, tier){
   if(!settings.anim || !gained) return;
   let sx = 0, sy = 0, n = 0;
   hit.forEach(i=>{
@@ -1532,8 +1974,9 @@ function showScore(hit, gained){
     sx += p.x + cell/2; sy += p.y + cell/2; n++;
   });
   if(!n) return;
+  const big = tier === 2, mid = tier === 1;
   const d = document.createElement('div');
-  d.className = 'score-float';
+  d.className = 'score-float' + (big ? ' big' : mid ? ' mid' : '');
   const sp = document.createElement('span');
   sp.textContent = '+' + gained;
   d.appendChild(sp);
@@ -1542,14 +1985,16 @@ function showScore(hit, gained){
   boardEl.appendChild(d);
   const kill = ()=>{ if(d.parentNode) d.parentNode.removeChild(d); };
   if(sp.animate){
+    /* 四连 / 五连的分数弹得更大、飘得更远，和特效的"分量"对上 */
+    const k = big ? 1.5 : mid ? 1.25 : 1;
     const a = sp.animate([
-      { transform:'translateY(0) scale(.55)',      opacity:0 },
-      { transform:'translateY(-16px) scale(1.16)', opacity:1, offset:.32 },
-      { transform:'translateY(-46px) scale(1)',    opacity:0 }
-    ], { duration:760, easing:'ease-out' });
+      { transform:'translateY(0) scale(' + (.55*k) + ')',                          opacity:0 },
+      { transform:'translateY(' + (-16*k) + 'px) scale(' + (1.16*k) + ')',         opacity:1, offset:.32 },
+      { transform:'translateY(' + (-46*k) + 'px) scale(' + (big ? 1.5 : mid ? 1.2 : 1) + ')', opacity:0 }
+    ], { duration: big ? 980 : mid ? 860 : 760, easing:'ease-out' });
     a.onfinish = kill;
   }
-  setTimeout(kill, 1200);   /* 切后台时 WAAPI 暂停，onfinish 不来，兜底回收 */
+  setTimeout(kill, 1500);   /* 切后台时 WAAPI 暂停，onfinish 不来，兜底回收 */
 }
 
 /* ---------- 交互 ---------- */
