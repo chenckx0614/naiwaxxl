@@ -125,12 +125,36 @@ const LEVELS = [
     needs: [15, 12, 10],    // 三个目标各需消除的数量
     types: [                // 该关的消除图标
       { key:'b', img:'naiwa/1/b.png', color:'#7ec3f5' },
-      // ...
+      { key:'d', img:'naiwa/1/d.png', color:'#ff9d1b' },
+      { key:'f', img:'naiwa/1/f.png', color:'#ffd54d' },
+      { key:'g', img:'naiwa/1/g.png', color:'#c98ff5' },
+      { key:'i', img:'naiwa/1/i.png', color:'#7ed957' },
     ],
   },
-  // 第 2 关做好后往这里追加一条即可
+  {
+    no: 2,
+    moves: 22,
+    needs: [20, 16, 13],
+    types: [
+      { key:'a', img:'naiwa/1/a.png', color:'#ffd45e' },
+      { key:'c', img:'naiwa/1/c.png', color:'#fff0c2' },
+      { key:'e', img:'naiwa/1/e.png', color:'#e8704a' },
+      { key:'h', img:'naiwa/1/h.png', color:'#9bd4f5' },
+    ],
+  },
 ];
 ```
+
+现有两关：
+
+| 关 | 图标 | 步数 | 目标 | 设计说明 |
+|---|---|---|---|---|
+| 1 | b / d / f / g / i（5 种） | 25 | 15 / 12 / 10 | 素材形状与配色差异大，扫一眼就能分辨 |
+| 2 | a / c / e / h（4 种） | 22 | 20 / 16 / 13 | 复用 `naiwa/1/` 里第一关没用过的 4 个素材。只有 4 种图标，匹配概率和连锁长度都比第一关高，所以步数从 25 收到 22、目标总量从 37 提到 49 来配平 |
+
+第二关这 4 个素材是同一个黄蛋角色的不同形态（普通 / 天使 / 红鼻子 / 哭泣），色系接近，
+靠眼睛、鼻子、眼泪、翅膀这些细节区分 —— 这是素材本身决定的，如果想更好辨认，
+可以给棋子加一层按 `color` 着色的底盘。
 
 - 关卡选择面板会按 `LEVEL_SLOTS`（默认 9）铺格子；`LEVELS` 里没有的编号自动渲染成「敬请期待」的锁定格，
   所以追加关卡后锁定格会自动减少，不用改 UI。
@@ -151,6 +175,21 @@ types: [
 ```
 
 棋盘棋子、顶部目标图标、关卡面板都会自动跟随更新。
+
+**两版的素材路径不一样，改的时候别只改一边：**
+
+| 版本 | 素材位置 | 引用写法 |
+|---|---|---|
+| 根版 `index.html`（线上单文件） | `naiwa/1/*.png` | `img:'naiwa/1/a.png'` |
+| 小工具版 `minitool/` | `minitool/naiwa/1/*.webp` | `img:'./naiwa/1/a.webp'` |
+
+小工具版用 WebP 是为了控制打包体积（小红书对单条文件有 1MiB 上限）。PNG 转 WebP：
+
+```bash
+# 宽度缩到 192px（棋子素材的既定规格）、保持长宽比、保留透明通道，约 4–6 KB/张
+ffmpeg -i naiwa/1/a.png -vf "scale=192:-1:flags=lanczos" \
+       -c:v libwebp -quality 80 -pix_fmt yuva420p minitool/naiwa/1/a.webp
+```
 
 ## 本地运行
 

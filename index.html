@@ -654,6 +654,22 @@ const LEVELS = [
       { key:'i', img:'naiwa/1/i.png', color:'#7ed957' },
     ],
   },
+
+  /* 第二关：用第一关没用过的 4 个素材（a / c / e / h）。
+     只有 4 种图标，比第一关少一种 —— 匹配更容易、连锁更长，
+     所以把步数从 25 收到 22、目标总量从 37 提到 49 来配平难度。
+     粒子颜色取自每个角色最显眼的部位，保证四者互相区分。 */
+  {
+    no: 2,
+    moves: 22,
+    needs: [20, 16, 13],
+    types: [
+      { key:'a', img:'naiwa/1/a.png', color:'#ffd45e' },
+      { key:'c', img:'naiwa/1/c.png', color:'#fff0c2' },
+      { key:'e', img:'naiwa/1/e.png', color:'#e8704a' },
+      { key:'h', img:'naiwa/1/h.png', color:'#9bd4f5' },
+    ],
+  },
 ];
 
 /* 关卡选择面板至少铺这么多格，超出的格子显示为「敬请期待」 */
