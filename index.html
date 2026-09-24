@@ -268,12 +268,23 @@
   }
   #result-overlay .panel { z-index:2; }   /* 面板永远压在插图上面 */
   .end-fx img { display:block; visibility:hidden; max-width:none; }
-  /* 赢：图片铺满屏幕正中，面板压在它上面 —— 像奶蛙从卡片后面探出头来 */
+  /* 赢：图片完整显示在面板**上方**那块空档里（横向居中）。
+     不铺满全屏 —— 铺满会被居中的面板拦腰压住（看着像穿模），横向还要裁掉两侧；
+     放在面板上方则整只奶蛙都看得见，面板也完全不被遮挡。 */
+  .end-fx.win { align-items:flex-start; }
   .end-fx.win img {
-    visibility:visible; height:96vh; width:auto;
+    visibility:visible; width:auto; height:auto; margin:3vh 0 0;
+    /* 面板垂直居中、高约 226px → 上沿 ≈ 50vh-113；再扣掉面板标题位(24)和呼吸位，
+       所以图片最高只到 50vh-170 —— 任何屏幕高度下都碰不到面板 */
+    max-height:clamp(110px, calc(50vh - 170px), 420px);
+    max-width:94vw;
+    /* 素材（naikiss_head）是裁到「头 + 脸」的一块，底边是裁切线 ——
+       这里用一段遮罩把它淡出去，轮廓才不会出现一条生硬的横边 */
+    -webkit-mask-image:linear-gradient(to bottom, #000 0, #000 86%, rgba(0,0,0,0) 100%);
+    mask-image:linear-gradient(to bottom, #000 0, #000 86%, rgba(0,0,0,0) 100%);
     animation:endWinIn 2s cubic-bezier(.22,.9,.28,1) both;
   }
-  @keyframes endWinIn { from { opacity:0; transform:scale(.9); } to { opacity:1; transform:scale(1); } }
+  @keyframes endWinIn { from { opacity:0; transform:translateY(16px) scale(.92); } to { opacity:1; transform:none; } }
   /* 输：腿从屏幕右边慢慢伸出来，图片右边界贴在屏幕右边缘 */
   .end-fx.lose img {
     visibility:visible; position:absolute; right:0; bottom:3vh;
@@ -1747,7 +1758,7 @@ function paintResult(){
 /* 结算插图：赢了 → 屏幕正中慢慢浮现（盖在蓝色蒙层上、压在面板下，不挡按钮）；
    输了 → 腿从屏幕右边慢慢伸出来，图片右边界贴屏幕右边缘。
    重开一局再结算时靠「清类 → 强制回流 → 加类」让动画重播（只换 src 不会重播）。 */
-const OVER_IMG = { win:'naiwa/over/naikiss.png', lose:'naiwa/over/naizu.png' };
+const OVER_IMG = { win:'naiwa/over/naikiss_head.png', lose:'naiwa/over/naizu.png' };
 
 function hideEndFx(){
   const box = $('#end-fx');
@@ -1915,7 +1926,14 @@ $('#level-grid').addEventListener('click', e=>{
 $('#gear-btn').addEventListener('click', ()=>{ SFX.click(); $('#settings-overlay').classList.add('show'); });
 $('#home-gear').addEventListener('click', ()=>{ SFX.click(); $('#settings-overlay').classList.add('show'); });
 document.querySelectorAll('[data-close]').forEach(b=>b.addEventListener('click', ()=>closeOverlay(b.dataset.close)));
-document.querySelectorAll('.overlay').forEach(o=>o.addEventListener('click', e=>{ if(e.target===o) o.classList.remove('show'); }));
+/* 点空白处关弹窗 —— 结算面板例外：本局已经结束、棋盘被 gameOver 锁着，
+   空白处一点就把面板关掉，玩家就再也找不到入口了（表现为「点哪都没反应」）。
+   所以结算面板只能通过里面的按钮离开。 */
+document.querySelectorAll('.overlay').forEach(o=>o.addEventListener('click', e=>{
+  if(e.target!==o) return;
+  if(o.id === 'result-overlay') return;
+  o.classList.remove('show');
+}));
 
 document.querySelectorAll('.switch').forEach(sw=>{
   sw.addEventListener('click', ()=>{
