@@ -256,6 +256,38 @@
     overflow-y:auto;          /* 面板比视口高时可滚 —— 否则小屏上顶部标题和底部按钮都会被裁掉 */
   }
   .overlay.show { display:flex; }
+
+  /* ---------- 结算插图（胜负特效） ----------
+     放在遮罩内部、面板下面（z-index 比 .panel 小）：
+     既盖在蓝色蒙层之上（不被压暗），又不会挡住结算面板上的按钮。
+     pointer-events:none —— 点插图等于点在遮罩上，不会吃掉按钮的点击。 */
+  .end-fx {
+    position:absolute; top:0; right:0; bottom:0; left:0; z-index:1;
+    display:flex; align-items:center; justify-content:center;
+    pointer-events:none; overflow:hidden;
+  }
+  #result-overlay .panel { z-index:2; }   /* 面板永远压在插图上面 */
+  .end-fx img { display:block; visibility:hidden; max-width:none; }
+  /* 赢：图片铺满屏幕正中，面板压在它上面 —— 像奶蛙从卡片后面探出头来 */
+  .end-fx.win img {
+    visibility:visible; height:96vh; width:auto;
+    animation:endWinIn 2s cubic-bezier(.22,.9,.28,1) both;
+  }
+  @keyframes endWinIn { from { opacity:0; transform:scale(.9); } to { opacity:1; transform:scale(1); } }
+  /* 输：腿从屏幕右边慢慢伸出来，图片右边界贴在屏幕右边缘 */
+  .end-fx.lose img {
+    visibility:visible; position:absolute; right:0; bottom:3vh;
+    height:min(34vh, 320px); width:auto;
+    animation:endLoseIn 1.7s cubic-bezier(.25,.75,.35,1) both;
+  }
+  @keyframes endLoseIn {
+    from { opacity:0; transform:translateX(100%); }
+    25%  { opacity:1; }
+    to   { opacity:1; transform:translateX(0); }
+  }
+  /* 设置里关掉「动画」时不做补间，直接呈现终态 */
+  .no-anim .end-fx img { animation:none !important; }
+
   .panel {
     width:min(400px, 94vw); background:#f2f8ff; border:4px solid #6ea7ec; border-radius:22px;
     padding:44px 18px 18px; position:relative; margin:auto;   /* 矮内容居中，高内容从顶部排、可滚 */
@@ -622,6 +654,8 @@
 
 <!-- 结算弹窗 -->
 <div class="overlay" id="result-overlay">
+  <!-- 结算插图：赢 → 屏幕正中浮现；输 → 从右边伸出来。在面板之前，所以层级在面板下面 -->
+  <div class="end-fx" id="end-fx" aria-hidden="true"><img id="end-fx-img" alt=""></div>
   <div class="panel">
     <div class="panel-title" id="result-title"><span class="star">⭐</span>胜利<span class="star">⭐</span></div>
     <div id="result-level"></div>
@@ -1710,6 +1744,25 @@ function paintResult(){
   }
 }
 
+/* 结算插图：赢了 → 屏幕正中慢慢浮现（盖在蓝色蒙层上、压在面板下，不挡按钮）；
+   输了 → 腿从屏幕右边慢慢伸出来，图片右边界贴屏幕右边缘。
+   重开一局再结算时靠「清类 → 强制回流 → 加类」让动画重播（只换 src 不会重播）。 */
+const OVER_IMG = { win:'naiwa/over/naikiss.png', lose:'naiwa/over/naizu.png' };
+
+function hideEndFx(){
+  const box = $('#end-fx');
+  if(box) box.classList.remove('win','lose');
+}
+
+function showEndFx(win){
+  const box = $('#end-fx'), img = $('#end-fx-img');
+  if(!box || !img) return;
+  box.classList.remove('win','lose');
+  void box.offsetWidth;          /* 强制回流：否则同一张图第二次出现时动画不重播 */
+  img.src = win ? OVER_IMG.win : OVER_IMG.lose;
+  box.classList.add(win ? 'win' : 'lose');
+}
+
 function showResult(win, stars){
   /* 最高分：不分胜负都记，开局就有分数也能留档 */
   const prevBest = bestOf(level);
@@ -1731,6 +1784,7 @@ function showResult(win, stars){
     save.unlocked = Math.max(save.unlocked, Math.min(LEVELS.length, level + 1));
   }
   persist();
+  showEndFx(win);            /* 先把插图摆好，面板一显示动画就跟着开始 */
   setTimeout(()=>{
     $('#result-overlay').classList.add('show');
     if(win && settings.sfx) SFX.end();
@@ -1774,6 +1828,7 @@ function nextLevel(){
 
 function restart(){
   gameOver = false;
+  hideEndFx();
   score = 0; reviveUsed = false;
   boosters = Object.assign({}, BOOSTER_MAX);   /* 道具每关复原 */
   deselect(); boosterMode = null;
@@ -1785,7 +1840,11 @@ function restart(){
 }
 
 /* ---------- 弹窗 ---------- */
-function closeOverlay(id){ document.getElementById(id).classList.remove('show'); }
+function closeOverlay(id){
+  document.getElementById(id).classList.remove('show');
+  /* 面板收起来时把插图一起撤掉，免得下次开局还挂着上一局的胜负图 */
+  if(id === 'result-overlay') hideEndFx();
+}
 
 /* ---------- 关卡选择 ----------
    格子数 = max(LEVEL_SLOTS, 关卡表长度)：关卡表里没有素材的编号一律渲染成
