@@ -180,11 +180,13 @@
      描边要够厚 —— 环本身还带 scale(.22)→scale(1.12)，缩到 0.22 时 4px 只剩 1px，等于看不见。 */
   .fx-wave {
     position:absolute; border-radius:50%; pointer-events:none; z-index:7;
-    border:6px solid #fff;
+    /* 白芯收窄到 4px、彩色环加粗到 12px：白芯太宽时整个环看上去就是"一圈白"，
+       完全看不出消掉的是哪种元素（浅色棋子尤其明显）。 */
+    border:4px solid rgba(255,255,255,.92);
     box-shadow:
-      0 0 0 3px rgba(35,65,110,.32),      /* 深色细描边：浅色棋子 + 浅蓝底也能看清轮廓 */
-      0 0 0 8px currentColor, 0 0 36px currentColor,
-      inset 0 0 0 5px currentColor, inset 0 0 26px currentColor;
+      0 0 0 3px rgba(35,65,110,.34),      /* 深色细描边：浅色棋子 + 浅蓝底也能看清轮廓 */
+      0 0 0 12px currentColor, 0 0 44px currentColor,
+      inset 0 0 0 7px currentColor, inset 0 0 32px currentColor;
   }
   /* 中心闪光：background 由 JS 按棋子颜色生成（纯白在浅底上看不见），
      这里只留一份兜底 + 柔化用的径向形状 */
@@ -1418,15 +1420,21 @@ function tileVortexFx(t, cen){
 function fxQuadGroup(cells, color){
   const cen = centroidOf(cells);
   const span = spanOf(cells) * 1.45;
-  /* 冲击波环：从中心炸开、越扩越淡 */
-  fxNode('fx-wave', {
+  /* 冲击波：**两圈错开**的环。
+     单圈的问题是中后期只剩"棋盘上飘着一个大圆圈"，跟这四枚棋子已经没关系了；
+     两圈前后错开 120ms，才有"轰、轰"接连炸开的层次。
+     最大 scale 从 1.12 收到 0.95：1.12 时环已经溢出到整块棋盘（span 本身是整组尺寸的
+     1.45 倍，再乘 1.12 ≈ 盖满 7 格），收进来之后环始终咬在四枚棋子周围。 */
+  const ring = (peak, dly, dur, op)=>fxNode('fx-wave', {
     left:(cen.x - span/2) + 'px', top:(cen.y - span/2) + 'px',
     width:span + 'px', height:span + 'px', color:vivid(color)
   }, [
-    { transform:'scale(.22)', opacity:.95 },
-    { transform:'scale(.62)', opacity:.6, offset:.42 },
-    { transform:'scale(1.12)', opacity:0 }
-  ], { duration: 520, easing:'cubic-bezier(.15,.75,.3,1)' });
+    { transform:'scale(.24)', opacity:0 },
+    { transform:'scale(.5)', opacity:op, offset:.3 },
+    { transform:'scale(' + peak + ')', opacity:0 }
+  ], { duration: dur, delay: dly, easing:'cubic-bezier(.18,.7,.34,1)' });
+  ring(.95, 0,   460, .95);      /* 内圈：先炸 */
+  ring(.74, 120, 400, .8);       /* 外圈：压着内圈的后半程再炸一次 */
 
   /* 中心白光：只做一小团（原来放大到 1.4 倍整组尺寸 + 0.85 不透明度，
      会把四枚棋子连人带脸糊成一坨白），峰值也压低、往后挪到塌缩那一刻 */
