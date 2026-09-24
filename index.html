@@ -105,6 +105,10 @@
   .tile .face {
     width:100%; height:100%; display:flex; align-items:center; justify-content:center;
     pointer-events:none; transition:transform .15s;
+    border-radius:50%;
+    /* 每个棋子按类型着色：内缘细环 + 柔光底色，帮助区分相似素材 */
+    background:radial-gradient(circle at 50% 50%, rgba(255,255,255,.55) 0%, rgba(255,255,255,0) 55%, var(--tile-color, rgba(255,255,255,.35)) 92%, var(--tile-color, rgba(255,255,255,.35)) 100%);
+    box-shadow:inset 0 0 0 3px var(--tile-color, rgba(255,255,255,.35)), 0 2px 3px rgba(0,0,0,.12);
   }
   .tile .face img { width:88%; height:88%; object-fit:contain; display:block; filter:drop-shadow(0 2px 2px rgba(0,0,0,.25)); }
   /* 设置里关闭「动画」时全局禁用过渡 */
@@ -1177,6 +1181,7 @@ function makeTile(r, c, type, spawnRows=0, dur){
   face.className = 'face';
   el.appendChild(face);
   const t = { type, el, r, c };
+  el.style.setProperty('--tile-color', TYPES[type].color);
   renderTileFace(t);
   el.addEventListener('pointerdown', e => {
     e.preventDefault();
