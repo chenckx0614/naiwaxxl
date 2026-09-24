@@ -106,9 +106,6 @@
     width:100%; height:100%; display:flex; align-items:center; justify-content:center;
     pointer-events:none; transition:transform .15s;
     border-radius:50%;
-    /* 每个棋子按类型着色：内缘细环 + 柔光底色，帮助区分相似素材 */
-    background:radial-gradient(circle at 50% 50%, rgba(255,255,255,.55) 0%, rgba(255,255,255,0) 55%, var(--tile-color, rgba(255,255,255,.35)) 92%, var(--tile-color, rgba(255,255,255,.35)) 100%);
-    box-shadow:inset 0 0 0 3px var(--tile-color, rgba(255,255,255,.35)), 0 2px 3px rgba(0,0,0,.12);
   }
   .tile .face img { width:88%; height:88%; object-fit:contain; display:block; filter:drop-shadow(0 2px 2px rgba(0,0,0,.25)); }
   /* 设置里关闭「动画」时全局禁用过渡 */
@@ -659,7 +656,8 @@ const LEVELS = [
     ],
   },
 
-  /* 第二关：用第一关没用过的 4 个素材（a / c / e / h）。
+  /* 第二关：用第一关没用过的 4 个素材（a / g / e / h），
+     其中 g 从第一关借来替换掉原来和 a 过于相似的 c。
      只有 4 种图标，比第一关少一种 —— 匹配更容易、连锁更长；
      但 4 种图标时目标总量如果堆太高，玩家会感觉"某个目标永远消不够"。
      参数取 moves=22、needs=[16,13,10]（总量 39），比第一关稍松一点，
@@ -671,7 +669,7 @@ const LEVELS = [
     needs: [16, 13, 10],
     types: [
       { key:'a', img:'naiwa/1/a.png', color:'#ffd45e' },
-      { key:'c', img:'naiwa/1/c.png', color:'#fff0c2' },
+      { key:'g', img:'naiwa/1/g.png', color:'#c98ff5' },
       { key:'e', img:'naiwa/1/e.png', color:'#e8704a' },
       { key:'h', img:'naiwa/1/h.png', color:'#9bd4f5' },
     ],
@@ -1182,7 +1180,6 @@ function makeTile(r, c, type, spawnRows=0, dur){
   face.className = 'face';
   el.appendChild(face);
   const t = { type, el, r, c };
-  el.style.setProperty('--tile-color', TYPES[type].color);
   renderTileFace(t);
   el.addEventListener('pointerdown', e => {
     e.preventDefault();
