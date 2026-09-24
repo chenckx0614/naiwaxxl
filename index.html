@@ -931,6 +931,7 @@ let board = [];            // board[r][c] = {type, el} | null
 let cell = 0, gap = 6;     // 像素尺寸，init 时计算
 let selected = null;       // {r,c}
 let busy = false;          // 动画/连锁中锁输入
+let gameOver = false;        // 本局已结算，禁止棋盘交互
 let boosterMode = null;    // 'hammer' | 'bomb' | null
 /* 每关道具的初始数量。restart() 会按这份模板复原 ——
    之前只在初始化时赋过一次值，用掉的道具重开 / 切关都不会回来，
@@ -1444,7 +1445,7 @@ function adjacent(a,b){ return Math.abs(a.r-b.r)+Math.abs(a.c-b.c)===1; }
 
 /* 交换两格并判定（滑动/点选共用） */
 async function trySwap(a, b){
-  if(busy) return;
+  if(busy || gameOver) return;
   busy = true;
   SFX.swap();
   swapTiles(a, b);
@@ -1467,7 +1468,7 @@ async function trySwap(a, b){
 
 /* 点按（未滑动时触发）：点选交换 或 使用道具 */
 async function onTapSelect(r, c){
-  if(busy) return;
+  if(busy || gameOver) return;
   clearHint();
   if(boosterMode){ await useBoosterOn(r, c); return; }
   const cur = {r,c};
@@ -1491,7 +1492,7 @@ function returnTile(d){
 }
 
 window.addEventListener('pointermove', e => {
-  if(!drag || drag.used || busy || boosterMode) return;
+  if(!drag || drag.used || busy || gameOver || boosterMode) return;
   const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
   if(Math.hypot(dx, dy) < cell * 0.35){
     /* 跟手预览：只沿位移更大的那个轴移动，且不超过一格 ——
@@ -1560,7 +1561,7 @@ function clearHint(){
 /* ---------- 道具 ---------- */
 document.querySelectorAll('.booster').forEach(b=>{
   b.addEventListener('click', async ()=>{
-    if(busy) return;
+    if(busy || gameOver) return;
     const k = b.dataset.b;
     if(boosters[k]<=0){ toast(T('booster_empty')); return; }
     if(k==='shuffle'){ boosters[k]--; renderHud(); SFX.booster(); shuffleBoard(true); return; }
@@ -1574,6 +1575,7 @@ document.querySelectorAll('.booster').forEach(b=>{
 });
 
 async function useBoosterOn(r, c){
+  if(gameOver) return;
   const k = boosterMode;
   boosterMode = null;
   document.querySelectorAll('.booster').forEach(x=>x.classList.remove('armed'));
@@ -1608,11 +1610,14 @@ function shuffleBoard(animate){
 
 /* ---------- 结束判定 ---------- */
 function checkEnd(){
+  if(gameOver) return;
   const done = goals.every(g=>g.got>=g.need);
   if(done){
+    gameOver = true;
     const stars = moves>=10 ? 3 : moves>=5 ? 2 : 1;
     showResult(true, stars);
   } else if(moves<=0){
+    gameOver = true;
     showResult(false, 0);
   }
 }
@@ -1683,6 +1688,7 @@ function showResult(win, stars){
 function doRevive(){
   if(reviveUsed) return;
   reviveUsed = true;
+  gameOver = false;
   moves += 5;
   closeOverlay('result-overlay');
   resultState = null;
@@ -1711,6 +1717,7 @@ function nextLevel(){
 }
 
 function restart(){
+  gameOver = false;
   score = 0; reviveUsed = false;
   boosters = Object.assign({}, BOOSTER_MAX);   /* 道具每关复原 */
   deselect(); boosterMode = null;
