@@ -466,6 +466,12 @@
   #result-level { text-align:center; font-size:13px; font-weight:800; color:#b08b4f; margin-top:-2px; }
   #result-score { text-align:center; font-size:15px; font-weight:900; color:#e07a1f; margin-top:6px; }
   #result-bonus { text-align:center; font-size:13px; font-weight:800; color:#3d9a4e; margin-top:2px; min-height:16px; }
+  /* 设置面板按打开来源显隐对局语义按钮：主页打开时没有进行中的对局，
+     「返回大厅 / 继续游戏」没有意义，只留「重新开始」；游戏内打开带 in-game 全显示。
+     用 data-i18n 属性选择器 —— 两版按钮的绑定机制不同（data-action vs onclick），
+     这个属性是两版唯一共同点。 */
+  #settings-overlay:not(.in-game) .btn[data-i18n="home"],
+  #settings-overlay:not(.in-game) .btn[data-i18n="resume"] { display:none; }
   #home-best { margin-top:8px; font-size:14px; font-weight:800; color:#7a5a2a; letter-spacing:1px; }
   #home-best:empty { display:none; }
   /* 加分时顶栏数字弹一下 */
@@ -723,6 +729,7 @@
       <button class="btn btn-green" onclick="closeOverlay('settings-overlay'); restart();" data-i18n="restart">重新开始</button>
       <button class="btn btn-orange" onclick="closeOverlay('settings-overlay')" data-i18n="resume">继续游戏</button>
     </div>
+    <div id="ver-tag" style="text-align:center; font-size:12px; font-weight:700; color:#9aa7c7; letter-spacing:1px; margin-top:10px;">v1.0.1</div>
   </div>
 </div>
 
@@ -2577,9 +2584,8 @@ $('#level-grid').addEventListener('click', e=>{
   if(LEVELS[no-1]) startLevel(no);
   else { SFX.invalid(); toast(T('level_wip', { n:no })); }
 });
-$('#gear-btn').addEventListener('click', ()=>{ SFX.click(); $('#settings-overlay').classList.add('show'); });
-$('#home-gear').addEventListener('click', ()=>{ SFX.click(); $('#settings-overlay').classList.add('show'); });
-document.querySelectorAll('[data-close]').forEach(b=>b.addEventListener('click', ()=>closeOverlay(b.dataset.close)));
+$('#gear-btn').addEventListener('click', ()=>{ SFX.click(); const o = $('#settings-overlay'); o.classList.add('show'); o.classList.add('in-game'); });
+$('#home-gear').addEventListener('click', ()=>{ SFX.click(); const o = $('#settings-overlay'); o.classList.add('show'); o.classList.remove('in-game'); });
 /* 点空白处关弹窗 —— 结算面板例外：本局已经结束、棋盘被 gameOver 锁着，
    空白处一点就把面板关掉，玩家就再也找不到入口了（表现为「点哪都没反应」）。
    所以结算面板只能通过里面的按钮离开。 */
