@@ -292,6 +292,13 @@
     font-size:24px; color:#fff8dc;
     text-shadow:0 2px 0 #c96a00, 0 0 12px rgba(255,200,60,1), 0 0 26px rgba(255,160,20,.9), 0 2px 4px rgba(0,0,0,.45);
   }
+  /* 倍率标签：数字 + 倍率一起飘，所以这一层才是动画的载体 */
+  .score-float .sc { display:flex; align-items:baseline; gap:4px; }
+  .score-float .mul {
+    font-style:normal; font-size:12px; font-weight:900; letter-spacing:.5px;
+    color:#fff3c4; text-shadow:0 1px 0 #b85c00, 0 0 8px rgba(255,190,60,.9);
+  }
+  .score-float.big .mul { font-size:14px; }
 
   /* 音量滑块 */
   .vol {
@@ -1055,9 +1062,30 @@ const SFX = {
   click:   () => webaudioSfx(900, 0.08, 'square', 0.25),
   swap:    () => webaudioSfx(520, 0.12, 'sine', 0.4, 880),
   invalid: () => webaudioSfx(180, 0.18, 'sawtooth', 0.25, 120),
-  clear:   () => {
+  /* 四连专属：低频冲击砸下来 + 一点金属尾。
+     之前四连和普通三连共用一条音效，特效做了两档、声音却一样，等于白做。
+     注：minitool 合规版用的是内嵌解码的 tone()，这里用 webaudioSfx()，
+     两条音效的**参数要保持一致**（容器里没原版素材，只能用合成音）。 */
+  quad:    () => {
+    webaudioSfx(118, 0.30, 'sine',     0.48, 56);          /* 冲击底板：往下砸 */
+    webaudioSfx(430, 0.16, 'sawtooth', 0.42, 96, 0.01);    /* 主冲击 */
+    webaudioSfx(1500, 0.10, 'square',  0.16, 760, 0.03);   /* 金属尾 */
+  },
+  /* 五连专属：上行滑音 + 反向旋转滑音 + 高频气流，配 640ms 的旋涡 */
+  vortex:  () => {
+    webaudioSfx(170,  0.58, 'sine',     0.42, 1500);        /* 被吸进去：主上行 */
+    webaudioSfx(1250, 0.50, 'triangle', 0.22, 250, 0.04);   /* 反向下行：旋转感 */
+    webaudioSfx(2500, 0.44, 'sawtooth', 0.09, 540, 0.07);   /* 气流噪音的近似 */
+  },
+  clear:   (combo, tier) => {
     if(!settings.sfx) return;
-    const a = comboAudios[rand(comboAudios.length)];
+    /* 四连 / 五连走专属合成音；普通档放原版 mp3。
+       原版 combo1~5 改成按连锁数索引，原来是 rand 随机 —— 随机的话连到第 5 连
+       也可能听到 combo1，听不出「越连越高」。 */
+    if(tier === 2){ SFX.vortex(); return; }
+    if(tier === 1){ SFX.quad(); return; }
+    const i = Math.min(Math.max(1, combo || 1), comboAudios.length) - 1;
+    const a = comboAudios[i];
     a.currentTime = 0;
     a.play().catch(()=>{});
   },
@@ -1823,13 +1851,23 @@ function clearTiers(hit, info){
   return { cls, quad, vortex };
 }
 
+/* 分档得分倍率。四连 / 五连本身要靠多花步数去凑，如果每格还是 10 分，
+   「做特效」就完全没有游戏性回报 —— 玩家不会为了一个动画去刻意凑长连。
+   倍率作用在每格分上，所以一条 5 连 = 5 格 × 10 × 2.5 = 125 分（原来 50 分）。
+   索引就是档位：0 普通 / 1 四连 / 2 五连。 */
+const TIER_MUL = [1, 1.5, 2.5];
+
 async function clearSet(hit, combo, info){
-  SFX.clear(combo);
-  if(combo>1) showCombo(combo);
-  const gained = hit.size * 10 * Math.max(1, combo);
-  addScore(gained);
+  /* 先分档再算分 —— 一轮里可能同时有普通格和四 / 五连格（一条 5 连 + 一条 3 连），
+     得逐格按各自倍率加权，不能拿整段的 topTier 一刀切。 */
   const tiers = clearTiers(hit, info);
   const topTier = Math.max.apply(null, Array.from(tiers.cls.values()).concat([0]));
+  let base = 0;
+  tiers.cls.forEach(tc=>{ base += 10 * TIER_MUL[tc]; });
+  const gained = Math.round(base * Math.max(1, combo));
+  addScore(gained);
+  SFX.clear(combo, topTier);
+  if(combo>1) showCombo(combo);
   showScore(hit, gained, topTier);
   buzz(topTier===2 ? [14,26,14] : topTier===1 ? 26 : (combo > 1 ? 22 : 12));
   // 收集目标
@@ -1985,17 +2023,30 @@ function showScore(hit, gained, tier){
   const big = tier === 2, mid = tier === 1;
   const d = document.createElement('div');
   d.className = 'score-float' + (big ? ' big' : mid ? ' mid' : '');
+  /* 数字和倍率标签要一起飘，所以套一层内层来跑动画
+     （外层 .score-float 的 transform 是 translate(-50%,-50%) 居中，动不得）。 */
+  const box = document.createElement('div');
+  box.className = 'sc';
   const sp = document.createElement('span');
   sp.textContent = '+' + gained;
-  d.appendChild(sp);
+  box.appendChild(sp);
+  /* 四连 / 五连额外挂一个倍率标签 —— 光看数字变大不够，得让玩家明白
+     「这一手就是更值钱」，才会主动去凑长连。 */
+  if(mid || big){
+    const tag = document.createElement('i');
+    tag.className = 'mul';
+    tag.textContent = '×' + TIER_MUL[tier];
+    box.appendChild(tag);
+  }
+  d.appendChild(box);
   d.style.left = Math.round(sx/n) + 'px';
   d.style.top  = Math.round(sy/n) + 'px';
   boardEl.appendChild(d);
   const kill = ()=>{ if(d.parentNode) d.parentNode.removeChild(d); };
-  if(sp.animate){
+  if(box.animate){
     /* 四连 / 五连的分数弹得更大、飘得更远，和特效的"分量"对上 */
     const k = big ? 1.5 : mid ? 1.25 : 1;
-    const a = sp.animate([
+    const a = box.animate([
       { transform:'translateY(0) scale(' + (.55*k) + ')',                          opacity:0 },
       { transform:'translateY(' + (-16*k) + 'px) scale(' + (1.16*k) + ')',         opacity:1, offset:.32 },
       { transform:'translateY(' + (-46*k) + 'px) scale(' + (big ? 1.5 : mid ? 1.2 : 1) + ')', opacity:0 }
@@ -2218,7 +2269,14 @@ function checkEnd(){
   const done = goals.every(g=>g.got>=g.need);
   if(done){
     gameOver = true;
-    const stars = moves>=10 ? 3 : moves>=5 ? 2 : 1;
+    /* 星级 = 过关时剩余步数占「本关总步数」的比例。
+       旧写法是固定阈值（>=10 三 / >=5 二），没跟关卡步数挂钩
+       —— 第一关 25 步留 10 步是 40%，第二关只有 20 步却也要留 10 步（50%），
+       同样的表现，步数少的关卡反而更难拿满星。改成比例之后两关标准一致。
+       用掉 +5 步道具后剩余可能超过总步数，那时 ratio>1，直接给三星，没问题。 */
+    const total = (LEVELS[level-1] && LEVELS[level-1].moves) || moves || 1;
+    const ratio = moves / total;
+    const stars = ratio >= 0.4 ? 3 : ratio >= 0.2 ? 2 : 1;
     showResult(true, stars);
   } else if(moves<=0){
     gameOver = true;
