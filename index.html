@@ -465,6 +465,7 @@
   #result-text { text-align:center; font-size:18px; font-weight:900; color:#8a5a1e; margin-bottom:4px; }
   #result-level { text-align:center; font-size:13px; font-weight:800; color:#b08b4f; margin-top:-2px; }
   #result-score { text-align:center; font-size:15px; font-weight:900; color:#e07a1f; margin-top:6px; }
+  #result-bonus { text-align:center; font-size:13px; font-weight:800; color:#3d9a4e; margin-top:2px; min-height:16px; }
   #home-best { margin-top:8px; font-size:14px; font-weight:800; color:#7a5a2a; letter-spacing:1px; }
   #home-best:empty { display:none; }
   /* 加分时顶栏数字弹一下 */
@@ -483,9 +484,14 @@
   .combo-float {
     position:absolute; font-size:30px; font-weight:900; color:#ff9d1b; pointer-events:none;
     text-shadow:0 2px 0 #fff, 0 3px 6px rgba(0,0,0,.3); z-index:20;
-    animation:comboUp .8s forwards;
   }
-  @keyframes comboUp { from { transform:translateY(0) scale(.6); opacity:0;} 30%{opacity:1; transform:translateY(-14px) scale(1.15);} to { transform:translateY(-46px) scale(1); opacity:0;} }
+  /* 连击分级：t1=x3 t2=x4 t3=x5+，字号/颜色/描边递进。
+     位移与时长由 JS 按 n 生成 WAAPI 关键帧，这里不再挂 CSS animation。 */
+  .combo-float.combo-t1 { font-size:38px; color:#ff7a1b; }
+  .combo-float.combo-t2 { font-size:47px; color:#ff4d2e;
+    text-shadow:0 2px 0 #fff, 0 0 14px rgba(255,90,40,.65), 0 4px 8px rgba(0,0,0,.32); }
+  .combo-float.combo-t3 { font-size:56px; color:#ff2e6a; letter-spacing:2px;
+    text-shadow:0 2px 0 #fff, 0 0 18px rgba(255,60,110,.8), 0 5px 10px rgba(0,0,0,.35); }
 
   /* ---------- 开始页（仿开心消消乐） ---------- */
   #home {
@@ -757,6 +763,7 @@
     <div id="result-level"></div>
     <div id="result-stars"></div>
     <div id="result-text"></div>
+    <div id="result-bonus"></div>
     <div id="result-score"></div>
     <div class="panel-btns">
       <button class="btn btn-blue" onclick="closeOverlay('result-overlay'); restart();" data-i18n="restart">重新开始</button>
@@ -875,6 +882,8 @@ const I18N = {
     lose_text:'步数用完了，再试一次吧',
     level_no:'第 {n} 关',
     result_score:'本局 {n} 分 · 最高 {s} 分',
+    moves_bonus:'剩余 {n} 步 × 50 = +{b} 分',
+    combo_2:'连击 x{n}！', combo_3:'漂亮！', combo_4:'厉害！', combo_5:'无敌了！',
     revive:'复活 +5 步',
     revived:'复活成功，加油！',
     home_best:'最高分 {n}',
@@ -914,6 +923,8 @@ const I18N = {
     lose_text:'Out of moves — give it another try',
     level_no:'Level {n}',
     result_score:'This run {n} · Best {s}',
+    moves_bonus:'{n} moves left × 50 = +{b}',
+    combo_2:'Combo x{n}!', combo_3:'Nice!', combo_4:'Great!', combo_5:'UNSTOPPABLE!',
     revive:'Revive +5',
     revived:'Revived — keep going!',
     home_best:'Best {n}',
@@ -1519,6 +1530,46 @@ function fxVortexGroup(cells, color){
   shardsIn(cen.x, cen.y, color, R * 0.9, 16);
 }
 
+/* ---------- 手感三件套：震屏 / 落地挤压 / hit-stop ---------- */
+
+/* hit-stop：消除确认后、爆炸开始前的短暂冻结。
+   档位越狠停得越久（0=三连 45ms / 1=四连 62ms / 2=五连 78ms）；
+   连锁深处（combo>=3）减半 —— 连着爆的时候再每下都冻会拖节奏。 */
+const HITSTOP_MS = [45, 62, 78];
+
+/* 剩余步数折分：过关结算时每剩一步折 50 分 */
+const LEFT_MOVE_SCORE = 50;
+
+/* 震屏。#board 本身没有 inline transform（棋子/特效都定位在它内部的子元素上），
+   在容器上跑 WAAPI 位移关键帧带着全场一起震，不会触发
+   「CSS 关键帧覆盖 .tile 定位 → 棋子飞向棋盘左上角」那条铁律。 */
+function shakeBoard(lv){
+  if(!settings.anim || !boardEl.animate || lv < 1) return;
+  const amp = lv === 2 ? 8 : 4;
+  const kf = [];
+  for(let i=0;i<7;i++){
+    const dec = 1 - i/7;
+    const dx = (i%2 ? 1 : -1) * amp * dec;
+    const dy = (i%2 ? -1 : 1) * amp * 0.35 * dec;
+    kf.push({ transform:'translate('+dx.toFixed(2)+'px,'+dy.toFixed(2)+'px)' });
+  }
+  kf.push({ transform:'translate(0,0)' });
+  boardEl.animate(kf, { duration: 220 + lv*90, easing:'linear' });
+}
+
+/* 落地挤压（squash & stretch）：下落到位瞬间 .face 压扁再回弹，给棋子重量感。
+   关键帧只动 scale —— 位移永远走 .tile 的 WAAPI（铁律），.face 只做形变。 */
+function squashFace(el){
+  if(!settings.anim || !el || !el.animate) return;
+  const face = el.firstChild;
+  if(!face || !face.animate) return;
+  face.animate([
+    { transform:'scale(1.14,.78)' },
+    { transform:'scale(.94,1.08)', offset:.55 },
+    { transform:'scale(1,1)' }
+  ], { duration:180, easing:'ease-out' });
+}
+
 /* ---------- 震动反馈 ----------
    iOS Safari 没有 navigator.vibrate，受限 WebView 也可能禁用它，
    所以一律 try 包住静默失败 —— 震不了不能影响游戏。 */
@@ -1635,9 +1686,9 @@ function readTranslate(el, fallback){
 
 /* 位移到目标点。from 传 null 表示不播动画、直接到位。
    无 Web Animations（老 WebView）时同样直接到位 —— 宁可没有动画，也不能错位。 */
-function moveTileTo(el, from, to, dur){
-  const fromXY = `translate(${from.x}px, ${from.y}px)`;
-  const toXY = `translate(${to.x}px, ${to.y}px)`;
+function moveTileTo(el, from, to, dur, opts){
+  const fromXY = 'translate('+from.x+'px, '+from.y+'px)';
+  const toXY = 'translate('+to.x+'px, '+to.y+'px)';
   /* 先停掉上一段动画。必须在 readTranslate（调用方）之后做，否则读不到实时位置；
      也必须在写新的 inline transform 之前做，避免 cancel 时回退到更旧的位置。 */
   const prev = TILE_ANIM.get(el);
@@ -1651,7 +1702,8 @@ function moveTileTo(el, from, to, dur){
     [{ transform: fromXY }, { transform: toXY }],
     { duration: dur || MOVE_MS, easing: MOVE_EASE, fill: 'forwards' }
   );
-  a.onfinish = function(){ el.style.transform = toXY; try{ TILE_ANIM['delete'](el); }catch(e){} };
+  /* opts.squash：下落到位后跑一次挤压回弹（只动 .face 的 scale） */
+  a.onfinish = function(){ el.style.transform = toXY; try{ TILE_ANIM['delete'](el); }catch(e){} if(opts && opts.squash) squashFace(el); };
   TILE_ANIM.set(el, a);
 }
 
@@ -1675,21 +1727,21 @@ function makeTile(r, c, type, spawnRows=0, dur){
     /* 按下先把 transform 钉到当前格子的落点：上一段位移动画可能还在跑，
        跟手位移需要一个确定的基准，否则会叠在动画的中间值上 */
     const base = pos(t.r, t.c);
-    el.style.transform = `translate(${base.x}px, ${base.y}px)`;
+    el.style.transform = 'translate('+base.x+'px, '+base.y+'px)';
     el.classList.add('dragging');
     drag = { t, x: e.clientX, y: e.clientY, base, used: false, slid: false };
   });
   const end = pos(r, c);
-  el.style.transform = `translate(${end.x}px, ${end.y}px)`;   /* 基础位置 = 落点 */
+  el.style.transform = 'translate('+end.x+'px, '+end.y+'px)';   /* 基础位置 = 落点 */
   boardEl.appendChild(el);
-  if(spawnRows > 0) moveTileTo(el, pos(r - spawnRows, c), end, dur);
+  if(spawnRows > 0) moveTileTo(el, pos(r - spawnRows, c), end, dur, { squash:true });
   return t;
 }
 
-function placeTile(t, r, c, dur){
+function placeTile(t, r, c, dur, opts){
   const from = readTranslate(t.el, pos(t.r, t.c));
   t.r = r; t.c = c;
-  moveTileTo(t.el, from, pos(r, c), dur);
+  moveTileTo(t.el, from, pos(r, c), dur, opts);
 }
 
 /* 落定校正：一轮下落结束后，把所有棋子的 transform 与所属格子强制对齐一次。
@@ -1697,7 +1749,7 @@ function placeTile(t, r, c, dur){
 function settleBoard(){
   forEachActive(function(r,c){
     const t = board[r][c];
-    if(t) t.el.style.transform = `translate(${pos(r,c).x}px, ${pos(r,c).y}px)`;
+    if(t) t.el.style.transform = 'translate('+pos(r,c).x+'px, '+pos(r,c).y+'px)';
   });
 }
 
@@ -1721,7 +1773,7 @@ function currentLevelDef(){ return LEVELS[level-1] || LEVELS[0]; }
 
 function initGoals(){
   const def = currentLevelDef();
-  const idx = [...def.types.keys()].sort(()=>Math.random()-.5).slice(0,3);
+  const idx = Array.from(def.types.keys()).sort(()=>Math.random()-.5).slice(0,3);
   const needs = def.needs || [15,12,10];
   goals = idx.map((t,i)=>({ type:t, need:needs[i] || 10, got:0 }));
   moves = def.moves || 25;
@@ -1736,7 +1788,8 @@ function renderHud(){
     const left = Math.max(0, gl.need - gl.got);
     const d = document.createElement('div');
     d.className = 'goal-item' + (left===0 ? ' done' : '');
-    d.innerHTML = `<span class="g-icon"><img src="${TYPES[gl.type].img}" alt="" draggable="false"></span><span class="g-num">${left===0?'✓':left}</span>`;
+    d.innerHTML = '<span class="g-icon"><img src="' + TYPES[gl.type].img + '" alt="" draggable="false"></span>'
+                + '<span class="g-num">' + (left===0 ? '✓' : left) + '</span>';
     g.appendChild(d);
   });
   document.querySelectorAll('.booster').forEach(b=>{
@@ -1810,9 +1863,9 @@ function findMove(){
       const r2=r+dr, c2=c+dc;
       if(r2<0||r2>=ROWS||c2<0||c2>=COLS||!isActive(r2,c2)||isCage(r2,c2)) continue;
       if(!board[r2][c2]) continue;
-      [board[r][c], board[r2][c2]] = [board[r2][c2], board[r][c]];
+      const tmp = board[r][c]; board[r][c] = board[r2][c2]; board[r2][c2] = tmp;
       const ok = findMatches().size>0;
-      [board[r][c], board[r2][c2]] = [board[r2][c2], board[r][c]];
+      const tmp2 = board[r][c]; board[r][c] = board[r2][c2]; board[r2][c2] = tmp2;
       if(ok) return [{r,c},{r:r2,c:c2}];
     }
   }
@@ -1869,6 +1922,8 @@ async function clearSet(hit, combo, info){
   SFX.clear(combo, topTier);
   if(combo>1) showCombo(combo);
   showScore(hit, gained, topTier);
+  /* 震屏与档位/连锁挂钩：四连轻震、五连重震、普通三连只在连锁较深时轻震 */
+  shakeBoard(topTier === 2 ? 2 : topTier === 1 ? 1 : (combo >= 3 ? 1 : 0));
   buzz(topTier===2 ? [14,26,14] : topTier===1 ? 26 : (combo > 1 ? 22 : 12));
   // 收集目标
   hit.forEach(i=>{
@@ -1972,7 +2027,7 @@ async function dropAndFill(combo){
     const spawnRows = settings.anim ? emptyCount : 0;
     rows = Math.max(rows, spawnRows);
     const dur = settings.anim ? dropDur(rows, k) : 0;
-    moves.forEach(function(m){ placeTile(m[0], m[1], m[2], dur); });
+    moves.forEach(function(m){ placeTile(m[0], m[1], m[2], dur, { squash:true }); });
     for(let idx=writeIdx; idx>=0; idx--){
       const r = activeRows[idx];
       board[r][c] = makeTile(r, c, rand(TYPES.length), spawnRows, dur);
@@ -1991,6 +2046,16 @@ async function resolveBoard(){
     if(info.hit.size===0) break;
     combo++;
     busy = true;
+    /* hit-stop（时间冻结）：交换/引爆炸开前先静一小拍，再让消除一起轰出来。
+       按本轮最高档位取时长（三连 45 / 四连 62 / 五连 78ms），
+       连锁到第 3 波起减半 —— 连续爆的时候再每下都冻足额就会拖沓。 */
+    if(settings.anim){
+      let top = 0;
+      info.tier.forEach(function(v){ if(v >= 5) top = 2; else if(v === 4 && top < 1) top = 1; });
+      let ms = HITSTOP_MS[top];
+      if(combo >= 3) ms = (ms / 2) | 0;
+      if(ms > 0) await sleep(ms);
+    }
     await clearSet(info.hit, combo, info);
     await dropAndFill(combo);
   }
@@ -2001,11 +2066,28 @@ async function resolveBoard(){
 }
 
 function showCombo(n){
+  /* 连击演出分级：n 越大字号越大、颜色越烈、文案升级（连击→漂亮→厉害→无敌）。
+     原来只有一版 CSS comboUp，x2 和 x5 看起来一模一样；分级要连时长/幅度一起变，
+     直接按 n 生成 WAAPI 关键帧比堆 class 盖样式干净。CSS 里不再挂 animation。
+     回收照旧双保险：onfinish + setTimeout 兜底（切后台 WAAPI 的 onfinish 不来）。 */
+  if(n < 2) return;
+  const tier = n >= 5 ? 3 : n === 4 ? 2 : n === 3 ? 1 : 0;
   const d = document.createElement('div');
-  d.id = 'combo-float'; d.textContent = `Combo x${n}!`;
-  d.style.left = '50%'; d.style.top = '40%'; d.style.transform = 'translateX(-50%)';
+  d.className = 'combo-float' + (tier ? ' combo-t' + tier : '');
+  d.textContent = T('combo_' + (tier + 2), { n: n });
+  d.style.left = '50%'; d.style.top = tier >= 2 ? '36%' : '40%';
   boardEl.appendChild(d);
-  setTimeout(()=>d.remove(), 850);
+  const dur = 850 + tier * 180;
+  if(d.animate){
+    const rise = 46 + tier * 16, big = 1 + tier * 0.3;
+    const a = d.animate([
+      { transform:'translate(-50%,0) scale(.6)', opacity:0 },
+      { transform:'translate(-50%,-14px) scale('+(big*1.18).toFixed(2)+')', opacity:1, offset:.3 },
+      { transform:'translate(-50%,'+(-rise)+'px) scale('+big.toFixed(2)+')', opacity:0 }
+    ], { duration: dur, easing:'cubic-bezier(.2,.7,.4,1)', fill:'forwards' });
+    a.onfinish = function(){ if(d.parentNode) d.parentNode.removeChild(d); };
+  }
+  setTimeout(function(){ if(d.parentNode) d.parentNode.removeChild(d); }, dur + 400);
 }
 
 /* 消除处的得分飘字，位置取这组消除的重心。
@@ -2277,7 +2359,11 @@ function checkEnd(){
     const total = (LEVELS[level-1] && LEVELS[level-1].moves) || moves || 1;
     const ratio = moves / total;
     const stars = ratio >= 0.4 ? 3 : ratio >= 0.2 ? 2 : 1;
-    showResult(true, stars);
+    /* 剩余步数折分：过关结算时把没用的步数折成分数给玩家。
+       必须在 showResult 之前加进 score —— 最高分记录、结算面板读的都是它。 */
+    const bonus = moves * LEFT_MOVE_SCORE;
+    if(bonus > 0) score += bonus;
+    showResult(true, stars, bonus);
   } else if(moves<=0){
     gameOver = true;
     showResult(false, 0);
