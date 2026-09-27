@@ -112,6 +112,11 @@
     border-radius:50%;
   }
   .tile .face img { width:88%; height:88%; object-fit:contain; display:block; filter:drop-shadow(0 2px 2px rgba(0,0,0,.25)); }
+  /* 待机呼吸：让静止的棋盘"活"。挂在 .face（只 scale 不碰位置）；随机相位由
+     JS 建棋子时 inline 设负 animation-delay。特异性低于 .tile.clearing .face，
+     消除 pop 照常覆盖；关动画由下面的 .no-anim 规则一并禁掉。 */
+  .tile .face { animation:idleBreath 2.6s ease-in-out infinite; }
+  @keyframes idleBreath { 0%,100% { transform:scale(1); } 50% { transform:scale(1.035); } }
   /* 牢笼棋子：不能交换/拖动，但可参与匹配和被道具消除 */
   .tile.caged { cursor:not-allowed; }
   .tile.caged .face { position:relative; }
@@ -206,6 +211,36 @@
     border:6px solid currentColor;
     box-shadow:0 0 0 2px rgba(255,255,255,.85), 0 0 26px currentColor, inset 0 0 20px currentColor;
   }
+
+  /* 特殊棋子：条纹 / 彩球。覆盖层全在 ::after —— face 本体不挂任何 CSS 动画，
+     pop/bump 这些按类切换的动画不受干扰。彩球用四段 linear-gradient 而不是
+     conic-gradient（后者 Chrome 69+ 才有，minitool 基线 61）。 */
+  .tile .face.eff-row, .tile .face.eff-col, .tile .face.eff-rainbow {
+    position:relative; overflow:hidden;
+  }
+  .face.eff-row::after, .face.eff-col::after {
+    content:''; position:absolute; top:0; right:0; bottom:0; left:0;
+    border-radius:inherit; pointer-events:none;
+  }
+  .face.eff-row::after {
+    background:repeating-linear-gradient(180deg, rgba(255,255,255,.95) 0 5px, rgba(60,90,140,.35) 5px 8px, rgba(255,255,255,0) 8px 14px);
+    animation:stripeFlowV 1.1s linear infinite;
+  }
+  .face.eff-col::after {
+    background:repeating-linear-gradient(90deg, rgba(255,255,255,.95) 0 5px, rgba(60,90,140,.35) 5px 8px, rgba(255,255,255,0) 8px 14px);
+    animation:stripeFlowH 1.1s linear infinite;
+  }
+  @keyframes stripeFlowV { to { background-position:0 14px; } }
+  @keyframes stripeFlowH { to { background-position:14px 0; } }
+  .face.eff-rainbow::after {
+    content:''; position:absolute; top:7%; right:7%; bottom:7%; left:7%;
+    border-radius:50%;
+    background:linear-gradient(135deg, #ff5a5a 0 25%, #ffd24d 0 50%, #5ad8ff 0 75%, #b28bff 0);
+    border:2px solid #fff;
+    box-shadow:0 0 10px rgba(255,255,255,.85), inset 0 0 6px rgba(255,255,255,.6);
+    animation:rainbowPulse 1.5s ease-in-out infinite;
+  }
+  @keyframes rainbowPulse { 0%,100% { opacity:.82; } 50% { opacity:1; } }
 
   /* 滑向不可去的格子（棋盘外 / 菱形缺角 / 牢笼）时的轻反馈。
      只抖内层 .face —— .tile 的 transform 是 inline 定位，CSS 动画一旦落在 .tile 上
@@ -1577,6 +1612,119 @@ function squashFace(el){
   ], { duration:180, easing:'ease-out' });
 }
 
+/* ---------- 特殊棋子：四连条纹 / 五连彩球 ----------
+   长连不再只是"当场好看"：消掉一条 >=4 的连线时，其中心格留下一枚带效果的特殊
+   棋子（横四连 → 清列条纹、竖四连 → 清行条纹、五连 → 彩球）。规则刻意简单自洽：
+   · 特殊棋子照常带颜色参与普通匹配；被消除波及时触发自己的效果（条纹清整行/列、
+     彩球清全场同色），并且能连锁点燃别的特殊棋子；
+   · 彩球与任意棋子交换直接触发（不用凑匹配），双彩球 = 全场清。
+   effect 取值：'row' | 'col' | 'rainbow' | undefined */
+
+/* 一整行/列的激活格（异形棋盘自动跳过缺角） */
+function lineCells(r, c, dir){
+  const out = [];
+  if(dir === 'row'){
+    for(let cc=0; cc<COLS; cc++) if(isActive(r, cc)) out.push({ r:r, c:cc });
+  } else {
+    for(let rr=0; rr<ROWS; rr++) if(isActive(rr, c)) out.push({ r:rr, c:c });
+  }
+  return out;
+}
+
+/* 彩球效果：全场与 type 同色的激活格（含彩球自身 —— 它也是这个颜色） */
+function rainbowCells(type){
+  const out = [];
+  forEachActive(function(r, c){
+    const t = board[r][c];
+    if(t && t.type === type) out.push({ r:r, c:c });
+  });
+  return out;
+}
+
+/* 被匹配波及的特殊棋子逐一触发，把效果格并入消除集合，循环到不再增长 ——
+   条纹清出来的行/列可能又撞上别的条纹。__fired 防同一枚重复触发；
+   被触发的棋子必然在消除集合里，随对象一起丢弃，标记无需清理。 */
+function expandSpecials(hit, tier){
+  let triggered = 0, grew = true;
+  while(grew){
+    grew = false;
+    const add = [];
+    hit.forEach(function(i){
+      const r = (i/COLS)|0, c = i%COLS;
+      if(r < 0 || r >= ROWS || c < 0 || c >= COLS) return;
+      const t = board[r][c];
+      if(!t || !t.effect || t.__fired) return;
+      t.__fired = true;
+      triggered++;
+      const cells = t.effect === 'row' ? lineCells(r, c, 'row')
+                  : t.effect === 'col' ? lineCells(r, c, 'col')
+                  : rainbowCells(t.type);
+      cells.forEach(function(p){
+        const j = p.r*COLS + p.c;
+        if(!hit.has(j)){ add.push(j); if(!tier.has(j)) tier.set(j, 0); }
+      });
+    });
+    if(add.length){ grew = true; add.forEach(function(j){ hit.add(j); }); }
+  }
+  return triggered;
+}
+
+/* 从一条连线上挑生成特殊棋子的格子：从中心向外找第一枚非牢笼的。
+   牢笼格不能留 —— 否则会出现"笼子没破却变成特殊棋子"的状态混乱。 */
+function pickSpawnCell(run){
+  const n = run.cells.length, mid = (n - 1) / 2;
+  for(let k = 0; k < n; k++){
+    const p = run.cells[Math.round(mid + (k % 2 ? Math.ceil(k / 2) : -k / 2))];
+    const t = board[p.r] && board[p.r][p.c];
+    if(t && !t.caged) return p;
+  }
+  return null;
+}
+
+/* 把 effect 画到棋子脸上：face 加 eff-xxx 类。覆盖层全在 ::after 上 ——
+   face 本体不挂任何 CSS 动画，pop/bump 这些按类切换的动画不受干扰。 */
+function applyEffectFace(t){
+  const f = t.el.firstChild;
+  if(f) f.className = 'face' + (t.effect ? ' eff-' + t.effect : '');
+}
+
+/* 生成特殊棋子瞬间的闪光（WAAPI 显式关键帧，无需回收 —— 不带 fill 会自己回弹） */
+function spawnFx(el){
+  if(!settings.anim) return;
+  const f = el.firstChild;
+  if(!f || !f.animate) return;
+  f.animate([
+    { transform:'scale(1)', filter:'brightness(1)' },
+    { transform:'scale(1.45)', filter:'brightness(2.2)', offset:.35 },
+    { transform:'scale(1)', filter:'brightness(1)' }
+  ], { duration:420, easing:'ease-out' });
+}
+
+/* 彩球交换：不检查匹配，直接触发全场同色消除。双彩球 = 全场清。
+   调用前 swapTiles 已把两枚换位（board 数据已交换），所以在这里重新辨认
+   哪边是彩球。清完接着 dropAndFill + resolveBoard，接住掉落凑出的新匹配。 */
+async function rainbowSwap(a, b){
+  busy = true;
+  const pa = board[a.r][a.c], pb = board[b.r][b.c];
+  const self = (pa && pa.effect === 'rainbow') ? pa : pb;
+  const other = (self === pa) ? pb : pa;
+  const selfPos = (self === pa) ? a : b;
+  const hit = new Set(), tier = new Map();
+  if(other && other.effect === 'rainbow'){
+    forEachActive(function(r, c){ hit.add(r*COLS + c); });   /* 双彩球：全场清 */
+  } else {
+    hit.add(selfPos.r*COLS + selfPos.c);                     /* 彩球本身 */
+    rainbowCells(other.type).forEach(function(p){ hit.add(p.r*COLS + p.c); });
+  }
+  SFX.vortex();
+  shakeBoard(2);
+  buzz([14,26,14]);
+  await clearSet(hit, 1, null);
+  await dropAndFill(1);
+  busy = false;
+  await resolveBoard();
+}
+
 /* ---------- 震动反馈 ----------
    iOS Safari 没有 navigator.vibrate，受限 WebView 也可能禁用它，
    所以一律 try 包住静默失败 —— 震不了不能影响游戏。 */
@@ -1721,6 +1869,9 @@ function makeTile(r, c, type, spawnRows=0, dur){
   el.style.width = el.style.height = cell + 'px';
   const face = document.createElement('div');
   face.className = 'face';
+  /* 待机呼吸的随机相位：负延迟让每枚棋子从动画中段"已经在呼吸"的状态开始，
+     不会出现全棋盘同步起伏的诡异整齐感 */
+  face.style.animationDelay = (-(Math.random() * 2.6)).toFixed(2) + 's';
   el.appendChild(face);
   const t = { type, el, r, c, caged: isCage(r,c) };
   if(t.caged) el.classList.add('caged');
@@ -1894,11 +2045,13 @@ const DROP_LEAD_MS = 110;   /* 标记消除后多久开始下落：让 pop 先�
 /* 一段消除的分档：
    0 = 普通（3 连 / 道具），1 = 四连（冲击波），2 = 五连及以上（旋涡）。
    同一轮里可以同时存在多档（例如一条 5 连 + 一条 3 连），各走各的特效。 */
-function clearTiers(hit, info){
+function clearTiers(hit, info, exclude){
   const cls = new Map();          /* flatIdx -> 0 | 1 | 2 */
   if(!info) { hit.forEach(i=>cls.set(i, 0)); return { cls, quad: [], vortex: [] }; }
   const quad = [], vortex = [];
   hit.forEach(i=>{
+    /* 特殊棋子生成格：留在棋盘上不消除，也不进任何档位的特效分组 */
+    if(exclude && exclude.has(i)) return;
     const r = (i/COLS)|0, c = i%COLS, t = board[r][c];
     const len = info.tier.get(i) || 0;
     const tc = len >= 5 ? 2 : len === 4 ? 1 : 0;
@@ -1918,9 +2071,26 @@ function clearTiers(hit, info){
 const TIER_MUL = [1, 1.5, 2.5];
 
 async function clearSet(hit, combo, info){
+  /* 长连生成特殊棋子：>=4 的连线中心格保留一枚（不消除），换成带效果的特殊棋子。
+     这些格子从消除/特效名单里剔除（clearTiers 的 exclude），分数也不计 ——
+     它没有消掉，糖果传奇同款规则。两条 run 选中同一格时只生成一次。 */
+  const spawnIdx = new Set();
+  const spawns = [];
+  if(info && info.runs){
+    info.runs.forEach(function(run){
+      if(run.len < 4) return;
+      const p = pickSpawnCell(run);
+      if(!p) return;
+      const j = p.r*COLS + p.c;
+      if(spawnIdx.has(j)) return;
+      spawnIdx.add(j);
+      spawns.push({ r:p.r, c:p.c, type:p.type,
+        effect: run.len >= 5 ? 'rainbow' : (run.dir === 'h' ? 'col' : 'row') });
+    });
+  }
   /* 先分档再算分 —— 一轮里可能同时有普通格和四 / 五连格（一条 5 连 + 一条 3 连），
      得逐格按各自倍率加权，不能拿整段的 topTier 一刀切。 */
-  const tiers = clearTiers(hit, info);
+  const tiers = clearTiers(hit, info, spawnIdx);
   const topTier = Math.max.apply(null, Array.from(tiers.cls.values()).concat([0]));
   let base = 0;
   tiers.cls.forEach(tc=>{ base += 10 * TIER_MUL[tc]; });
@@ -1932,8 +2102,9 @@ async function clearSet(hit, combo, info){
   /* 震屏与档位/连锁挂钩：四连轻震、五连重震、普通三连只在连锁较深时轻震 */
   shakeBoard(topTier === 2 ? 2 : topTier === 1 ? 1 : (combo >= 3 ? 1 : 0));
   buzz(topTier===2 ? [14,26,14] : topTier===1 ? 26 : (combo > 1 ? 22 : 12));
-  // 收集目标
+  // 收集目标（生成格没消掉，不计收集进度）
   hit.forEach(i=>{
+    if(spawnIdx.has(i)) return;
     const r=(i/COLS)|0, c=i%COLS, t=board[r][c];
     if(!t) return;
     const gl = goals.find(g=>g.type===t.type);
@@ -1942,6 +2113,7 @@ async function clearSet(hit, combo, info){
   renderHud();
   const cleared = [];                 /* 记下被消掉的棋子，特效要用（后面 board 就清空了） */
   hit.forEach(i=>{
+    if(spawnIdx.has(i)) return;       /* 特殊棋子生成格：保留在棋盘上，不走消除 */
     const r=(i/COLS)|0, c=i%COLS, t=board[r][c];
     if(!t) return;
     const tc = tiers.cls.get(i) || 0;
@@ -1985,6 +2157,18 @@ async function clearSet(hit, combo, info){
       });
     });
   }
+
+  /* 生成特殊棋子：换掉旧对象与 DOM，原地站一枚新的 —— 它不参与这轮消除，
+     随后跟着大部队一起压实/补位。放在 sleep 之前，特效闪一下正好看得见。 */
+  spawns.forEach(function(s){
+    const old = board[s.r][s.c];
+    if(old && old.el.parentNode) old.el.parentNode.removeChild(old.el);
+    const t = makeTile(s.r, s.c, s.type);
+    t.effect = s.effect;
+    board[s.r][s.c] = t;
+    applyEffectFace(t);
+    spawnFx(t.el);
+  });
 
   /* 让出 pop 的前半程就返回 —— 等到底会在下落前留出空档。
      四连 / 五连要等特效演完（此时棋子已缩到看不见）再落，不然下落的棋子
@@ -2053,6 +2237,9 @@ async function resolveBoard(){
     if(info.hit.size===0) break;
     combo++;
     busy = true;
+    /* 特殊棋子连锁扩展：被波及的条纹/彩球把整行/列/全场同色并入消除集合，
+       并能连锁点燃别的特殊棋子（循环到不再增长）。 */
+    expandSpecials(info.hit, info.tier);
     /* hit-stop（时间冻结）：交换/引爆炸开前先静一小拍，再让消除一起轰出来。
        按本轮最高档位取时长（三连 45 / 四连 62 / 五连 78ms），
        连锁到第 3 波起减半 —— 连续爆的时候再每下都冻足额就会拖沓。 */
@@ -2153,6 +2340,18 @@ async function trySwap(a, b){
   if(busy || gameOver) return;
   const ta = board[a.r][a.c], tb = board[b.r][b.c];
   if((ta && ta.caged) || (tb && tb.caged)) return;
+  /* 彩球交换：不凑匹配直接引爆全场同色（双彩球全清）。先换位再交给 rainbowSwap ——
+     它会在换位后的棋盘上重新辨认彩球在哪一边。 */
+  if((ta && ta.effect === 'rainbow') || (tb && tb.effect === 'rainbow')){
+    busy = true;
+    SFX.swap();
+    swapTiles(a, b);
+    await sleep(230);
+    moves--; renderHud(); buzz(10);
+    busy = false;
+    await rainbowSwap(a, b);
+    return;
+  }
   busy = true;
   SFX.swap();
   swapTiles(a, b);
