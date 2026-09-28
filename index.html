@@ -654,9 +654,43 @@
     cursor:pointer; transition:transform .1s;
   }
   #home-gear:active { transform:scale(.92); }
+  /* ---------- 开场加载遮罩 ----------
+     z-index 压过 #home(100)/面板(200)/toast(9999 以外一切层级)；fixed 全屏
+     不用 inset（Chrome 87+ 才支持，基线 61 要四边写全）；logo 排版不用 flex
+     gap（Chrome 84+），用 span 自身 margin。 */
+  #loader {
+    position:fixed; left:0; top:0; right:0; bottom:0; z-index:5000;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    background:linear-gradient(180deg,#8ed8f8 0%,#bfeaff 60%,#e2f7ff 100%);
+    transition:opacity .45s ease;
+  }
+  #loader.done { opacity:0; pointer-events:none; }
+  #loader-logo { margin-bottom:22px; text-align:center; }
+  #loader-logo span {
+    display:inline-block; margin:0 2px;
+    font-size:34px; font-weight:800; color:#fff;
+    text-shadow:0 3px 0 #5db6e0, 0 5px 8px rgba(0,0,0,.15);
+  }
+  #loader-bar {
+    width:200px; height:14px; border-radius:999px;
+    background:rgba(255,255,255,.55); box-shadow:inset 0 2px 4px rgba(0,0,0,.12);
+    overflow:hidden;
+  }
+  #loader-fill {
+    width:0%; height:100%; border-radius:999px;
+    background:linear-gradient(90deg,#7ed957,#4cb847);
+    transition:width .25s ease;
+  }
+  #loader-pct { margin-top:10px; font-size:14px; font-weight:700; color:#2b7fb8; }
 </style>
 </head>
 <body>
+<!-- 开场加载遮罩：素材全部就位后由脚本淡出（进度条由 app.js 驱动） -->
+<div id="loader">
+  <div id="loader-logo"><span>奶</span><span>蛙</span><span>消</span><span>消</span><span>乐</span></div>
+  <div id="loader-bar"><div id="loader-fill"></div></div>
+  <div id="loader-pct">0%</div>
+</div>
 <!-- 开始页 -->
 <div id="home">
   <button id="home-gear" title="设置" data-i18n-title="settings">⚙️</button>
@@ -2860,6 +2894,60 @@ document.querySelectorAll('.vol').forEach(el=>{
   });
 });
 
+/* ---------- 开场加载遮罩：素材全部就位后才进入游戏 ----------
+   收集两路素材：页面里已有的 <img src>（开始页气泡 / 道具图标）+ LEVELS 声明的
+   棋子素材与结算插图（将来加关卡自动跟上，不用改这里）。每张图 onload 和
+   onerror 都计数 —— 单张失败不该卡死入口，宁可放行也不能永久黑屏。
+   进度条宽度走 CSS transition 平滑；全部就位后停 300ms 让 100% 被看到，再淡出。
+   音频是否计入进度由各版本自行追加（内嵌 base64 无需预加载，外部 mp3 需要）。 */
+const PRELOAD = {
+  total: 0, done: 0, revealed: false, el: null, fill: null, pct: null,
+  init: function(){
+    this.el = document.getElementById('loader');
+    this.fill = document.getElementById('loader-fill');
+    this.pct = document.getElementById('loader-pct');
+  },
+  bump: function(){
+    this.done++;
+    const p = this.total ? Math.min(1, this.done / this.total) : 0;
+    if(this.fill) this.fill.style.width = (p * 100).toFixed(1) + '%';
+    if(this.pct) this.pct.textContent = Math.round(p * 100) + '%';
+    if(this.done >= this.total) this.reveal();
+  },
+  reveal: function(){
+    if(this.revealed) return;
+    this.revealed = true;
+    const el = this.el;
+    setTimeout(function(){
+      if(!el) return;
+      el.classList.add('done');
+      setTimeout(function(){ el.style.display = 'none'; }, 500);
+    }, 300);
+  },
+  /* 兜底：个别资源挂起（代理卡住 / 弱网无响应）时不永久黑屏 */
+  force: function(){ this.done = this.total; this.reveal(); }
+};
+function collectPreloadImages(){
+  const set = {};
+  document.querySelectorAll('img[src]').forEach(im=>{ set[im.getAttribute('src')] = 1; });
+  LEVELS.forEach(L=>{ (L.types || []).forEach(t=>{ set[t.img] = 1; }); });
+  if(typeof OVER_IMG !== 'undefined'){ set[OVER_IMG.win] = 1; set[OVER_IMG.lose] = 1; }
+  return Object.keys(set);
+}
+function preloadImages(list){
+  list.forEach(src=>{
+    if(!src) return;
+    PRELOAD.total++;
+    const im = new Image();
+    im.onload = ()=>{ PRELOAD.bump(); };
+    im.onerror = ()=>{ PRELOAD.bump(); };
+    im.src = src;
+  });
+}
+PRELOAD.init();
+preloadImages(collectPreloadImages());
+setTimeout(()=>{ PRELOAD.force(); }, 8000);   /* 超时兜底：8 秒强制放行 */
+
 /* ---------- 启动 ---------- */
 window.addEventListener('resize', ()=>{ layoutBoard(); for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++){ const t=board[r]&&board[r][c]; if(t) placeTile(t,r,c); } });
 loadLang();       /* 语言存档要在任何 T() 之前读出来 */
@@ -2872,6 +2960,21 @@ newBoard();
 scheduleHint();
 applyLang();     /* 铺文案 + 高亮语言分段控件 + 刷新开始页/关卡面板/顶部栏 */
 applyVolumes();  /* 把存档音量回填到滑块（音频链在 initAudio 里初始化） */
+
+/* root 专属：外部 mp3 预加载计入加载进度（发行差异 —— minitool 音频 base64
+   内嵌、脚本执行完即素材就绪，无需此段）。<audio> 是惰性加载的，不等就位
+   第一次播 BGM/音效会卡一下；canplaythrough 若在挂事件前已触发（本地缓存
+   极快），用 readyState 兜底判完成。error 也计数 —— 单个音频失败不卡入口。 */
+{
+  const list = [bgmAudio, endAudio].concat(comboAudios);
+  list.forEach(a => {
+    PRELOAD.total++;
+    if(a.readyState >= 3){ PRELOAD.bump(); return; }
+    const step = () => PRELOAD.bump();
+    a.addEventListener('canplaythrough', step, { once:true });
+    a.addEventListener('error', step, { once:true });
+  });
+}
 </script>
 </body>
 </html>
