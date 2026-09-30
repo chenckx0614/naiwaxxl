@@ -111,7 +111,7 @@
     pointer-events:none; transition:transform .15s;
     border-radius:50%;
   }
-  .tile .face img { width:88%; height:88%; object-fit:contain; display:block; filter:drop-shadow(0 2px 2px rgba(0,0,0,.25)); }
+  .tile .face img { width:94%; height:94%; object-fit:contain; display:block; filter:drop-shadow(0 2px 2px rgba(0,0,0,.25)); }
   /* 待机呼吸：让静止的棋盘"活"。挂在 .face（只 scale 不碰位置）；随机相位由
      JS 建棋子时 inline 设负 animation-delay。特异性低于 .tile.clearing .face，
      消除 pop 照常覆盖；关动画由下面的 .no-anim 规则一并禁掉。 */
@@ -143,7 +143,25 @@
     pointer-events:none;
   }
   .tile.frozen .face img { opacity:0.85; }
-  /* 设置里关闭「动画」时全局禁用过渡 */
+  /* 果冻格：双层粉色半透明覆盖，棋子可正常交换；被波及一次减一层，
+     减到 0 时播放 .jelly-pop 爆开消失。果冻 div 位于棋子之下。 */
+  .jelly {
+    position:absolute; border-radius:18%; pointer-events:none; z-index:1;
+    box-sizing:border-box;
+    background:
+      repeating-linear-gradient(30deg, transparent, transparent 8px, rgba(255,255,255,.18) 8px, rgba(255,255,255,.18) 14px),
+      repeating-linear-gradient(-30deg, transparent, transparent 10px, rgba(255,255,255,.12) 10px, rgba(255,255,255,.12) 16px);
+  }
+  .jelly-layer2 {
+    border:3px solid rgba(255,20,147,.7);
+    background-color:rgba(255,105,180,.55);
+  }
+  .jelly-layer1 {
+    border:2px solid rgba(255,105,180,.55);
+    background-color:rgba(255,182,193,.38);
+  }
+  .jelly-pop { animation:jellyPop .25s forwards; }
+  @keyframes jellyPop { to { transform:scale(1.22); opacity:0; } }
   .no-anim .tile, .no-anim .tile .face { transition:none !important; }
   /* 跟手拖动中：抬起放大 + 置于最上层。位移仍由 JS 直接写 transform，
      这里绝对不能加 transition（会退回合成器线程竞态） */
@@ -1010,6 +1028,31 @@ const LEVELS = [
        没写 winImg 的关卡回落到 OVER_IMG.win（亲吻特写，面板保持居中）。 */
     winImg: 'naiwa/over/naihao.png',
   },
+  {
+    no: 4,
+    rows: 9,
+    cols: 9,
+    moves: 24,
+    needs: [22, 18, 16],
+    types: [
+      { key:'a4', img:'naiwa/4/a4.png', color:'#f0e6d8', bg:'#faf6f0' },
+      { key:'b4', img:'naiwa/4/b4.png', color:'#e6b800', bg:'#fff8dc' },
+      { key:'c4', img:'naiwa/4/c4.png', color:'#f5c700', bg:'#fffce6' },
+      { key:'d4', img:'naiwa/4/d4.png', color:'#a86f48', bg:'#f5e9df' },
+      { key:'e4', img:'naiwa/4/e4.png', color:'#4a4a4a', bg:'#f0f0f0' },
+      { key:'f4', img:'naiwa/4/f4.png', color:'#ff8eb0', bg:'#ffe8f0' },
+    ],
+    /* 第四关棋盘：9×9 圆角矩形 57 格（四角按 rr+cc<3 切掉，每角 6 格），
+       比第三关 48 格大、比 8×8 椭圆更方正，下落每列连续。 */
+    shape: function(r,c){ const rr=Math.min(r,ROWS-1-r), cc=Math.min(c,COLS-1-c); return rr+cc>=3; },
+    /* 三个牢笼三角分布：角落天然难消，加中间偏上增加压迫 */
+    cages: [ { r:1, c:1 }, { r:1, c:7 }, { r:7, c:1 } ],
+    /* 冰封 4 枚：集中在中央偏右 */
+    frozen: [ {r:4,c:3},{r:3,c:4},{r:5,c:5},{r:4,c:6} ],
+    /* 果冻 8 格：双层，被匹配/道具/特殊棋子波及一次减一层（棋子保留），
+       清完 0 层该格恢复正常。增加空间压制，但不改收集目标 UI。 */
+    jellies: [ {r:2,c:2},{r:2,c:6},{r:3,c:1},{r:3,c:7},{r:5,c:1},{r:5,c:7},{r:6,c:2},{r:6,c:6} ],
+  },
 ];
 
 /* 关卡选择面板至少铺这么多格，超出的格子显示为「敬请期待」 */
@@ -1057,6 +1100,7 @@ const I18N = {
     reshuffled:'棋盘已重排',
     cage_break:'牢笼已破，这一格可以动了！',
     ice_break:'冰已碎裂！',
+    jelly_break:'果冻少了一层！',
     level_wip:'第 {n} 关还在制作中，敬请期待',
     copied:'已复制：{s}',
     email_is:'邮箱：{s}',
@@ -1099,6 +1143,7 @@ const I18N = {
     reshuffled:'Board reshuffled',
     cage_break:'Cage broken — this cell is free!',
     ice_break:'Ice shattered!',
+    jelly_break:'Jelly layer cleared!',
     level_wip:'Level {n} is still in the works',
     copied:'Copied: {s}',
     email_is:'Email: {s}',
@@ -1304,6 +1349,7 @@ let activeShape = null;    // 当前关卡形状函数 (r,c)=>boolean；null 表
    「破了一个还剩一个」，所以第三关起改棋子级状态。 */
 let cageList = [];         // 本关牢笼格 [{r,c},...]
 let frozenList = [];       // 本关冰封格 [{r,c},...]：棋子不可动，被波及一次破冰保留
+let jellyGrid = [];        // 本关果冻层 [r][c] = 0/1/2：0 为空，>0 时该格有果冻层；棋子可正常交换
 /* 每关道具的初始数量。restart() 会按这份模板复原 ——
    之前只在初始化时赋过一次值，用掉的道具重开 / 切关都不会回来，
    玩家玩几局后道具就永久耗尽，必须刷新页面才能恢复。 */
@@ -1356,6 +1402,53 @@ const $ = s => document.querySelector(s);
 
 /* 当前格是否在当前关卡棋盘内（激活格） */
 function isActive(r,c){ return r>=0 && r<ROWS && c>=0 && c<COLS && (!activeShape || activeShape(r,c)); }
+/* 初始化果冻层：默认 2 层；没声明 jellies 的关卡全 0 */
+function initJellyGrid(list){
+  const g = Array.from({length:ROWS}, ()=>Array(COLS).fill(0));
+  if(list) list.forEach(function(p){ if(isActive(p.r,p.c)) g[p.r][p.c] = p.layer || 2; });
+  return g;
+}
+function hasJelly(r,c){ return jellyGrid[r] && jellyGrid[r][c] > 0; }
+
+/* 渲染/重绘所有果冻覆盖层。layoutBoard 重建 cell-bg 时会一并调用；
+   果冻 div 要插在棋子之前，这样棋子 face 盖在果冻上面。 */
+function renderJellies(){
+  boardEl.querySelectorAll('.jelly').forEach(e=>e.remove());
+  for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++){
+    const layer = jellyGrid[r] && jellyGrid[r][c];
+    if(!layer) continue;
+    const el = document.createElement('div');
+    el.className = 'jelly jelly-layer' + layer;
+    el.dataset.rc = r + ',' + c;
+    const p = pos(r,c);
+    el.style.cssText = `left:${p.x}px;top:${p.y}px;width:${cell}px;height:${cell}px;`;
+    boardEl.appendChild(el);
+  }
+}
+
+/* 一次消除波及到果冻格：减一层；减到 0 时清掉并 toast。
+   果冻只清层，不清棋子 —— 棋子仍走正常消除/生成逻辑。 */
+function hitJelly(hit){
+  let broke = false;
+  hit.forEach(function(i){
+    const r=(i/COLS)|0, c=i%COLS;
+    if(!hasJelly(r,c)) return;
+    jellyGrid[r][c]--;
+    const el = boardEl.querySelector('.jelly[data-rc="'+r+','+c+'"]');
+    if(el){
+      if(jellyGrid[r][c] > 0){
+        el.className = 'jelly jelly-layer' + jellyGrid[r][c];
+        el.dataset.rc = r + ',' + c;
+      } else {
+        el.classList.add('jelly-pop');
+        setTimeout(function(){ if(el.parentNode) el.parentNode.removeChild(el); }, 260);
+      }
+    }
+    broke = true;
+  });
+  if(broke) toast(T('jelly_break'));
+}
+
 /* 该坐标是不是本关的牢笼 / 冰封格。只在 newBoard() 建棋子时用来上锁；
    运行时判定一律读棋子自身的 t.caged / t.frozen —— 破笼 / 破冰后
    棋子状态翻 false，这一格自动恢复普通格，不需要任何全局开关。 */
@@ -1931,6 +2024,7 @@ function layoutBoard(){
     bg.style.cssText = `width:${cell}px;height:${cell}px;left:${gap+c*(cell+gap)}px;top:${gap+r*(cell+gap)}px;`;
     boardEl.appendChild(bg);
   }
+  renderJellies();
 }
 
 function pos(r,c){ return { x: gap + c*(cell+gap), y: gap + r*(cell+gap) }; }
@@ -2250,8 +2344,57 @@ function thawFrozen(hit){
   if(broke) toast(T('ice_break'));
 }
 
+/* 初始化果冻层：默认 2 层；没声明 jellies 的关卡全 0 */
+function initJellyGrid(list){
+  var g = [];
+  for(var rr=0; rr<ROWS; rr++){ g[rr] = []; for(var cc=0; cc<COLS; cc++) g[rr][cc] = 0; }
+  if(list) list.forEach(function(p){ if(isActive(p.r,p.c)) g[p.r][p.c] = p.layer || 2; });
+  return g;
+}
+function hasJelly(r,c){ return jellyGrid[r] && jellyGrid[r][c] > 0; }
+
+/* 渲染/重绘所有果冻覆盖层。layoutBoard 重建 cell-bg 时会一并调用；
+   果冻 div 要插在棋子之前，这样棋子 face 盖在果冻上面。 */
+function renderJellies(){
+  boardEl.querySelectorAll('.jelly').forEach(function(e){ e.remove(); });
+  for(var r=0; r<ROWS; r++) for(var c=0; c<COLS; c++){
+    var layer = jellyGrid[r] && jellyGrid[r][c];
+    if(!layer) continue;
+    var el = document.createElement('div');
+    el.className = 'jelly jelly-layer' + layer;
+    el.setAttribute('data-rc', r + ',' + c);
+    var p = pos(r,c);
+    el.style.cssText = 'left:' + p.x + 'px;top:' + p.y + 'px;width:' + cell + 'px;height:' + cell + 'px;';
+    boardEl.appendChild(el);
+  }
+}
+
+/* 一次消除波及到果冻格：减一层；减到 0 时清掉并 toast。
+   果冻只清层，不清棋子 —— 棋子仍走正常消除/生成逻辑。 */
+function hitJelly(hit){
+  var broke = false;
+  hit.forEach(function(i){
+    var r=(i/COLS)|0, c=i%COLS;
+    if(!hasJelly(r,c)) return;
+    jellyGrid[r][c]--;
+    var el = boardEl.querySelector('.jelly[data-rc="' + r + ',' + c + '"]');
+    if(el){
+      if(jellyGrid[r][c] > 0){
+        el.className = 'jelly jelly-layer' + jellyGrid[r][c];
+        el.setAttribute('data-rc', r + ',' + c);
+      } else {
+        el.classList.add('jelly-pop');
+        setTimeout(function(){ if(el.parentNode) el.parentNode.removeChild(el); }, 260);
+      }
+    }
+    broke = true;
+  });
+  if(broke) toast(T('jelly_break'));
+}
+
 async function clearSet(hit, combo, info){
   thawFrozen(hit);
+  hitJelly(hit);
   /* 长连生成特殊棋子：>=4 的连线中心格保留一枚（不消除），换成带效果的特殊棋子。
      这些格子从消除/特效名单里剔除（clearTiers 的 exclude），分数也不计 ——
      它没有消掉，糖果传奇同款规则。两条 run 选中同一格时只生成一次。 */
@@ -2893,7 +3036,9 @@ function restart(){
   gameOver = false;
   hideEndFx();
   /* 牢笼 / 冰封不用在这里重置 —— newBoard() 重建棋子时会按 cageList / frozenList
-     重新上锁（复活走 doRevive()，保留棋盘，所以已破的笼 / 冰保持原状）。 */
+     重新上锁（复活走 doRevive()，保留棋盘，所以已破的笼 / 冰保持原状）。
+     果冻是格子级状态，restart 要重置；doRevive 保留棋盘，所以不清果冻。 */
+  jellyGrid = initJellyGrid((currentLevelDef() || {}).jellies);
   score = 0; reviveUsed = false;
   boosters = Object.assign({}, BOOSTER_MAX);   /* 道具每关复原 */
   deselect(); boosterMode = null;
