@@ -522,6 +522,18 @@
   .panel-btns { display:flex; gap:10px; justify-content:center; margin-top:18px; flex-wrap:wrap; }
   .panel-btns .btn { font-size:16px; padding:9px 18px; }
 
+  /* 作者面板社交链接：原生 <a> 跳转，不依赖 JS（合规版 CSP 也放行 href）。
+     不用 flex gap —— 基线 Chrome 61 的 flex 容器不支持，间距用 margin。 */
+  .author-social { margin-top:12px; display:flex; justify-content:center; }
+  .social-btn {
+    display:inline-block; padding:8px 20px; border-radius:999px;
+    font-weight:900; font-size:14px; color:#fff; text-decoration:none;
+    box-shadow:0 2px 4px rgba(0,0,0,.18), inset 0 -2px 3px rgba(0,0,0,.15);
+  }
+  .social-btn:active { transform:translateY(1px); }
+  .social-douyin { background:#161823; margin-right:10px; }
+  .social-xhs { background:#ff2442; }
+
   /* 结算面板 */
   #result-stars { text-align:center; font-size:44px; margin:6px 0 2px; letter-spacing:6px; }
   #result-stars .dim { filter:grayscale(1); opacity:.35; }
@@ -873,6 +885,10 @@
       <div class="author-name">奶蛙消消乐</div>
       <div class="author-label" data-i18n="contact_email">联系邮箱</div>
       <div class="author-mail" id="author-mail">chenckx@qq.com</div>
+      <div class="author-social">
+        <a class="social-btn social-douyin" href="https://v.douyin.com/4Cgv0y6hX8I/" target="_blank" rel="noopener">🎵 抖音</a>
+        <a class="social-btn social-xhs" href="https://www.xiaohongshu.com/user/profile/6365232c000000001f019878" target="_blank" rel="noopener">📕 小红书</a>
+      </div>
     </div>
     <div class="panel-btns">
       <button class="btn btn-blue" onclick="copyMail()" data-i18n="copy_email">复制邮箱</button>
