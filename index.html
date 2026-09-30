@@ -975,6 +975,10 @@ const LEVELS = [
     shape: function(r,c){ const dx=(c-3.5)/3.6, dy=(r-3.5)/3.9; return dx*dx+dy*dy <= 1; },
     cages: [ { r:1, c:1 }, { r:6, c:6 } ],
     frozen: [ {r:2,c:3},{r:2,c:4},{r:5,c:3},{r:5,c:4},{r:3,c:1},{r:4,c:6} ],
+    /* 第三关专属胜利插图：naihao 上半身特写（naiwa/over/naihao_head.png，
+       从 naihao.png 裁头+领带段，底边裁切线由 .end-fx.win 的渐隐遮罩淡出）。
+       没写 winImg 的关卡回落到 OVER_IMG.win（亲吻特写）。 */
+    winImg: 'naiwa/over/naihao_head.png',
   },
 ];
 
@@ -2777,7 +2781,9 @@ function showEndFx(win){
   if(!box || !img) return;
   box.classList.remove('win','lose');
   void box.offsetWidth;          /* 强制回流：否则同一张图第二次出现时动画不重播 */
-  img.src = win ? OVER_IMG.win : OVER_IMG.lose;
+  /* 胜利图按关卡取：关卡定义了 winImg 就用它（第三关=奶好），否则回落亲吻特写 */
+  const def = LEVELS[level-1];
+  img.src = win ? ((def && def.winImg) || OVER_IMG.win) : OVER_IMG.lose;
   box.classList.add(win ? 'win' : 'lose');
 }
 
@@ -3049,6 +3055,7 @@ function collectPreloadImages(){
   document.querySelectorAll('img[src]').forEach(im=>{ set[im.getAttribute('src')] = 1; });
   LEVELS.forEach(L=>{ (L.types || []).forEach(t=>{ set[t.img] = 1; }); });
   if(typeof OVER_IMG !== 'undefined'){ set[OVER_IMG.win] = 1; set[OVER_IMG.lose] = 1; }
+  LEVELS.forEach(function(L){ if(L.winImg) set[L.winImg] = 1; });   /* 各关专属胜利插图 */
   return Object.keys(set);
 }
 function preloadImages(list){
