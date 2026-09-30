@@ -609,12 +609,13 @@
      blob 自带立体感 —— 原渐变/圆角/box-shadow 全去掉，投影用 drop-shadow
      跟随 blob 形状；宽高比贴图（2.15:1），pulse/active 反馈保留。 */
   #btn-start {
-    position:relative; z-index:2; border:none; cursor:pointer; font-family:inherit;
+    position:relative; z-index:2; border:none; cursor:pointer; font-family:"Yuanti SC","YouYuan","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
     width:64vw; max-width:280px; height:130px; padding:0;
     background:none; box-shadow:none;
     display:flex; align-items:center; justify-content:center;
-    font-size:30px; font-weight:900; color:#fff; letter-spacing:6px;
-    text-shadow:0 2px 3px rgba(150,80,0,.45);
+    font-size:32px; font-weight:800; color:#fff7e8; letter-spacing:4px;
+    -webkit-text-stroke:2px #b85c12; paint-order:stroke fill;
+    text-shadow:0 3px 0 #e08a1e, 0 6px 10px rgba(120,60,0,.35);
     animation:startPulse 1.4s ease-in-out infinite;
     transition:transform .1s;
   }
@@ -623,7 +624,7 @@
     object-fit:contain; pointer-events:none;
     filter:drop-shadow(0 6px 10px rgba(180,110,0,.35));
   }
-  #btn-start span { position:relative; margin-top:44px; }   /* 眼睛在 blob 上方，文字沉到眼睛下面 */   /* blob 视觉重心偏下，文字随之下沉 */
+  #btn-start span { position:relative; margin-top:25px; }   /* 两字「开始」紧贴眼睛下方，复刻原图布局 */
   #btn-start:active { transform:scale(.94); animation:none; }
   @keyframes startPulse { 0%,100%{ transform:scale(1);} 50%{ transform:scale(1.05);} }
   /* 「选择关卡」次级按钮：比开始游戏小一号，颜色也让位（蓝色系） */
@@ -725,7 +726,7 @@
   <span class="home-bubble" style="bottom:16%;left:20%;animation-delay:1.5s;"><img src="naiwa/1/i.png" alt=""></span>
   <div id="home-logo"><span>奶</span><span>蛙</span><span>消</span><span>消</span><span>乐</span><img class="home-mascot" src="naiwa/start/mascot.png" alt="" draggable="false"></div>
   <div id="home-sub" data-i18n="home_sub">滑 动 消 除 · 轻 松 一 夏</div>
-  <button id="btn-start"><img class="btn-face" src="naiwa/start/start_btn.png" alt="" draggable="false"><span data-i18n="start">开始游戏</span></button>
+  <button id="btn-start"><img class="btn-face" src="naiwa/start/start_btn.png" alt="" draggable="false"><span data-i18n="start">开始</span></button>
   <button id="btn-levels" onclick="openLevels()" data-i18n="pick_level">选择关卡</button>
   <div id="home-level-tag"><span id="home-level-pre">当前进度：第 </span><span id="home-level">1</span><span id="home-level-post"> 关</span></div>
   <div id="home-best"></div>
@@ -955,7 +956,7 @@ const I18N = {
     sec_game:'游戏设置', hint:'提示', anim:'关卡动画', vibe:'震动',
     sec_other:'其他设置', language:'语言', author:'作者',
     home:'返回大厅', restart:'重新开始', resume:'继续游戏',
-    start:'开始游戏', pick_level:'选择关卡',
+    start:'开始', pick_level:'选择关卡',
     home_sub:'滑 动 消 除 · 轻 松 一 夏',
     progress_pre:'当前进度：第 ', progress_post:' 关',
     moves:'步数', level:'关卡', goals:'目标', score:'分数',
