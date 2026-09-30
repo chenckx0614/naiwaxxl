@@ -129,6 +129,20 @@
     pointer-events:none;
   }
   .tile.caged .face img { opacity:0.92; }
+  /* 冰封棋子：不能交换/拖动，可参与匹配；被波及一次破冰（棋子保留）。
+     冰壳挂在 face 的 ::after 上 —— 冰蓝半透 + 斜纹冰裂纹，一眼和牢笼区分开 */
+  .tile.frozen { cursor:not-allowed; }
+  .tile.frozen .face { position:relative; }
+  .tile.frozen .face::after {
+    content:""; position:absolute; inset:2px; border-radius:50%;
+    border:3px solid rgba(120,180,235,.85);
+    background:
+      repeating-linear-gradient(45deg, transparent, transparent 6px, rgba(160,210,245,.4) 6px, rgba(160,210,245,.4) 9px),
+      repeating-linear-gradient(-45deg, transparent, transparent 8px, rgba(200,235,255,.3) 8px, rgba(200,235,255,.3) 11px),
+      rgba(195,228,252,.5);
+    pointer-events:none;
+  }
+  .tile.frozen .face img { opacity:0.85; }
   /* 设置里关闭「动画」时全局禁用过渡 */
   .no-anim .tile, .no-anim .tile .face { transition:none !important; }
   /* 跟手拖动中：抬起放大 + 置于最上层。位移仍由 JS 直接写 transform，
@@ -624,7 +638,7 @@
     object-fit:contain; pointer-events:none;
     filter:drop-shadow(0 6px 10px rgba(180,110,0,.35));
   }
-  #btn-start span { position:relative; margin-top:25px; }   /* 两字「开始」紧贴眼睛下方，复刻原图布局 */
+  #btn-start span { position:relative; }   /* 「开始」水平垂直居中，与下方「选择关卡」按钮一致 */
   #btn-start:active { transform:scale(.94); animation:none; }
   @keyframes startPulse { 0%,100%{ transform:scale(1);} 50%{ transform:scale(1.05);} }
   /* 「选择关卡」次级按钮：比开始游戏小一号，颜色也让位（蓝色系） */
@@ -879,7 +893,10 @@
  * 图标占位说明：TYPES 数组即消除图标。之后换成自定义图片时，
  * 只需把 emoji 换成 <img> 或背景图渲染即可（见 renderTileFace）。
  * ============================================================ */
-const COLS = 7, ROWS = 7;
+/* 棋盘行列数：默认 7×7，第三关是 8×8 —— startLevel() 会按关卡的 rows/cols 覆盖。
+   全部引用都是运行时读（循环边界 / 索引计算 / 越界判断），没有闭包缓存，
+   所以可以用 let 随关卡切换。 */
+let ROWS = 7, COLS = 7;
 
 /* ============================================================
  * 关卡表 —— 加新关卡只改这里
@@ -928,6 +945,37 @@ const LEVELS = [
     shape: function(r,c){ return Math.abs(r-3)+Math.abs(c-3) <= 3; },
     cage: { r:3, c:3 },
   },
+
+  /* 第三关：椭圆棋盘 + 冰封棋子 + 双牢笼 + 彩色底座。
+     棋盘为 8×8 内的椭圆 ((c-3.5)/3.6)² + ((r-3.5)/3.9)² <= 1，共 48 格；
+     椭圆每列都是连续区间，下落逻辑按列重排不会跨洞 —— 所以形状不能用带洞的
+     沙漏 / 十字，那会让 c0 / c7 列出现上下两段，棋子会跨洞掉落。
+     5 个新素材（naiwa/3/）全是黄色系，肉眼难分，因此 types 声明 bg 字段：
+     每枚棋子的圆形 face 画一层淡色底座，靠底色快速区分（只第三关启用）。
+     新玩法①冰封（frozen）：开局 6 枚棋子带冰壳，不能交换 / 拖动，但可参与匹配；
+     被匹配线 / 道具 / 特殊棋子波及一次即破冰，棋子本体保留（见 thawFrozen）。
+     新玩法②双牢笼（cages）：牢笼从单格升级为数组，摆在左上 / 右下对角角落 ——
+     角落棋子天然难消除，牢笼压制感最强。消除状态挂在棋子上（t.caged），
+     两个牢笼各自独立可破。
+     难度：5 种图标比第二关多一种，48 格大棋盘 + 22 步 + 收集总量 49，
+     比第二关（25 格 / 20 步 / 43 目标 / 单牢笼）整体更难。 */
+  {
+    no: 3,
+    rows: 8,
+    cols: 8,
+    moves: 22,
+    needs: [20, 16, 13],
+    types: [
+      { key:'a3', img:'naiwa/3/a3.png', color:'#7ed957', bg:'#e4f6d5' },
+      { key:'b3', img:'naiwa/3/b3.png', color:'#3f9ddb', bg:'#d9edfa' },
+      { key:'c3', img:'naiwa/3/c3.png', color:'#d85a30', bg:'#fce3d2' },
+      { key:'d3', img:'naiwa/3/d3.png', color:'#8b7fe8', bg:'#e9e7fa' },
+      { key:'e3', img:'naiwa/3/e3.png', color:'#cf4a52', bg:'#fadcdc' },
+    ],
+    shape: function(r,c){ const dx=(c-3.5)/3.6, dy=(r-3.5)/3.9; return dx*dx+dy*dy <= 1; },
+    cages: [ { r:1, c:1 }, { r:6, c:6 } ],
+    frozen: [ {r:2,c:3},{r:2,c:4},{r:5,c:3},{r:5,c:4},{r:3,c:1},{r:4,c:6} ],
+  },
 ];
 
 /* 关卡选择面板至少铺这么多格，超出的格子显示为「敬请期待」 */
@@ -974,6 +1022,7 @@ const I18N = {
     aim_bomb:'点击爆炸中心（3×3）',
     reshuffled:'棋盘已重排',
     cage_break:'牢笼已破，这一格可以动了！',
+    ice_break:'冰已碎裂！',
     level_wip:'第 {n} 关还在制作中，敬请期待',
     copied:'已复制：{s}',
     email_is:'邮箱：{s}',
@@ -1015,6 +1064,7 @@ const I18N = {
     aim_bomb:'Tap the center of a 3×3 blast',
     reshuffled:'Board reshuffled',
     cage_break:'Cage broken — this cell is free!',
+    ice_break:'Ice shattered!',
     level_wip:'Level {n} is still in the works',
     copied:'Copied: {s}',
     email_is:'Email: {s}',
@@ -1213,11 +1263,13 @@ let busy = false;          // 动画/连锁中锁输入
 let gameOver = false;        // 本局已结算，禁止棋盘交互
 let boosterMode = null;    // 'hammer' | 'bomb' | null
 let activeShape = null;    // 当前关卡形状函数 (r,c)=>boolean；null 表示 7×7 全满
-let cagePos = null;        // {r,c} 当前牢笼位置；null 表示无牢笼
-/* 牢笼是否还在。必须和 cagePos 分开记：牢笼只在开局的那一枚棋子上，
-   棋子被消掉之后这一格就该恢复成普通格 —— 如果只按坐标判定（cagePos 永不清空），
-   牢笼被消掉后那一格会永久锁死，左右的棋子永远换不进去。 */
-let cageAlive = false;
+/* 第三关起牢笼可以是多个：cageList 是坐标数组，旧关卡的单 cage 字段也会被收进数组。
+   「牢笼是否还在」不再用全局开关 —— 状态直接挂在每枚棋子的 t.caged 上，
+   被消掉即解锁（t.caged=false），重开时 newBoard() 按 cageList 重新上锁。
+   旧写法（cagePos + cageAlive 全局布尔）在多牢笼下无法表达
+   「破了一个还剩一个」，所以第三关起改棋子级状态。 */
+let cageList = [];         // 本关牢笼格 [{r,c},...]
+let frozenList = [];       // 本关冰封格 [{r,c},...]：棋子不可动，被波及一次破冰保留
 /* 每关道具的初始数量。restart() 会按这份模板复原 ——
    之前只在初始化时赋过一次值，用掉的道具重开 / 切关都不会回来，
    玩家玩几局后道具就永久耗尽，必须刷新页面才能恢复。 */
@@ -1270,9 +1322,17 @@ const $ = s => document.querySelector(s);
 
 /* 当前格是否在当前关卡棋盘内（激活格） */
 function isActive(r,c){ return r>=0 && r<ROWS && c>=0 && c<COLS && (!activeShape || activeShape(r,c)); }
-/* 当前格是否是牢笼 */
-/* 当前格是否是牢笼。cageAlive 为假时（牢笼棋子已被消掉）这一格就是普通格 */
-function isCage(r,c){ return cageAlive && cagePos && cagePos.r===r && cagePos.c===c; }
+/* 该坐标是不是本关的牢笼 / 冰封格。只在 newBoard() 建棋子时用来上锁；
+   运行时判定一律读棋子自身的 t.caged / t.frozen —— 破笼 / 破冰后
+   棋子状态翻 false，这一格自动恢复普通格，不需要任何全局开关。 */
+function isCage(r,c){
+  for(let i=0;i<cageList.length;i++){ const p=cageList[i]; if(p.r===r && p.c===c) return true; }
+  return false;
+}
+function isFrozenCell(r,c){
+  for(let i=0;i<frozenList.length;i++){ const p=frozenList[i]; if(p.r===r && p.c===c) return true; }
+  return false;
+}
 /* 遍历当前关卡所有激活格 */
 function forEachActive(fn){
   for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++) if(isActive(r,c)) fn(r,c);
@@ -1842,7 +1902,11 @@ function layoutBoard(){
 function pos(r,c){ return { x: gap + c*(cell+gap), y: gap + r*(cell+gap) }; }
 
 function renderTileFace(t){
-  t.el.firstChild.innerHTML = `<img src="${TYPES[t.type].img}" alt="" draggable="false">`;
+  const f = t.el.firstChild;
+  f.innerHTML = `<img src="${TYPES[t.type].img}" alt="" draggable="false">`;
+  /* 彩色底座：只给声明了 bg 的类型画（第三关 5 个角色全是黄色，靠底色区分）。
+     写在 renderTileFace 里，洗牌换 type 后底座自动跟着换；无 bg 的关卡置空。 */
+  f.style.background = (TYPES[t.type] && TYPES[t.type].bg) || '';
 }
 
 /* ---------- 位移 ----------
@@ -1930,15 +1994,16 @@ function makeTile(r, c, type, spawnRows=0, dur){
      不会出现全棋盘同步起伏的诡异整齐感 */
   face.style.animationDelay = (-(Math.random() * 2.6)).toFixed(2) + 's';
   el.appendChild(face);
-  const t = { type, el, r, c, caged: isCage(r,c) };
+  const t = { type, el, r, c, caged: isCage(r,c), frozen: isFrozenCell(r,c) };
   if(t.caged) el.classList.add('caged');
+  if(t.frozen) el.classList.add('frozen');
   renderTileFace(t);
   el.addEventListener('pointerdown', e => {
     e.preventDefault();
     /* 注意：必须记录棋子对象本身，运行时读取 t.r/t.c。
        用闭包里的 r/c 会在棋子移动后指向旧格子（滑动错位的根因）。 */
-    /* 牢笼棋子不能被拖动，但可以被点击（点选逻辑会忽略它） */
-    if(t.caged){ drag = null; return; }
+    /* 牢笼 / 冰封棋子不能被拖动，但可以被点击（点选逻辑会忽略它） */
+    if(t.caged || t.frozen){ drag = null; return; }
     /* 按下先把 transform 钉到当前格子的落点：上一段位移动画可能还在跑，
        跟手位移需要一个确定的基准，否则会叠在动画的中间值上 */
     const base = pos(t.r, t.c);
@@ -2073,11 +2138,13 @@ function findMatchInfo(){
 
 function findMove(){
   for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++){
-    if(!isActive(r,c) || isCage(r,c) || !board[r][c]) continue;
+    const t0 = isActive(r,c) ? board[r][c] : null;
+    if(!t0 || t0.caged || t0.frozen) continue;
     for(const [dr,dc] of [[0,1],[1,0]]){
       const r2=r+dr, c2=c+dc;
-      if(r2<0||r2>=ROWS||c2<0||c2>=COLS||!isActive(r2,c2)||isCage(r2,c2)) continue;
-      if(!board[r2][c2]) continue;
+      if(r2<0||r2>=ROWS||c2<0||c2>=COLS||!isActive(r2,c2)) continue;
+      const t2 = board[r2][c2];
+      if(!t2 || t2.caged || t2.frozen) continue;
       const tmp = board[r][c]; board[r][c] = board[r2][c2]; board[r2][c2] = tmp;
       const ok = findMatches().size>0;
       const tmp2 = board[r][c]; board[r][c] = board[r2][c2]; board[r2][c2] = tmp2;
@@ -2127,7 +2194,30 @@ function clearTiers(hit, info, exclude){
    索引就是档位：0 普通 / 1 四连 / 2 五连。 */
 const TIER_MUL = [1, 1.5, 2.5];
 
+/* 冰封豁免：进入消除流程先把 hit 里的冰封棋子一律改成「破冰保留」。
+   冰封棋子不能主动交换，只会被匹配线 / 道具 / 特殊棋子波及 —— 波及一次冰壳即碎，
+   棋子本体留在原地（board 不清空），之后恢复普通棋子。
+   必须放在 clearSet 最开头：长连生成 / 分档计分 / 收集统计 / 消除全链路
+   都拿的是同一个 hit，这里先剔掉冰封格，后面就再也不用各自防一遍。 */
+function thawFrozen(hit){
+  var broke = false;
+  var drop = [];
+  hit.forEach(function(i){
+    var r=(i/COLS)|0, c=i%COLS, t=board[r] && board[r][c];
+    if(t && t.frozen){
+      t.frozen = false;
+      t.el.classList.remove('frozen');
+      if(settings.anim) burst(r, c, '#9fd4f5');
+      drop.push(i);
+      broke = true;
+    }
+  });
+  drop.forEach(function(i){ hit.delete(i); });
+  if(broke) toast(T('ice_break'));
+}
+
 async function clearSet(hit, combo, info){
+  thawFrozen(hit);
   /* 长连生成特殊棋子：>=4 的连线中心格保留一枚（不消除），换成带效果的特殊棋子。
      这些格子从消除/特效名单里剔除（clearTiers 的 exclude），分数也不计 ——
      它没有消掉，糖果传奇同款规则。两条 run 选中同一格时只生成一次。 */
@@ -2184,7 +2274,9 @@ async function clearSet(hit, combo, info){
     }
     /* 牢笼棋子被消掉 → 这一格解锁，落下来的新棋子是普通棋子，
        左右邻居从此可以往这里换。只在开局那一枚上生效，不会重新上锁。 */
-    if(t.caged){ cageAlive = false; toast(T('cage_break')); }
+    /* 牢笼棋子被消掉 → 解锁：状态翻在棋子身上（多牢笼彼此独立，破一个不影响别的），
+       落下来的新棋子是普通棋子，左右邻居从此可以往这里换。不会重新上锁。 */
+    if(t.caged){ t.caged = false; t.el.classList.remove('caged'); toast(T('cage_break')); }
     /* 格子数据立刻清空，上方棋子马上就能往下走；DOM 留在原地把动画播完再自己
        收走。消除的收缩与上方的下落因此重叠在一起，中间不留空档。
        无动画模式下没有 pop 可播，直接移除。 */
@@ -2396,7 +2488,7 @@ function adjacent(a,b){ return Math.abs(a.r-b.r)+Math.abs(a.c-b.c)===1; }
 async function trySwap(a, b){
   if(busy || gameOver) return;
   const ta = board[a.r][a.c], tb = board[b.r][b.c];
-  if((ta && ta.caged) || (tb && tb.caged)) return;
+  if((ta && (ta.caged || ta.frozen)) || (tb && (tb.caged || tb.frozen))) return;
   /* 彩球交换：不凑匹配直接引爆全场同色（双彩球全清）。先换位再交给 rainbowSwap ——
      它会在换位后的棋盘上重新辨认彩球在哪一边。 */
   if((ta && ta.effect === 'rainbow') || (tb && tb.effect === 'rainbow')){
@@ -2489,12 +2581,15 @@ window.addEventListener('pointermove', e => {
   const [dr, dc] = Math.abs(dx) > Math.abs(dy) ? [0, Math.sign(dx)] : [Math.sign(dy), 0];
   const a = { r: drag.t.r, c: drag.t.c };
   const b = { r: a.r + dr, c: a.c + dc };
-  /* 目标格不可去（棋盘外 / 菱形缺角 / 牢笼）：棋子弹回原位，但**这次手势不作废** ——
+  /* 目标格不可去（棋盘外 / 椭圆缺角 / 牢笼 / 冰封）：棋子弹回原位，但**这次手势不作废** ——
      把基准点挪到当前位置，玩家手指不抬起来、接着往别的方向滑仍然生效。
      旧写法在这里顺手 drag.used = true，结果「朝牢笼滑一下之后整只手势就失灵了」：
      先右滑撞牢笼、再左滑完全没反应，玩家只能松手重按。
-     菱形棋盘中央紧邻牢笼的那两格最容易踩到这个坑，所以必须先归位再重置基准。 */
-  if(b.r < 0 || b.r >= ROWS || b.c < 0 || b.c >= COLS || !isActive(b.r,b.c) || isCage(b.r,b.c)){
+     菱形棋盘中央紧邻牢笼的那两格最容易踩到这个坑，所以必须先归位再重置基准。
+     牢笼 / 冰封判定读目标格棋子状态（tb2.caged / tb2.frozen），
+     破笼 / 破冰后这一格自动恢复可换。 */
+  const tb2 = (b.r >= 0 && b.r < ROWS && b.c >= 0 && b.c < COLS && isActive(b.r,b.c)) ? board[b.r][b.c] : null;
+  if(!tb2 || tb2.caged || tb2.frozen){
     returnTile(drag);
     bumpTile(drag.t);
     drag.x = e.clientX; drag.y = e.clientY;
@@ -2526,7 +2621,7 @@ window.addEventListener('pointercancel', () => {
 
 function swapTiles(a, b){
   const ta = board[a.r][a.c], tb = board[b.r][b.c];
-  if((ta && ta.caged) || (tb && tb.caged)) return;
+  if((ta && (ta.caged || ta.frozen)) || (tb && (tb.caged || tb.frozen))) return;
   board[a.r][a.c] = tb; board[b.r][b.c] = ta;
   placeTile(ta, b.r, b.c); placeTile(tb, a.r, a.c);
 }
@@ -2737,8 +2832,9 @@ function startLevel(no){
   level = def.no;
   TYPES = def.types;
   activeShape = def.shape || null;
-  cagePos = def.cage || null;
-  cageAlive = !!cagePos;          /* 进关即重新上锁 */
+  ROWS = def.rows || 7; COLS = def.cols || 7;
+  cageList = def.cages || (def.cage ? [def.cage] : []);
+  frozenList = def.frozen || [];
   document.querySelectorAll('.overlay').forEach(o=>o.classList.remove('show'));
   $('#home').classList.add('hide');
   refreshHome();
@@ -2753,10 +2849,8 @@ function nextLevel(){
 function restart(){
   gameOver = false;
   hideEndFx();
-  /* 重开要把牢笼重新上锁 —— newBoard() 会按 isCage() 决定哪一枚是牢笼，
-     这里漏了的话，被打碎过牢笼之后再点「重新开始」就没有牢笼了。
-     （复活走的是 doRevive()，保留棋盘，所以牢笼保持已破状态。） */
-  cageAlive = !!cagePos;
+  /* 牢笼 / 冰封不用在这里重置 —— newBoard() 重建棋子时会按 cageList / frozenList
+     重新上锁（复活走 doRevive()，保留棋盘，所以已破的笼 / 冰保持原状）。 */
   score = 0; reviveUsed = false;
   boosters = Object.assign({}, BOOSTER_MAX);   /* 道具每关复原 */
   deselect(); boosterMode = null;
