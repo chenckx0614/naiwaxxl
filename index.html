@@ -419,6 +419,16 @@
     animation:endWinIn 2s cubic-bezier(.22,.9,.28,1) both;
   }
   @keyframes endWinIn { from { opacity:0; transform:translateY(16px) scale(.92); } to { opacity:1; transform:none; } }
+  /* 第三关奶好全身：插图完整展示（全身+椅子），面板整体下移让出上方空间。
+     面板下移用 margin-top 覆盖 auto（左右仍 auto 居中）—— 不能用 transform，
+     panel 的 panelIn 入场动画写 transform，会被动画关键帧覆盖掉。 */
+  #result-overlay.alt .panel { margin-top:52vh; }
+  .end-fx.win.alt img {
+    margin:1.5vh 0 0;
+    max-height:calc(52vh - 70px);
+    /* 全身图底边是完整的椅子，不是裁切线 —— 去掉渐隐遮罩，完整呈现 */
+    -webkit-mask-image:none; mask-image:none;
+  }
   /* 输：腿从屏幕右边慢慢伸出来，图片右边界贴在屏幕右边缘 */
   .end-fx.lose img {
     visibility:visible; position:absolute; right:0; bottom:3vh;
@@ -975,10 +985,10 @@ const LEVELS = [
     shape: function(r,c){ const dx=(c-3.5)/3.6, dy=(r-3.5)/3.9; return dx*dx+dy*dy <= 1; },
     cages: [ { r:1, c:1 }, { r:6, c:6 } ],
     frozen: [ {r:2,c:3},{r:2,c:4},{r:5,c:3},{r:5,c:4},{r:3,c:1},{r:4,c:6} ],
-    /* 第三关专属胜利插图：naihao 上半身特写（naiwa/over/naihao_head.png，
-       从 naihao.png 裁头+领带段，底边裁切线由 .end-fx.win 的渐隐遮罩淡出）。
-       没写 winImg 的关卡回落到 OVER_IMG.win（亲吻特写）。 */
-    winImg: 'naiwa/over/naihao_head.png',
+    /* 第三关专属胜利插图：naihao 全身原图（端坐+椅子完整展示）。
+       alt 布局见 .end-fx.win.alt —— 插图占上方整块空间，面板整体下移让位。
+       没写 winImg 的关卡回落到 OVER_IMG.win（亲吻特写，面板保持居中）。 */
+    winImg: 'naiwa/over/naihao.png',
   },
 ];
 
@@ -2773,7 +2783,9 @@ const OVER_IMG = { win:'naiwa/over/naikiss_head.png', lose:'naiwa/over/naizu.png
 
 function hideEndFx(){
   const box = $('#end-fx');
-  if(box) box.classList.remove('win','lose');
+  if(box) box.classList.remove('win','lose','alt');
+  const ov = document.getElementById('result-overlay');
+  if(ov) ov.classList.remove('alt');
 }
 
 function showEndFx(win){
@@ -2781,10 +2793,15 @@ function showEndFx(win){
   if(!box || !img) return;
   box.classList.remove('win','lose');
   void box.offsetWidth;          /* 强制回流：否则同一张图第二次出现时动画不重播 */
-  /* 胜利图按关卡取：关卡定义了 winImg 就用它（第三关=奶好），否则回落亲吻特写 */
+  /* 胜利图按关卡取：关卡定义了 winImg 就用它（第三关=奶好全身），否则回落亲吻特写。
+     alt 模式：插图全身展示、面板下移让位（见 .end-fx.win.alt）；关面板时一起清。 */
   const def = LEVELS[level-1];
+  const alt = !!(win && def && def.winImg);
   img.src = win ? ((def && def.winImg) || OVER_IMG.win) : OVER_IMG.lose;
+  box.classList.toggle('alt', alt);
   box.classList.add(win ? 'win' : 'lose');
+  const ov = document.getElementById('result-overlay');
+  if(ov) ov.classList.toggle('alt', alt);
 }
 
 function showResult(win, stars){
