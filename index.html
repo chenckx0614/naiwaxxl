@@ -421,10 +421,14 @@
   @keyframes endWinIn { from { opacity:0; transform:translateY(16px) scale(.92); } to { opacity:1; transform:none; } }
   /* 第三关奶好全身：插图完整展示（全身+椅子），面板整体下移让出上方空间。
      面板下移用 margin-top 覆盖 auto（左右仍 auto 居中）—— 不能用 transform，
-     panel 的 panelIn 入场动画写 transform，会被动画关键帧覆盖掉。 */
+     panel 的 panelIn 入场动画写 transform，会被动画关键帧覆盖掉。
+     插图用绝对定位把**底边钉在面板标题上方 8px**：宽屏矮视口下图受 94vw
+     约束长不满时，若跟着 flex 顶部对齐，图底与面板之间会撑出大空隙 ——
+     锚定底边后空隙恒定，视口变化只影响图往上长多高。 */
   #result-overlay.alt .panel { margin-top:52vh; }
   .end-fx.win.alt img {
-    margin:1.5vh 0 0;
+    position:absolute; left:0; right:0; margin:auto;   /* 水平居中 */
+    bottom:calc(48vh + 32px);       /* 图底 = 52vh-32，恰在标题顶(52vh-24)上方 8px */
     max-height:calc(52vh - 70px);
     /* 全身图底边是完整的椅子，不是裁切线 —— 去掉渐隐遮罩，完整呈现 */
     -webkit-mask-image:none; mask-image:none;
