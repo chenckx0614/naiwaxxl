@@ -8,18 +8,18 @@
                 'always' 每次进游戏都弹（慎用，容易烦人）
    - title / body: 双语写 { zh:'', en:'' }；只写一种语言就直接给字符串
    - body 里的 \n 是换行
-   - img:   可选配图 URL，留空不显示（图放仓库里用相对路径，如 'naiwa/over/naihao.png'）
+   - img:（图放仓库里用相对路径，如 'naiwa/over/naihao.png'）
    - btn:   可选跳转按钮 { text:{zh:'',en:''}, url:'https://...' }，不需要就 null
    ============================================================ */
 window.XXL_NOTICE = {
   enabled: true,
-  id: 'welcome1',
-  frequency: 'once',
+  id: 'cny2026',
+  frequency: 'always',
   title: { zh:'公告', en:'Notice' },
   body: {
-    zh:'欢迎来到奶蛙消消乐！\n\n之后的节日活动、版本更新、福利预告，都会在这里第一时间通知大家。',
-    en:'Welcome to Naiwa Match!\n\nEvents, updates and goodies will be announced here first.'
+    zh:'祝大家国庆节快乐！',
+    en:'Wish everyone a happy National Day!'
   },
-  img: '',
+  img: 'naiwa/activity/gqj.png',
   btn: null
 };
