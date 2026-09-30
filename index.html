@@ -480,7 +480,7 @@
 
   /* 英文文案普遍比中文宽，逐处收一档字号/字距，避免按钮和标题溢出 */
   html[lang="en"] #home-sub { letter-spacing:3px; font-size:16px; }
-  html[lang="en"] #btn-start { font-size:24px; letter-spacing:3px; padding:18px 46px; }
+  html[lang="en"] #btn-start { font-size:24px; letter-spacing:3px; }
   html[lang="en"] #btn-levels { font-size:17px; letter-spacing:2px; padding:11px 34px; }
   html[lang="en"] .panel-title { font-size:22px; padding:6px 24px; }
   html[lang="en"] #result-text { font-size:16px; }
@@ -570,7 +570,20 @@
   .home-bubble img { width:50px; height:50px; object-fit:contain; display:block; }
   @keyframes bubbleFloat { 0%,100%{ transform:translateY(0) rotate(-6deg);} 50%{ transform:translateY(-18px) rotate(6deg);} }
 
-  #home-logo { display:flex; gap:4px; margin-bottom:8px; z-index:2; }
+  #home-logo { display:flex; gap:4px; margin-bottom:8px; z-index:2; position:relative; }
+  /* 吉祥物：站在标题右侧的透明底立绘，轻微摇摆。
+     z-index:-1 垫在标题字后（logo 的 z-index:2 建立 stacking context），
+     探出的部分压住一点字，有「融进标题」的感觉。 */
+  #home-logo .home-mascot {
+    position:absolute; right:-26px; bottom:-8px; width:clamp(72px, 19vw, 94px);
+    z-index:-1; pointer-events:none;
+    filter:drop-shadow(0 6px 8px rgba(60,110,60,.35));
+    animation:mascotSway 2.6s ease-in-out infinite;
+  }
+  @keyframes mascotSway {
+    0%,100% { transform:rotate(-2deg) translateY(0); }
+    50% { transform:rotate(2.5deg) translateY(-8px); }
+  }
   #home-logo span {
     font-size:clamp(44px, 13vw, 68px); font-weight:900; font-family:"PingFang SC","Microsoft YaHei",sans-serif;
     -webkit-text-stroke:3px #fff; paint-order:stroke fill;
@@ -592,16 +605,25 @@
     z-index:2; margin-top:18px; background:rgba(255,255,255,.85); color:#2f6fd0; font-weight:900;
     padding:6px 22px; border-radius:999px; font-size:16px; box-shadow:0 3px 6px rgba(60,100,170,.25);
   }
+  /* 开始按钮：手绘 blob 图（naiwa/start/start_btn.png）铺底，文字叠在图上。
+     blob 自带立体感 —— 原渐变/圆角/box-shadow 全去掉，投影用 drop-shadow
+     跟随 blob 形状；宽高比贴图（2.15:1），pulse/active 反馈保留。 */
   #btn-start {
-    z-index:2; border:none; cursor:pointer; font-family:inherit;
+    position:relative; z-index:2; border:none; cursor:pointer; font-family:inherit;
+    width:64vw; max-width:280px; height:130px; padding:0;
+    background:none; box-shadow:none;
+    display:flex; align-items:center; justify-content:center;
     font-size:30px; font-weight:900; color:#fff; letter-spacing:6px;
-    padding:18px 62px; border-radius:999px;
-    background:linear-gradient(#ffcf5c,#ff9d1b);
-    box-shadow:0 6px 0 #d97b00, inset 0 3px 3px rgba(255,255,255,.6), 0 12px 24px rgba(180,110,0,.35);
     text-shadow:0 2px 3px rgba(150,80,0,.45);
     animation:startPulse 1.4s ease-in-out infinite;
     transition:transform .1s;
   }
+  #btn-start .btn-face {
+    position:absolute; left:0; top:0; width:100%; height:100%;
+    object-fit:contain; pointer-events:none;
+    filter:drop-shadow(0 6px 10px rgba(180,110,0,.35));
+  }
+  #btn-start span { position:relative; margin-top:16px; }   /* blob 视觉重心偏下，文字随之下沉 */
   #btn-start:active { transform:scale(.94); animation:none; }
   @keyframes startPulse { 0%,100%{ transform:scale(1);} 50%{ transform:scale(1.05);} }
   /* 「选择关卡」次级按钮：比开始游戏小一号，颜色也让位（蓝色系） */
@@ -701,9 +723,9 @@
   <span class="home-bubble" style="top:58%;left:9%;animation-delay:1.1s;"><img src="naiwa/1/f.png" alt=""></span>
   <span class="home-bubble" style="top:48%;right:10%;animation-delay:.3s;"><img src="naiwa/1/g.png" alt=""></span>
   <span class="home-bubble" style="bottom:16%;left:20%;animation-delay:1.5s;"><img src="naiwa/1/i.png" alt=""></span>
-  <div id="home-logo"><span>奶</span><span>蛙</span><span>消</span><span>消</span><span>乐</span></div>
+  <div id="home-logo"><span>奶</span><span>蛙</span><span>消</span><span>消</span><span>乐</span><img class="home-mascot" src="naiwa/start/mascot.png" alt="" draggable="false"></div>
   <div id="home-sub" data-i18n="home_sub">滑 动 消 除 · 轻 松 一 夏</div>
-  <button id="btn-start" data-i18n="start">开始游戏</button>
+  <button id="btn-start"><img class="btn-face" src="naiwa/start/start_btn.png" alt="" draggable="false"><span data-i18n="start">开始游戏</span></button>
   <button id="btn-levels" onclick="openLevels()" data-i18n="pick_level">选择关卡</button>
   <div id="home-level-tag"><span id="home-level-pre">当前进度：第 </span><span id="home-level">1</span><span id="home-level-post"> 关</span></div>
   <div id="home-best"></div>
