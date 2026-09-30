@@ -552,6 +552,11 @@
   .social-douyin { background:#161823; margin-right:10px; }
   .social-xhs { background:#ff2442; }
 
+  /* 公告弹窗：正文 pre-line 让 notice.js 里的 \n 直接生效；图/按钮默认隐藏，有内容才显示 */
+  .notice-body { white-space:pre-line; font-size:16px; line-height:1.65; color:#3a4a63; font-weight:700; text-align:center; padding:0 8px; }
+  .notice-img { display:none; width:100%; border-radius:12px; margin-top:12px; }
+  .notice-btn { display:none; margin-top:12px; text-decoration:none; }
+
   /* 结算面板 */
   #result-stars { text-align:center; font-size:44px; margin:6px 0 2px; letter-spacing:6px; }
   #result-stars .dim { filter:grayscale(1); opacity:.35; }
@@ -915,6 +920,20 @@
   </div>
 </div>
 
+<!-- 公告弹窗：内容由 notice.js 配置（改公告只改那个文件），启动时按频率弹出 -->
+<div class="overlay" id="notice-overlay">
+  <div class="panel">
+    <div class="panel-title"><span class="star">⭐</span><span id="notice-title">公告</span><span class="star">⭐</span></div>
+    <button class="panel-close" data-close="notice-overlay">✕</button>
+    <div class="notice-body" id="notice-body"></div>
+    <img class="notice-img" id="notice-img" alt="" draggable="false">
+    <a class="btn btn-orange notice-btn" id="notice-btn" target="_blank" rel="noopener"></a>
+    <div class="panel-btns">
+      <button class="btn btn-blue" data-close="notice-overlay" data-i18n="notice_ok">知道了</button>
+    </div>
+  </div>
+</div>
+
 <!-- 结算弹窗 -->
 <div class="overlay" id="result-overlay">
   <!-- 结算插图：赢 → 屏幕正中浮现；输 → 从右边伸出来。在面板之前，所以层级在面板下面 -->
@@ -935,6 +954,7 @@
 
 <div id="toast"></div>
 
+<script src="notice.js"></script>
 <script>
 /* ============================================================
  * 消消乐核心逻辑
@@ -1081,6 +1101,7 @@ const I18N = {
     sec_game:'游戏设置', hint:'提示', anim:'关卡动画', vibe:'震动',
     sec_other:'其他设置', language:'语言', author:'作者',
     home:'返回大厅', restart:'重新开始', resume:'继续游戏',
+    notice_ok:'知道了', notice:'公告',
     start:'开始', pick_level:'选择关卡',
     home_sub:'滑 动 消 除 · 轻 松 一 夏',
     progress_pre:'当前进度：第 ', progress_post:' 关',
@@ -1124,6 +1145,7 @@ const I18N = {
     sec_game:'Gameplay', hint:'Hints', anim:'Animations', vibe:'Vibration',
     sec_other:'More', language:'Language', author:'Author',
     home:'Home', restart:'Restart', resume:'Resume',
+    notice_ok:'OK', notice:'Notice',
     start:'Start Game', pick_level:'Levels',
     home_sub:'Swipe · Match · Relax',
     progress_pre:'Level ', progress_post:' · Current Progress',
@@ -3228,6 +3250,8 @@ const PRELOAD = {
       el.classList.add('done');
       setTimeout(function(){ el.style.display = 'none'; }, 500);
     }, 300);
+    /* 进首页后弹公告：等 loader 淡出完再弹，避免两个浮层打架 */
+    setTimeout(function(){ try { maybeShowNotice(); } catch(e){} }, 900);
   },
   /* 兜底：个别资源挂起（代理卡住 / 弱网无响应）时不永久黑屏 */
   force: function(){ this.done = this.total; this.reveal(); }
@@ -3266,6 +3290,47 @@ newBoard();
 scheduleHint();
 applyLang();     /* 铺文案 + 高亮语言分段控件 + 刷新开始页/关卡面板/顶部栏 */
 applyVolumes();  /* 把存档音量回填到滑块（音频链在 initAudio 里初始化） */
+
+/* ---------- 公告弹窗（内容由 notice.js 配置） ---------- */
+/* 读公告字段：双语对象 {zh,en} 按当前语言取，纯字符串原样返回 */
+function noticePick(v){
+  return (v && typeof v === 'object') ? (v[lang] || v.zh || v.en || '') : (v || '');
+}
+function noticeSeenKey(id){ return 'notice_seen_' + (id || ''); }
+function shouldShowNotice(){
+  const N = window.XXL_NOTICE;
+  if(!N || !N.enabled || !N.body) return false;
+  if(N.frequency === 'always') return true;
+  let seen = null;
+  try { seen = localStorage.getItem(noticeSeenKey(N.id)); } catch(e){}
+  if(N.frequency === 'daily') return seen !== new Date().toDateString();
+  return !seen;                                  /* once：这个 id 没弹过才弹 */
+}
+function markNoticeSeen(){
+  const N = window.XXL_NOTICE;
+  if(!N) return;
+  try {
+    localStorage.setItem(noticeSeenKey(N.id),
+      N.frequency === 'daily' ? new Date().toDateString() : '1');
+  } catch(e){}
+}
+function maybeShowNotice(){
+  if(!shouldShowNotice()) return;
+  const N = window.XXL_NOTICE;
+  $('#notice-title').textContent = noticePick(N.title) || T('notice');
+  $('#notice-body').textContent = noticePick(N.body);
+  const im = $('#notice-img');
+  if(N.img){ im.src = N.img; im.style.display = 'block'; }
+  else { im.style.display = 'none'; im.removeAttribute('src'); }
+  const btn = $('#notice-btn');
+  if(N.btn && N.btn.url){
+    btn.href = N.btn.url;
+    btn.textContent = noticePick(N.btn.text) || N.btn.url;
+    btn.style.display = 'inline-block';
+  } else { btn.style.display = 'none'; btn.removeAttribute('href'); }
+  $('#notice-overlay').classList.add('show');
+  markNoticeSeen();    /* 显示即记：once 弹过就算，不纠结玩家怎么关的 */
+}
 
 /* root 专属：外部 mp3 预加载计入加载进度（发行差异 —— minitool 音频 base64
    内嵌、脚本执行完即素材就绪，无需此段）。<audio> 是惰性加载的，不等就位
