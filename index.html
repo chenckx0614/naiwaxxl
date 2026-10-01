@@ -3361,7 +3361,8 @@ function maybeShowNotice(){
   markNoticeSeen();    /* 显示即记：once 弹过就算，不纠结玩家怎么关的 */
 }
 
-/* ---------- 分享战绩卡（canvas 纯绘制，不引照片素材 → 无跨域污染，toDataURL 稳） ---------- */
+/* ---------- 分享战绩卡（canvas 绘制；吉祥物图同源加载，file:// 下 canvas 会被污染，
+   toDataURL 抛错时自动退回无图版 —— 游戏线上跑 http/https，不受影响） ---------- */
 function drawStar(ctx, cx, cy, r, color){
   ctx.beginPath();
   for(let i=0;i<10;i++){
@@ -3373,12 +3374,16 @@ function drawStar(ctx, cx, cy, r, color){
   ctx.fillStyle = color;
   ctx.fill();
 }
-function drawShareCard(){
+function loadImage(src){
+  return new Promise(res => {
+    const im = new Image();
+    im.onload = () => res(im);
+    im.onerror = () => res(null);
+    im.src = src;
+  });
+}
+function paintShareCard(ctx, W, H, mascot){
   const st = resultState || { win:true, level:1, stars:3, score:0, best:0 };
-  const W = 720, H = 960;
-  const cv = document.createElement('canvas');
-  cv.width = W; cv.height = H;
-  const ctx = cv.getContext('2d');
 
   /* 背景蓝天渐变 + 白云（几个半透明圆叠出一朵） */
   const bg = ctx.createLinearGradient(0, 0, 0, H);
@@ -3390,57 +3395,79 @@ function drawShareCard(){
       ctx.beginPath(); ctx.arc(x + c[0]*s, y + c[1]*s, c[2]*s, 0, 7); ctx.fill();
     });
   };
-  cloud(120, 150, 1.2, .75); cloud(600, 110, 1.0, .6); cloud(520, 300, 0.8, .45);
+  cloud(110, 150, 1.2, .75); cloud(610, 110, 1.0, .6); cloud(545, 320, .8, .45); cloud(80, 720, .9, .35);
 
   /* 标题：橙描边立体字（和开始按钮文字同风格） */
   ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
   ctx.lineJoin = 'round';
-  ctx.font = '900 84px "PingFang SC","Microsoft YaHei",sans-serif';
+  ctx.font = '900 88px "PingFang SC","Microsoft YaHei",sans-serif';
   ctx.strokeStyle = '#b85c12'; ctx.lineWidth = 14;
-  ctx.strokeText('奶蛙消消乐', W/2, 150);
+  ctx.strokeText('奶蛙消消乐', W/2, 160);
   ctx.fillStyle = '#fff7e8';
-  ctx.fillText('奶蛙消消乐', W/2, 150);
+  ctx.fillText('奶蛙消消乐', W/2, 160);
 
   /* 关卡 + 结果词 */
-  ctx.font = '800 52px "PingFang SC","Microsoft YaHei",sans-serif';
+  ctx.font = '800 54px "PingFang SC","Microsoft YaHei",sans-serif';
   ctx.fillStyle = '#2b5a9e';
-  ctx.fillText((st.win ? '成功通关 · ' : '挑战 · ') + T('level_no', { n: st.level }), W/2, 270);
+  ctx.fillText((st.win ? '成功通关 · ' : '挑战 · ') + T('level_no', { n: st.level }), W/2, 292);
 
   /* 三颗星：胜利按星级点亮，失败全灰 */
-  const starY = 400, starGap = 150, starR = 58;
   for(let i=0;i<3;i++){
-    const x = W/2 + (i-1)*starGap;
+    const x = W/2 + (i-1)*160;
     const lit = st.win && i < st.stars;
-    drawStar(ctx, x, starY, starR, lit ? '#ffcf3e' : 'rgba(255,255,255,.55)');
-    if(lit){ drawStar(ctx, x, starY, starR*0.62, '#ffe89a'); }
+    drawStar(ctx, x, 442, 62, lit ? '#ffcf3e' : 'rgba(255,255,255,.55)');
+    if(lit){ drawStar(ctx, x, 442, 62*0.62, '#ffe89a'); }
   }
 
-  /* 分数面板：白色圆角卡 */
-  const cardY = 520, cardW = 480, cardH = 210, cardX = (W-cardW)/2;
-  ctx.fillStyle = 'rgba(255,255,255,.92)';
+  /* 分数面板：白色圆角卡（带投影） */
+  const cardW = 500, cardH = 220, cardX = (W-cardW)/2, cardY = 575;
+  ctx.save();
+  ctx.shadowColor = 'rgba(40,70,130,.25)'; ctx.shadowBlur = 24; ctx.shadowOffsetY = 10;
+  ctx.fillStyle = 'rgba(255,255,255,.94)';
   ctx.beginPath();
-  if(ctx.roundRect) ctx.roundRect(cardX, cardY, cardW, cardH, 28); else ctx.rect(cardX, cardY, cardW, cardH);
+  if(ctx.roundRect) ctx.roundRect(cardX, cardY, cardW, cardH, 30); else ctx.rect(cardX, cardY, cardW, cardH);
   ctx.fill();
-  ctx.font = '800 40px "PingFang SC","Microsoft YaHei",sans-serif';
+  ctx.restore();
+  ctx.font = '800 42px "PingFang SC","Microsoft YaHei",sans-serif';
   ctx.fillStyle = '#7d93b8';
-  ctx.fillText(T('result_score_label'), W/2, cardY + 58);
-  ctx.font = '900 88px "PingFang SC","Microsoft YaHei",sans-serif';
+  ctx.fillText(T('result_score_label'), W/2, cardY + 62);
+  ctx.font = '900 92px "PingFang SC","Microsoft YaHei",sans-serif';
   ctx.fillStyle = '#e8842a';
-  ctx.fillText(String(st.score), W/2, cardY + 140);
+  ctx.fillText(String(st.score), W/2, cardY + 148);
 
-  /* 底部：吉祥物点缀 + 日期 + slogan */
-  ctx.font = '120px sans-serif';
-  ctx.fillText('🐸', W/2, 830);
-  ctx.font = '700 30px "PingFang SC","Microsoft YaHei",sans-serif';
+  /* 吉祥物：白椭圆底座 + 立绘（1080x1440 透明底，比例 3:4） */
+  const mH = 330, mW = mH * 0.75, mX = W/2 - mW/2, mY = 812;
+  ctx.fillStyle = 'rgba(255,255,255,.55)';
+  ctx.beginPath(); ctx.ellipse(W/2, mY + mH - 8, 165, 30, 0, 0, 7); ctx.fill();
+  if(mascot) ctx.drawImage(mascot, mX, mY, mW, mH);
+
+  /* 底部：日期 + slogan */
+  ctx.font = '700 32px "PingFang SC","Microsoft YaHei",sans-serif';
   ctx.fillStyle = 'rgba(43,90,158,.9)';
-  ctx.fillText(new Date().toLocaleDateString(lang === 'en' ? 'en-US' : 'zh-CN'), W/2, 905);
-  ctx.font = '800 26px "PingFang SC","Microsoft YaHei",sans-serif';
+  ctx.fillText(new Date().toLocaleDateString(lang === 'en' ? 'en-US' : 'zh-CN'), W/2, mY + mH + 48);
+  ctx.font = '800 27px "PingFang SC","Microsoft YaHei",sans-serif';
   ctx.fillStyle = 'rgba(43,90,158,.65)';
-  ctx.fillText(T('home_sub'), W/2, 940);
-  return cv.toDataURL('image/png');
+  ctx.fillText(T('home_sub'), W/2, mY + mH + 92);
 }
-function showShare(){
-  const url = drawShareCard();
+async function drawShareCard(){
+  const W = 720, H = 1280;
+  const cv = document.createElement('canvas');
+  cv.width = W; cv.height = H;
+  const ctx = cv.getContext('2d');
+  const mascot = await loadImage('naiwa/start/start_bj.webp');
+  paintShareCard(ctx, W, H, mascot);
+  try { return cv.toDataURL('image/png'); }
+  catch(e){
+    /* canvas 被污染（file:// 等）→ 退回纯绘制版 */
+    const cv2 = document.createElement('canvas');
+    cv2.width = W; cv2.height = H;
+    paintShareCard(cv2.getContext('2d'), W, H, null);
+    try { return cv2.toDataURL('image/png'); } catch(e2){ return ''; }
+  }
+}
+async function showShare(){
+  const url = await drawShareCard();
+  if(!url) return;
   $('#share-img').src = url;
   $('#share-overlay').classList.add('show');
 }
