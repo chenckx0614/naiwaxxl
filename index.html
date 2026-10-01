@@ -919,15 +919,12 @@ var _hmt = _hmt || [];
     <div class="author-card">
       <div class="author-avatar">🐸</div>
       <div class="author-name">奶蛙消消乐</div>
-      <div class="author-label" data-i18n="contact_email">联系邮箱</div>
-      <div class="author-mail" id="author-mail">chenckx@qq.com</div>
       <div class="author-social">
         <a class="social-btn social-douyin" href="https://v.douyin.com/4Cgv0y6hX8I/" target="_blank" rel="noopener">🎵 抖音</a>
         <a class="social-btn social-xhs" href="https://www.xiaohongshu.com/user/profile/6365232c000000001f019878" target="_blank" rel="noopener">📕 小红书</a>
       </div>
     </div>
     <div class="panel-btns">
-      <button class="btn btn-blue" onclick="copyMail()" data-i18n="copy_email">复制邮箱</button>
       <button class="btn btn-orange" onclick="closeOverlay('author-overlay')" data-i18n="close">关闭</button>
     </div>
   </div>
@@ -1134,7 +1131,6 @@ const I18N = {
     moves:'步数', level:'关卡', goals:'目标', score:'分数',
     levels_title:'选择关卡', coming_soon:'敬请期待',
     levels_tip:'素材还在做，更多关卡敬请期待 🐸',
-    contact_email:'联系邮箱', copy_email:'复制邮箱', close:'关闭',
     victory:'胜利', failure:'失败', next_level:'下一关', go_home:'返回首页',
     hammer_t:'小锤：消除1个', bomb_t:'炸弹：消除3×3',
     shuffle_t:'刷新：重排棋盘', moves_t:'星星：+5步',
@@ -1149,8 +1145,7 @@ const I18N = {
     ice_break:'冰已碎裂！',
     jelly_break:'果冻少了一层！',
     level_wip:'第 {n} 关还在制作中，敬请期待',
-    copied:'已复制：{s}',
-    email_is:'邮箱：{s}',
+    close:'关闭',
     win_text:'剩余 {n} 步，太棒了！',
     lose_text:'步数用完了，再试一次吧',
     level_no:'第 {n} 关',
@@ -1179,7 +1174,7 @@ const I18N = {
     moves:'Moves', level:'Level', goals:'Goals', score:'Score',
     levels_title:'Select Level', coming_soon:'Coming soon',
     levels_tip:'More levels are on the way 🐸',
-    contact_email:'Contact Email', copy_email:'Copy Email', close:'Close',
+    close:'Close',
     victory:'Victory', failure:'Out of Moves', next_level:'Next Level', go_home:'Home',
     hammer_t:'Hammer: remove 1 tile', bomb_t:'Bomb: clear a 3×3 area',
     shuffle_t:'Shuffle: reshuffle the board', moves_t:'Star: +5 moves',
@@ -1194,8 +1189,6 @@ const I18N = {
     ice_break:'Ice shattered!',
     jelly_break:'Jelly layer cleared!',
     level_wip:'Level {n} is still in the works',
-    copied:'Copied: {s}',
-    email_is:'Email: {s}',
     win_text:'{n} moves left — great job!',
     lose_text:'Out of moves — give it another try',
     level_no:'Level {n}',
@@ -2032,25 +2025,9 @@ function toast(msg){
 }
 
 /* ---------- 作者信息 ---------- */
-const AUTHOR_MAIL = 'chenckx@qq.com';
 function showAuthor(){
   if(typeof SFX !== 'undefined') SFX.click();
   $('#author-overlay').classList.add('show');
-}
-/* 复制文本：老 WebView 没有 navigator.clipboard，用选中 + execCommand 兜底 */
-function copyMail(){
-  let ok = false;
-  try{
-    const ta = document.createElement('textarea');
-    ta.value = AUTHOR_MAIL;
-    ta.setAttribute('readonly','readonly');
-    ta.style.position = 'fixed'; ta.style.top = '-1000px'; ta.style.opacity = '0';
-    document.body.appendChild(ta);
-    ta.select(); ta.setSelectionRange(0, AUTHOR_MAIL.length);
-    ok = document.execCommand('copy');
-    document.body.removeChild(ta);
-  }catch(e){ ok = false; }
-  toast(ok ? T('copied', { s:AUTHOR_MAIL }) : T('email_is', { s:AUTHOR_MAIL }));
 }
 
 /* 设置里的「动画」开关：关闭时全局去掉 transform 过渡，进入无动画模式 */
