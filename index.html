@@ -446,8 +446,8 @@
   #result-overlay.alt .panel { margin-top:52vh; }
   .end-fx.win.alt img {
     position:absolute; left:0; right:0; margin:auto;   /* 水平居中 */
-    bottom:calc(48vh + 32px);       /* 图底 = 52vh-32，恰在标题顶(52vh-24)上方 8px */
-    max-height:calc(52vh - 70px);
+    bottom:calc(52vh - 24px);       /* 图底正好压在标题顶(52vh-24)上，零间隙 */
+    max-height:calc(52vh - 44px);
     /* 全身图底边是完整的椅子，不是裁切线 —— 去掉渐隐遮罩，完整呈现 */
     -webkit-mask-image:none; mask-image:none;
   }
