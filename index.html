@@ -559,6 +559,8 @@
   /* 分享战绩：图占满面板宽、圆角；提示小字居中 */
   .share-img { width:100%; border-radius:12px; display:block; border:2px solid #6ea7ec; }
   .share-hint { text-align:center; font-size:13px; font-weight:800; color:#7d93b8; margin-top:10px; }
+  /* 粉丝群二维码：同 share-img 展示 */
+  .fanqun-img { width:100%; border-radius:12px; display:block; border:2px solid #6ea7ec; }
 
   /* 结算面板 */
   #result-stars { text-align:center; font-size:44px; margin:6px 0 2px; letter-spacing:6px; }
@@ -890,6 +892,7 @@ var _hmt = _hmt || [];
 
     <div class="link-row">
       <button class="btn btn-blue" onclick="showAuthor()"><span data-i18n="author">作者</span>&nbsp;›</button>
+      <button class="btn btn-blue" onclick="openFanqun()"><span data-i18n="fanqun">粉丝群</span>&nbsp;›</button>
     </div>
 
     <div class="panel-btns">
@@ -970,6 +973,16 @@ var _hmt = _hmt || [];
     <button class="panel-close" data-close="share-overlay">✕</button>
     <img class="share-img" id="share-img" alt="" draggable="false">
     <div class="share-hint" data-i18n="share_hint">长按图片保存或转发</div>
+  </div>
+</div>
+
+<!-- 粉丝群弹窗：群二维码，长按识别加入 -->
+<div class="overlay" id="fanqun-overlay">
+  <div class="panel">
+    <div class="panel-title"><span class="star">⭐</span><span data-i18n="fanqun">粉丝群</span><span class="star">⭐</span></div>
+    <button class="panel-close" data-close="fanqun-overlay">✕</button>
+    <img class="fanqun-img" id="fanqun-img" alt="" draggable="false">
+    <div class="share-hint" data-i18n="fanqun_hint">长按二维码识别加入</div>
   </div>
 </div>
 
@@ -1125,6 +1138,7 @@ const I18N = {
     home:'返回大厅', restart:'重新开始', resume:'继续游戏',
     notice_ok:'知道了', notice:'公告',
     share_result:'分享战绩', share_title:'分享战绩', share_hint:'长按图片保存或转发', result_score_label:'本局得分',
+    fanqun:'粉丝群', fanqun_hint:'长按二维码识别加入',
     start:'开始', pick_level:'选择关卡',
     home_sub:'滑 动 消 除 · 轻 松 一 夏',
     progress_pre:'当前进度：第 ', progress_post:' 关',
@@ -1168,6 +1182,7 @@ const I18N = {
     home:'Home', restart:'Restart', resume:'Resume',
     notice_ok:'OK', notice:'Notice',
     share_result:'Share Score', share_title:'Share Score', share_hint:'Long-press the image to save or share', result_score_label:'Score',
+    fanqun:'Fan Club', fanqun_hint:'Long-press the QR code to join',
     start:'Start Game', pick_level:'Levels',
     home_sub:'Swipe · Match · Relax',
     progress_pre:'Level ', progress_post:' · Current Progress',
@@ -3159,10 +3174,11 @@ document.querySelectorAll('.overlay').forEach(o=>o.addEventListener('click', e=>
   o.classList.remove('show');
 }));
 
-/* 面板右上角 ✕：HTML 用 data-close 标目标面板 —— 此前 JS 里从没写过处理器，
+/* 面板关闭按钮：HTML 用 data-close 标目标面板 —— 此前 JS 里从没写过处理器，
    ✕ 一直是死的（设置/关卡/作者三个面板全中），点空白能关把这个问题掩盖了很久。
+   绑所有 [data-close]：✕ 和面板底部的「知道了」等文字按钮共用这套机制。
    minitool 版走 data-action 事件委托没这个问题，所以这是根版专属修复。 */
-document.querySelectorAll('.panel-close').forEach(b=>b.addEventListener('click', ()=>{
+document.querySelectorAll('[data-close]').forEach(b=>b.addEventListener('click', ()=>{
   closeOverlay(b.dataset.close);
 }));
 
@@ -3448,6 +3464,11 @@ async function showShare(){
   if(!url) return;
   $('#share-img').src = url;
   $('#share-overlay').classList.add('show');
+}
+function openFanqun(){
+  const im = $('#fanqun-img');
+  if(!im.getAttribute('src')) im.src = 'naiwa/about/fsq.webp';
+  $('#fanqun-overlay').classList.add('show');
 }
 
 /* root 专属：外部 mp3 预加载计入加载进度（发行差异 —— minitool 音频 base64
