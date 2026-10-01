@@ -25,3 +25,7 @@ minitool.zip
 
 # 日志
 *.log
+
+# 素材原图：线上只发 webp（根目录 naiwa 与 minitool 均如此）。
+# 新素材请转 webp 后再入库；png 原图留在本地作重转备份，不进仓库。
+naiwa/**/*.png

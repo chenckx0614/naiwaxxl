@@ -668,7 +668,7 @@
     z-index:2; margin-top:18px; background:rgba(255,255,255,.85); color:#2f6fd0; font-weight:900;
     padding:6px 22px; border-radius:999px; font-size:16px; box-shadow:0 3px 6px rgba(60,100,170,.25);
   }
-  /* 开始按钮：手绘 blob 图（naiwa/start/start_btn.png）铺底，文字叠在图上。
+  /* 开始按钮：手绘 blob 图（naiwa/start/start_btn.webp）铺底，文字叠在图上。
      blob 自带立体感 —— 原渐变/圆角/box-shadow 全去掉，投影用 drop-shadow
      跟随 blob 形状；宽高比贴图（2.15:1），pulse/active 反馈保留。 */
   #btn-start {
@@ -782,14 +782,14 @@
   <button id="home-gear" title="设置" data-i18n-title="settings">⚙️</button>
   <div class="cloud c1"></div><div class="cloud c2"></div><div class="cloud c3"></div>
   <div id="home-hill"></div>
-  <span class="home-bubble" style="top:20%;left:12%;"><img src="naiwa/1/b.png" alt=""></span>
-  <span class="home-bubble" style="top:32%;right:14%;animation-delay:.6s;"><img src="naiwa/1/d.png" alt=""></span>
-  <span class="home-bubble" style="top:58%;left:9%;animation-delay:1.1s;"><img src="naiwa/1/f.png" alt=""></span>
-  <span class="home-bubble" style="top:48%;right:10%;animation-delay:.3s;"><img src="naiwa/1/g.png" alt=""></span>
-  <span class="home-bubble" style="bottom:16%;left:20%;animation-delay:1.5s;"><img src="naiwa/1/i.png" alt=""></span>
-  <div id="home-logo"><span>奶</span><span>蛙</span><span>消</span><span>消</span><span>乐</span><img class="home-mascot" src="naiwa/start/mascot.png" alt="" draggable="false"></div>
+  <span class="home-bubble" style="top:20%;left:12%;"><img src="naiwa/1/b.webp" alt=""></span>
+  <span class="home-bubble" style="top:32%;right:14%;animation-delay:.6s;"><img src="naiwa/1/d.webp" alt=""></span>
+  <span class="home-bubble" style="top:58%;left:9%;animation-delay:1.1s;"><img src="naiwa/1/f.webp" alt=""></span>
+  <span class="home-bubble" style="top:48%;right:10%;animation-delay:.3s;"><img src="naiwa/1/g.webp" alt=""></span>
+  <span class="home-bubble" style="bottom:16%;left:20%;animation-delay:1.5s;"><img src="naiwa/1/i.webp" alt=""></span>
+  <div id="home-logo"><span>奶</span><span>蛙</span><span>消</span><span>消</span><span>乐</span><img class="home-mascot" src="naiwa/start/mascot.webp" alt="" draggable="false"></div>
   <div id="home-sub" data-i18n="home_sub">滑 动 消 除 · 轻 松 一 夏</div>
-  <button id="btn-start"><img class="btn-face" src="naiwa/start/start_btn.png" alt="" draggable="false"><span data-i18n="start">开始</span></button>
+  <button id="btn-start"><img class="btn-face" src="naiwa/start/start_btn.webp" alt="" draggable="false"><span data-i18n="start">开始</span></button>
   <button id="btn-levels" onclick="openLevels()" data-i18n="pick_level">选择关卡</button>
   <div id="home-level-tag"><span id="home-level-pre">当前进度：第 </span><span id="home-level">1</span><span id="home-level-post"> 关</span></div>
   <div id="home-best"></div>
@@ -982,11 +982,11 @@ const LEVELS = [
     moves: 25,
     needs: [15, 12, 10],
     types: [
-      { key:'b', img:'naiwa/1/b.png', color:'#7ec3f5' },
-      { key:'d', img:'naiwa/1/d.png', color:'#ff9d1b' },
-      { key:'f', img:'naiwa/1/f.png', color:'#ffd54d' },
-      { key:'g', img:'naiwa/1/g.png', color:'#c98ff5' },
-      { key:'i', img:'naiwa/1/i.png', color:'#7ed957' },
+      { key:'b', img:'naiwa/1/b.webp', color:'#7ec3f5' },
+      { key:'d', img:'naiwa/1/d.webp', color:'#ff9d1b' },
+      { key:'f', img:'naiwa/1/f.webp', color:'#ffd54d' },
+      { key:'g', img:'naiwa/1/g.webp', color:'#c98ff5' },
+      { key:'i', img:'naiwa/1/i.webp', color:'#7ed957' },
     ],
   },
 
@@ -1005,10 +1005,10 @@ const LEVELS = [
     moves: 20,
     needs: [18, 14, 11],
     types: [
-      { key:'a', img:'naiwa/1/a.png', color:'#ffd45e' },
-      { key:'g', img:'naiwa/1/g.png', color:'#c98ff5' },
-      { key:'e', img:'naiwa/1/e.png', color:'#e8704a' },
-      { key:'h', img:'naiwa/1/h2.png', color:'#9bd4f5' },
+      { key:'a', img:'naiwa/1/a.webp', color:'#ffd45e' },
+      { key:'g', img:'naiwa/1/g.webp', color:'#c98ff5' },
+      { key:'e', img:'naiwa/1/e.webp', color:'#e8704a' },
+      { key:'h', img:'naiwa/1/h2.webp', color:'#9bd4f5' },
     ],
     shape: function(r,c){ return Math.abs(r-3)+Math.abs(c-3) <= 3; },
     cage: { r:3, c:3 },
@@ -1034,11 +1034,11 @@ const LEVELS = [
     moves: 22,
     needs: [20, 16, 13],
     types: [
-      { key:'a3', img:'naiwa/3/a3.png', color:'#7ed957' },
-      { key:'b3', img:'naiwa/3/b3.png', color:'#3f9ddb' },
-      { key:'c3', img:'naiwa/3/c3.png', color:'#d85a30' },
-      { key:'d3', img:'naiwa/3/d3.png', color:'#8b7fe8' },
-      { key:'e3', img:'naiwa/3/e3.png', color:'#cf4a52' },
+      { key:'a3', img:'naiwa/3/a3.webp', color:'#7ed957' },
+      { key:'b3', img:'naiwa/3/b3.webp', color:'#3f9ddb' },
+      { key:'c3', img:'naiwa/3/c3.webp', color:'#d85a30' },
+      { key:'d3', img:'naiwa/3/d3.webp', color:'#8b7fe8' },
+      { key:'e3', img:'naiwa/3/e3.webp', color:'#cf4a52' },
     ],
     shape: function(r,c){ const dx=(c-3.5)/3.6, dy=(r-3.5)/3.9; return dx*dx+dy*dy <= 1; },
     cages: [ { r:1, c:1 }, { r:6, c:6 } ],
@@ -1046,7 +1046,7 @@ const LEVELS = [
     /* 第三关专属胜利插图：naihao 全身原图（端坐+椅子完整展示）。
        alt 布局见 .end-fx.win.alt —— 插图占上方整块空间，面板整体下移让位。
        没写 winImg 的关卡回落到 OVER_IMG.win（亲吻特写，面板保持居中）。 */
-    winImg: 'naiwa/over/naihao.png',
+    winImg: 'naiwa/over/naihao.webp',
   },
   {
     no: 4,
@@ -1055,12 +1055,12 @@ const LEVELS = [
     moves: 24,
     needs: [22, 18, 16],
     types: [
-      { key:'a4', img:'naiwa/4/a4.png', color:'#f0e6d8' },
-      { key:'b4', img:'naiwa/4/b4.png', color:'#e6b800' },
-      { key:'c4', img:'naiwa/4/c4.png', color:'#f5c700' },
-      { key:'d4', img:'naiwa/4/d4.png', color:'#a86f48' },
-      { key:'e4', img:'naiwa/4/e4.png', color:'#4a4a4a' },
-      { key:'f4', img:'naiwa/4/f4.png', color:'#ff8eb0' },
+      { key:'a4', img:'naiwa/4/a4.webp', color:'#f0e6d8' },
+      { key:'b4', img:'naiwa/4/b4.webp', color:'#e6b800' },
+      { key:'c4', img:'naiwa/4/c4.webp', color:'#f5c700' },
+      { key:'d4', img:'naiwa/4/d4.webp', color:'#a86f48' },
+      { key:'e4', img:'naiwa/4/e4.webp', color:'#4a4a4a' },
+      { key:'f4', img:'naiwa/4/f4.webp', color:'#ff8eb0' },
     ],
     /* 第四关棋盘：9×9 圆角矩形 57 格（四角按 rr+cc<3 切掉，每角 6 格），
        比第三关 48 格大、比 8×8 椭圆更方正，下落每列连续。 */
@@ -2964,7 +2964,7 @@ function paintResult(){
 /* 结算插图：赢了 → 屏幕正中慢慢浮现（盖在蓝色蒙层上、压在面板下，不挡按钮）；
    输了 → 腿从屏幕右边慢慢伸出来，图片右边界贴屏幕右边缘。
    重开一局再结算时靠「清类 → 强制回流 → 加类」让动画重播（只换 src 不会重播）。 */
-const OVER_IMG = { win:'naiwa/over/naikiss_head.png', lose:'naiwa/over/naizu.png' };
+const OVER_IMG = { win:'naiwa/over/naikiss_head.webp', lose:'naiwa/over/naizu.webp' };
 
 function hideEndFx(){
   const box = $('#end-fx');
@@ -3262,6 +3262,7 @@ function collectPreloadImages(){
   LEVELS.forEach(L=>{ (L.types || []).forEach(t=>{ set[t.img] = 1; }); });
   if(typeof OVER_IMG !== 'undefined'){ set[OVER_IMG.win] = 1; set[OVER_IMG.lose] = 1; }
   LEVELS.forEach(function(L){ if(L.winImg) set[L.winImg] = 1; });   /* 各关专属胜利插图 */
+  if(window.XXL_NOTICE && XXL_NOTICE.img) set[XXL_NOTICE.img] = 1;  /* 公告配图（不预载弹窗会闪一下） */
   return Object.keys(set);
 }
 function preloadImages(list){
