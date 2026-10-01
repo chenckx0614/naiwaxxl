@@ -1275,12 +1275,18 @@ function setLang(v){
  * ============================================================ */
 let actx = null, sfxGain = null;
 
-/* 外部音频文件 */
+/* 外部音频文件。显式 preload=auto + load()：省流量模式/部分 webview 下
+   new Audio(src) 可能只拉元数据，等首次 play 才真下载 → 音效明显延迟。
+   数据是否就位由后面的预加载段计入进度条（canplaythrough 计数）。 */
 const bgmAudio    = new Audio('bgm/bgm.mp3');
-bgmAudio.loop = true; bgmAudio.volume = 0.5;
-const comboAudios = [1,2,3,4,5].map(i => { const a = new Audio(`bgm/combo${i}.mp3`); a.volume = 0.7; return a; });
+bgmAudio.loop = true; bgmAudio.volume = 0.5; bgmAudio.preload = 'auto'; bgmAudio.load();
+const comboAudios = [1,2,3,4,5].map(i => {
+  const a = new Audio(`bgm/combo${i}.mp3`);
+  a.volume = 0.7; a.preload = 'auto'; a.load();
+  return a;
+});
 const endAudio    = new Audio('bgm/end.mp3');
-endAudio.volume = 0.8;
+endAudio.volume = 0.8; endAudio.preload = 'auto'; endAudio.load();
 
 /* 音量：0~1 的倍数，分别乘到各条音频链的基准值上。
    两条链路基准不同（BGM 文件 0.5 / 合成音效 0.5 / combo 文件 0.7 / 结算文件 0.8），
@@ -1316,10 +1322,25 @@ function initAudio(){
     actx = new (window.AudioContext || window.webkitAudioContext)();
     sfxGain = actx.createGain(); sfxGain.connect(actx.destination);
     applyVolumes();                      /* 按存档音量初始化 */
+    warmupAudio();                       /* 首次手势即预热播放管线，消除首播卡顿 */
   } else if(actx.state === 'suspended'){
     actx.resume();
   }
   if(settings.music) tryPlayBgm();
+}
+/* 播放管线预热：mp3 数据就位 ≠ 能瞬间出声 —— <audio> 首次 play 还要初始化
+   解码器/播放管线，体感是「第一次消除没声音或慢半拍」。这里借首次手势的
+   授权把每条音频静音播一下立刻停掉，之后所有播放都是热的。
+   手势前调用会被自动播放策略拒绝（NotAllowedError）——catch 静默即可。 */
+let audioWarmed = false;
+function warmupAudio(){
+  if(audioWarmed) return;
+  audioWarmed = true;
+  [bgmAudio].concat(comboAudios, [endAudio]).forEach(a => {
+    a.muted = true;
+    a.play().then(() => { a.pause(); a.currentTime = 0; a.muted = false; })
+            .catch(() => { a.muted = false; });
+  });
 }
 /* ---- 浏览器自动播放策略 ----
    手势之前 <audio>.play() 会被拒（NotAllowedError），所以「打开网页就自动响」
