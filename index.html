@@ -979,6 +979,7 @@ var _hmt = _hmt || [];
 <div id="toast"></div>
 
 <script src="notice.js"></script>
+<script src="share-art.js"></script>
 <script>
 /* ============================================================
  * 消消乐核心逻辑
@@ -3454,7 +3455,7 @@ async function drawShareCard(){
   const cv = document.createElement('canvas');
   cv.width = W; cv.height = H;
   const ctx = cv.getContext('2d');
-  const mascot = await loadImage('naiwa/start/start_bj.webp');
+  const mascot = await loadImage(window.XXL_SHARE_ART || 'naiwa/start/start_bj.webp');
   paintShareCard(ctx, W, H, mascot);
   try { return cv.toDataURL('image/png'); }
   catch(e){
