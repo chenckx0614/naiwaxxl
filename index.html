@@ -556,6 +556,9 @@
   .notice-body { white-space:pre-line; font-size:16px; line-height:1.65; color:#3a4a63; font-weight:700; text-align:center; padding:0 8px; }
   .notice-img { display:none; width:100%; border-radius:12px; margin-top:12px; }
   .notice-btn { display:none; margin-top:12px; text-decoration:none; }
+  /* 分享战绩：图占满面板宽、圆角；提示小字居中 */
+  .share-img { width:100%; border-radius:12px; display:block; border:2px solid #6ea7ec; }
+  .share-hint { text-align:center; font-size:13px; font-weight:800; color:#7d93b8; margin-top:10px; }
 
   /* 结算面板 */
   #result-stars { text-align:center; font-size:44px; margin:6px 0 2px; letter-spacing:6px; }
@@ -956,9 +959,20 @@ var _hmt = _hmt || [];
     <div id="result-bonus"></div>
     <div id="result-score"></div>
     <div class="panel-btns">
+      <button class="btn btn-green" id="share-btn" data-i18n="share_result" onclick="showShare()">分享战绩</button>
       <button class="btn btn-blue" onclick="closeOverlay('result-overlay'); restart();" data-i18n="restart">重新开始</button>
       <button class="btn btn-orange" id="next-level-btn" data-i18n="next_level" onclick="nextLevel()">下一关</button>
     </div>
+  </div>
+</div>
+
+<!-- 分享战绩弹窗：canvas 生成战绩卡，长按图片即可保存/转发 -->
+<div class="overlay" id="share-overlay">
+  <div class="panel">
+    <div class="panel-title"><span class="star">⭐</span><span data-i18n="share_title">分享战绩</span><span class="star">⭐</span></div>
+    <button class="panel-close" data-close="share-overlay">✕</button>
+    <img class="share-img" id="share-img" alt="" draggable="false">
+    <div class="share-hint" data-i18n="share_hint">长按图片保存或转发</div>
   </div>
 </div>
 
@@ -1112,6 +1126,7 @@ const I18N = {
     sec_other:'其他设置', language:'语言', author:'作者',
     home:'返回大厅', restart:'重新开始', resume:'继续游戏',
     notice_ok:'知道了', notice:'公告',
+    share_result:'分享战绩', share_title:'分享战绩', share_hint:'长按图片保存或转发', result_score_label:'本局得分',
     start:'开始', pick_level:'选择关卡',
     home_sub:'滑 动 消 除 · 轻 松 一 夏',
     progress_pre:'当前进度：第 ', progress_post:' 关',
@@ -1156,6 +1171,7 @@ const I18N = {
     sec_other:'More', language:'Language', author:'Author',
     home:'Home', restart:'Restart', resume:'Resume',
     notice_ok:'OK', notice:'Notice',
+    share_result:'Share Score', share_title:'Share Score', share_hint:'Long-press the image to save or share', result_score_label:'Score',
     start:'Start Game', pick_level:'Levels',
     home_sub:'Swipe · Match · Relax',
     progress_pre:'Level ', progress_post:' · Current Progress',
@@ -3311,6 +3327,8 @@ function noticeSeenKey(id){ return 'notice_seen_' + (id || ''); }
 function shouldShowNotice(){
   const N = window.XXL_NOTICE;
   if(!N || !N.enabled || !N.body) return false;
+  /* end（可选，'YYYY-MM-DD'）：该日 0 点起公告自动失效 —— 限时活动提前配好，到点不用管 */
+  if(N.end && new Date(N.end + 'T00:00:00') <= new Date()) return false;
   if(N.frequency === 'always') return true;
   let seen = null;
   try { seen = localStorage.getItem(noticeSeenKey(N.id)); } catch(e){}
@@ -3341,6 +3359,90 @@ function maybeShowNotice(){
   } else { btn.style.display = 'none'; btn.removeAttribute('href'); }
   $('#notice-overlay').classList.add('show');
   markNoticeSeen();    /* 显示即记：once 弹过就算，不纠结玩家怎么关的 */
+}
+
+/* ---------- 分享战绩卡（canvas 纯绘制，不引照片素材 → 无跨域污染，toDataURL 稳） ---------- */
+function drawStar(ctx, cx, cy, r, color){
+  ctx.beginPath();
+  for(let i=0;i<10;i++){
+    const ang = -Math.PI/2 + i*Math.PI/5;
+    const rr = i%2===0 ? r : r*0.46;
+    ctx[i?'lineTo':'moveTo'](cx + rr*Math.cos(ang), cy + rr*Math.sin(ang));
+  }
+  ctx.closePath();
+  ctx.fillStyle = color;
+  ctx.fill();
+}
+function drawShareCard(){
+  const st = resultState || { win:true, level:1, stars:3, score:0, best:0 };
+  const W = 720, H = 960;
+  const cv = document.createElement('canvas');
+  cv.width = W; cv.height = H;
+  const ctx = cv.getContext('2d');
+
+  /* 背景蓝天渐变 + 白云（几个半透明圆叠出一朵） */
+  const bg = ctx.createLinearGradient(0, 0, 0, H);
+  bg.addColorStop(0, '#d3e4fb'); bg.addColorStop(0.45, '#a9c8f2'); bg.addColorStop(1, '#8ab0e8');
+  ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+  const cloud = (x, y, s, a) => {
+    ctx.fillStyle = 'rgba(255,255,255,' + a + ')';
+    [[0,0,46],[42,8,34],[-40,10,30],[18,-22,30]].forEach(c => {
+      ctx.beginPath(); ctx.arc(x + c[0]*s, y + c[1]*s, c[2]*s, 0, 7); ctx.fill();
+    });
+  };
+  cloud(120, 150, 1.2, .75); cloud(600, 110, 1.0, .6); cloud(520, 300, 0.8, .45);
+
+  /* 标题：橙描边立体字（和开始按钮文字同风格） */
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.lineJoin = 'round';
+  ctx.font = '900 84px "PingFang SC","Microsoft YaHei",sans-serif';
+  ctx.strokeStyle = '#b85c12'; ctx.lineWidth = 14;
+  ctx.strokeText('奶蛙消消乐', W/2, 150);
+  ctx.fillStyle = '#fff7e8';
+  ctx.fillText('奶蛙消消乐', W/2, 150);
+
+  /* 关卡 + 结果词 */
+  ctx.font = '800 52px "PingFang SC","Microsoft YaHei",sans-serif';
+  ctx.fillStyle = '#2b5a9e';
+  ctx.fillText((st.win ? '成功通关 · ' : '挑战 · ') + T('level_no', { n: st.level }), W/2, 270);
+
+  /* 三颗星：胜利按星级点亮，失败全灰 */
+  const starY = 400, starGap = 150, starR = 58;
+  for(let i=0;i<3;i++){
+    const x = W/2 + (i-1)*starGap;
+    const lit = st.win && i < st.stars;
+    drawStar(ctx, x, starY, starR, lit ? '#ffcf3e' : 'rgba(255,255,255,.55)');
+    if(lit){ drawStar(ctx, x, starY, starR*0.62, '#ffe89a'); }
+  }
+
+  /* 分数面板：白色圆角卡 */
+  const cardY = 520, cardW = 480, cardH = 210, cardX = (W-cardW)/2;
+  ctx.fillStyle = 'rgba(255,255,255,.92)';
+  ctx.beginPath();
+  if(ctx.roundRect) ctx.roundRect(cardX, cardY, cardW, cardH, 28); else ctx.rect(cardX, cardY, cardW, cardH);
+  ctx.fill();
+  ctx.font = '800 40px "PingFang SC","Microsoft YaHei",sans-serif';
+  ctx.fillStyle = '#7d93b8';
+  ctx.fillText(T('result_score_label'), W/2, cardY + 58);
+  ctx.font = '900 88px "PingFang SC","Microsoft YaHei",sans-serif';
+  ctx.fillStyle = '#e8842a';
+  ctx.fillText(String(st.score), W/2, cardY + 140);
+
+  /* 底部：吉祥物点缀 + 日期 + slogan */
+  ctx.font = '120px sans-serif';
+  ctx.fillText('🐸', W/2, 830);
+  ctx.font = '700 30px "PingFang SC","Microsoft YaHei",sans-serif';
+  ctx.fillStyle = 'rgba(43,90,158,.9)';
+  ctx.fillText(new Date().toLocaleDateString(lang === 'en' ? 'en-US' : 'zh-CN'), W/2, 905);
+  ctx.font = '800 26px "PingFang SC","Microsoft YaHei",sans-serif';
+  ctx.fillStyle = 'rgba(43,90,158,.65)';
+  ctx.fillText(T('home_sub'), W/2, 940);
+  return cv.toDataURL('image/png');
+}
+function showShare(){
+  const url = drawShareCard();
+  $('#share-img').src = url;
+  $('#share-overlay').classList.add('show');
 }
 
 /* root 专属：外部 mp3 预加载计入加载进度（发行差异 —— minitool 音频 base64

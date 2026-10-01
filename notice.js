@@ -9,6 +9,7 @@
    - title / body: 双语写 { zh:'', en:'' }；只写一种语言就直接给字符串
    - body 里的 \n 是换行
    - img:（图放仓库里用相对路径，如 'naiwa/over/naihao.webp'）
+   - end:（可选）失效日期 'YYYY-MM-DD'，该日 0 点起不再弹 —— 限时活动到点自动下线
    - btn:   可选跳转按钮 { text:{zh:'',en:''}, url:'https://...' }，不需要就 null
    ============================================================ */
 window.XXL_NOTICE = {
@@ -21,5 +22,6 @@ window.XXL_NOTICE = {
     en:'Wish everyone a happy National Day!'
   },
   img: 'naiwa/activity/gqj.webp',
+  end: '2026-10-08',               /* 国庆活动：10 月 8 日起自动停弹 */
   btn: null
 };
