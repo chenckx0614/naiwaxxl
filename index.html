@@ -4081,8 +4081,8 @@ function initMascot3D() {
   overlay.classList.add('mascot-3d-ready', 'mascot-3d-loading');
   isInitialized = true;
 
-  // 加载 GLB 模型替换占位几何体（未压缩原始模型，加载慢但细节完整）
-  loadMascotModel('naiwa/naiwa3d/naiwa.glb');
+  // 加载 GLB 模型替换占位几何体（轻度压缩版：1.39MB，11万三角形，平衡质量与加载速度）
+  loadMascotModel('naiwa/naiwa3d/naiwa_lite.glb');
 }
 
 function animate() {
