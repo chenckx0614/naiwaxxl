@@ -734,6 +734,28 @@
     position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
     color:#2b7fb8; font-weight:800; font-size:15px; pointer-events:none;
   }
+  /* 奶蛙空间 3D 模型独立进度条：和游戏开头的全局加载条分开，
+     只在这个弹窗里显示 GLB 下载进度 */
+  #mascot-3d-progress {
+    position:absolute; bottom:20px; left:50%; transform:translateX(-50%);
+    width:200px; display:none; pointer-events:none;
+  }
+  #mascot-space-overlay.mascot-3d-loading #mascot-3d-progress { display:block; }
+  #mascot-3d-progress-bar {
+    height:10px; border-radius:999px; background:rgba(255,255,255,.55);
+    box-shadow:inset 0 2px 4px rgba(0,0,0,.12); overflow:hidden;
+  }
+  #mascot-3d-progress-fill {
+    height:100%; width:0%; border-radius:999px;
+    background:linear-gradient(90deg,#7ed957,#4cb847);
+    transition:width .2s ease;
+  }
+  #mascot-3d-progress-pct {
+    margin-top:6px; text-align:center; font-size:13px; font-weight:700; color:#2b7fb8;
+  }
+  /* GLB 下载完成：隐藏进度条和 loading 文字 */
+  #mascot-space-overlay.mascot-glb-loaded #mascot-3d-progress,
+  #mascot-space-overlay.mascot-glb-loaded #mascot-3d-loading { display:none; }
   /* 3D 就绪后隐藏 2D 立绘和 loading；失败时显示 img 作为兜底 */
   #mascot-space-overlay.mascot-3d-ready #mascot-space-img,
   #mascot-space-overlay.mascot-3d-ready #mascot-3d-loading { display:none; }
@@ -1131,6 +1153,10 @@ var _hmt = _hmt || [];
     <div id="mascot-3d-container">
       <canvas id="mascot-3d-canvas"></canvas>
       <div id="mascot-3d-loading" data-i18n="mascot_3d_loading">3D 加载中...</div>
+      <div id="mascot-3d-progress">
+        <div id="mascot-3d-progress-bar"><div id="mascot-3d-progress-fill"></div></div>
+        <div id="mascot-3d-progress-pct">0%</div>
+      </div>
     </div>
     <img id="mascot-space-img" src="naiwa/start/start_bj.webp" alt="" draggable="false">
     <div id="mascot-space-hint" data-i18n="mascot_space_hint">这里是奶蛙的小空间，更多互动 coming soon~</div>
@@ -3970,11 +3996,21 @@ function initMascot3D() {
   renderer.setSize(w, h);
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
-  // 灯光：环境光打底 + 方向光出层次
-  scene.add(new THREE.AmbientLight(0xffffff, 0.65));
-  const dirLight = new THREE.DirectionalLight(0xffffff, 0.85);
-  dirLight.position.set(2, 3, 2);
-  scene.add(dirLight);
+  // 灯光：三点打光（主光+补光+轮廓光）让模型更立体
+  // 主光：前方偏右上，强度最高，出主要明暗
+  const keyLight = new THREE.DirectionalLight(0xffffff, 1.0);
+  keyLight.position.set(2, 3, 2);
+  scene.add(keyLight);
+  // 补光：左前方，强度减半，柔化主光阴影
+  const fillLight = new THREE.DirectionalLight(0xffffff, 0.45);
+  fillLight.position.set(-2, 1, 1.5);
+  scene.add(fillLight);
+  // 轮廓光：后方，勾勒边缘，让模型从背景里跳出来
+  const rimLight = new THREE.DirectionalLight(0xffeecc, 0.35);
+  rimLight.position.set(0, 1, -2);
+  scene.add(rimLight);
+  // 环境光：很低的底光，避免死黑
+  scene.add(new THREE.AmbientLight(0xffffff, 0.35));
 
   // ---- 占位奶蛙：黄色椭球身体 + 黑眼睛（GLB 加载失败时的兜底） ----
   const bodyGeo = new THREE.SphereGeometry(1, 32, 32);
@@ -4039,13 +4075,14 @@ function initMascot3D() {
     }
   });
 
-  // 隐藏 loading 和 2D 兜底图
+  // 隐藏 loading 和 2D 兜底图，显示 3D 进度条
   loading.style.display = 'none';
-  document.getElementById('mascot-space-overlay').classList.add('mascot-3d-ready');
+  const overlay = document.getElementById('mascot-space-overlay');
+  overlay.classList.add('mascot-3d-ready', 'mascot-3d-loading');
   isInitialized = true;
 
-  // 加载 GLB 模型替换占位几何体
-  loadMascotModel('naiwa/naiwa3d/naiwa3d.glb');
+  // 加载 GLB 模型替换占位几何体（未压缩原始模型，加载慢但细节完整）
+  loadMascotModel('naiwa/naiwa3d/naiwa.glb');
 }
 
 function animate() {
@@ -4092,19 +4129,13 @@ function loadMascotModel(glbUrl) {
       model.scale.setScalar(scale);
       model.position.set(-center.x * scale, -center.y * scale, -center.z * scale);
 
-      // 材质微调：避免 PBR 在浅蓝底上过曝
-      model.traverse((child) => {
-        if (child.isMesh && child.material) {
-          child.material.roughness = Math.max(child.material.roughness, 0.6);
-          child.material.metalness = Math.min(child.material.metalness, 0.1);
-        }
-      });
-
-      // 移除占位体，加入 GLB
+      // 移除占位体，加入 GLB（保持模型原始 PBR 材质，不做二次微调）
       scene.remove(placeholderGroup);
       scene.add(model);
       frogGroup = model;
       mascotModel = model;
+      /* GLB 加载成功：加标记 class，方便探针/调试确认 */
+      document.getElementById('mascot-space-overlay').classList.add('mascot-glb-loaded');
 
       // 骨骼动画：如果有，用 AnimationMixer 播放
       if (gltf.animations && gltf.animations.length) {
@@ -4115,9 +4146,28 @@ function loadMascotModel(glbUrl) {
 
       console.log('[mascot3d] GLB loaded:', glbUrl, 'bbox:', size, 'anims:', gltf.animations?.length || 0);
     },
-    undefined,   // progress
+    (xhr) => {
+      /* GLB 下载进度：更新奶蛙空间独立进度条（和游戏开头全局加载条分开） */
+      if (xhr.total > 0) {
+        const pct = Math.round((xhr.loaded / xhr.total) * 100);
+        const bar = document.getElementById('mascot-3d-progress-fill');
+        const pctText = document.getElementById('mascot-3d-progress-pct');
+        if (bar) bar.style.width = pct + '%';
+        if (pctText) pctText.textContent = pct + '%';
+      }
+    },   // progress
     (err) => {
-      console.warn('[mascot3d] GLB load failed, keep placeholder:', err);
+      console.error('[mascot3d] GLB load failed:', err);
+      /* 加载失败：显示错误信息，方便排查 */
+      const loading = document.getElementById('mascot-3d-loading');
+      if (loading) {
+        loading.textContent = '3D 模型加载失败: ' + (err.message || err);
+        loading.style.display = 'block';
+        loading.style.color = '#d32f2f';
+      }
+      /* 隐藏进度条 */
+      const overlay = document.getElementById('mascot-space-overlay');
+      if (overlay) overlay.classList.remove('mascot-3d-loading');
     }
   );
 }
