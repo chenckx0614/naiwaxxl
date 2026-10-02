@@ -583,6 +583,8 @@
   .share-hint { text-align:center; font-size:13px; font-weight:800; color:#7d93b8; margin-top:10px; }
   /* 粉丝群二维码：同 share-img 展示 */
   .fanqun-img { width:100%; border-radius:12px; display:block; border:2px solid #6ea7ec; }
+  /* 第二张群二维码：和第一张之间留一道间距 */
+  #fanqun-img2 { margin-top:12px; }
   /* 胜利彩带：独立全屏 canvas，飘在结算面板（z 200）之上、toast 之下；
      pointer-events:none 不挡按钮。rAF 驱动，画完自动隐藏。 */
   #confetti-cv { position:fixed; inset:0; width:100%; height:100%; pointer-events:none; z-index:210; display:none; }
@@ -1125,6 +1127,7 @@ var _hmt = _hmt || [];
     <div class="panel-title"><span class="star">⭐</span><span data-i18n="fanqun">粉丝群</span><span class="star">⭐</span></div>
     <button class="panel-close" data-close="fanqun-overlay">✕</button>
     <img class="fanqun-img" id="fanqun-img" alt="" draggable="false">
+    <img class="fanqun-img" id="fanqun-img2" alt="" draggable="false">
     <div class="share-hint" data-i18n="fanqun_hint">长按二维码识别加入</div>
   </div>
 </div>
@@ -3848,7 +3851,10 @@ function ensureNightStars(){
 function openFanqun(){
   track('fanqun', 'click');
   const im = $('#fanqun-img');
-  if(!im.getAttribute('src')) im.src = 'naiwa/about/fsq2.webp';
+  if(!im.getAttribute('src')) im.src = 'naiwa/about/fsq.webp';
+  /* 第二张群二维码（fsq3）；两张都只在首次打开时赋 src */
+  const im2 = $('#fanqun-img2');
+  if(im2 && !im2.getAttribute('src')) im2.src = 'naiwa/about/fsq3.webp';
   $('#fanqun-overlay').classList.add('show');
 }
 
