@@ -1141,6 +1141,7 @@ const I18N = {
     notice_ok:'知道了', notice:'公告',
     share_result:'分享战绩', share_title:'分享战绩', share_hint:'长按图片保存或转发', result_score_label:'本局得分',
     fanqun:'粉丝群', fanqun_hint:'长按二维码识别加入',
+    bday_toast:'🎂 今天是奶蛙的生日！专属生日歌已上线',
     share_win:'成功通关 ·', share_try:'挑战 ·',
     start:'开始', pick_level:'选择关卡',
     home_sub:'滑 动 消 除 · 轻 松 一 夏',
@@ -1186,6 +1187,7 @@ const I18N = {
     notice_ok:'OK', notice:'Notice',
     share_result:'Share Score', share_title:'Share Score', share_hint:'Long-press the image to save or share', result_score_label:'Score',
     fanqun:'Fan Club', fanqun_hint:'Long-press the QR code to join',
+    bday_toast:'🎂 It\'s Naiwa\'s birthday! A special birthday song is on',
     share_win:'Level Clear ·', share_try:'Challenge ·',
     start:'Start Game', pick_level:'Levels',
     home_sub:'Swipe · Match · Relax',
@@ -1341,6 +1343,7 @@ function loadVolumes(){
 function saveVolumes(){ try{ localStorage.setItem(VOL_KEY, JSON.stringify(volumes)); }catch(e){} }
 function applyVolumes(){
   bgmAudio.volume = VOL_BASE.music * volumes.music;
+  if(bdayGain) bdayGain.gain.value = VOL_BASE.music * volumes.music;
   if(sfxGain) sfxGain.gain.value = VOL_BASE.sfx * volumes.sfx;
   comboAudios.forEach(a=>{ a.volume = VOL_SFX_FILE.combo * volumes.sfx; });
   endAudio.volume = VOL_SFX_FILE.end * volumes.sfx;
@@ -1386,9 +1389,65 @@ function warmupAudio(){
 });
 window.addEventListener('DOMContentLoaded', ()=>{ if(settings.music) tryPlayBgm(); });
 
-function tryPlayBgm(){ if(!settings.music) return; bgmAudio.play().catch(()=>{}); }
+function tryPlayBgm(){
+  if(!settings.music) return;
+  if(isFrogBirthday()){ bgmAudio.pause(); startBirthdayBgm(); return; }   /* 生日彩蛋：今日 BGM 换生日歌 */
+  bgmAudio.play().catch(()=>{});
+}
 function startBgm(){ tryPlayBgm(); }
-function stopBgm(){ bgmAudio.pause(); }
+function stopBgm(){ stopBirthdayBgm(); bgmAudio.pause(); }
+
+/* ---------- 生日彩蛋：10 月 2 日奶蛙生日，BGM 换成合成版《祝你生日快乐》 ----------
+   今日限定：isFrogBirthday() 之外的日子永远走原曲分支。纯 WebAudio 合成（零素材、
+   零版权），走 music 音量链 —— settings.music 开关和音量滑杆都照常控制。
+   曲式：C 大调 3/4，四句各两遍起步；循环间隔 0.9s 呼吸。 */
+function isFrogBirthday(){
+  const d = new Date();
+  return d.getMonth() === 9 && d.getDate() === 2;      /* 10 月 2 日（month 0 基） */
+}
+const BDAY_SONG = [   /* [midi 音高, 拍数] */
+  [67,.75],[67,.25],[69,1],[67,1],[72,1],[71,2],       /* 祝你生日快乐 */
+  [67,.75],[67,.25],[69,1],[67,1],[74,1],[72,2],       /* 祝你生日快乐 */
+  [67,.75],[67,.25],[79,1],[76,1],[72,1],[71,1],[69,2],/* 祝你生日快乐奶蛙 */
+  [77,.75],[77,.25],[76,1],[72,1],[74,1],[72,2],       /* 祝你生日快乐 */
+];
+const BDAY_BEAT = 0.42;
+let bdayTimer = null, bdayGain = null;
+function stopBirthdayBgm(){
+  if(bdayTimer){ clearTimeout(bdayTimer); bdayTimer = null; }
+  if(bdayGain){
+    const g = bdayGain; bdayGain = null;
+    try { g.gain.setTargetAtTime(0, actx.currentTime, 0.06); } catch(e){}
+    setTimeout(()=>{ try{ g.disconnect(); }catch(e){} }, 250);
+  }
+}
+function startBirthdayBgm(){
+  if(!actx || !settings.music) return;
+  stopBirthdayBgm();
+  bgmAudio.pause();
+  bdayGain = actx.createGain();
+  bdayGain.gain.value = VOL_BASE.music * volumes.music;
+  bdayGain.connect(actx.destination);
+  let t = actx.currentTime + 0.15;
+  BDAY_SONG.forEach(([m, beats]) => {
+    const dur = beats * BDAY_BEAT;
+    const o = actx.createOscillator(), g = actx.createGain();
+    o.type = 'triangle';
+    o.frequency.value = midi(m);
+    g.gain.setValueAtTime(0, t);
+    g.gain.linearRampToValueAtTime(0.85, t + 0.03);
+    g.gain.setValueAtTime(0.85, t + dur*0.75);
+    g.gain.linearRampToValueAtTime(0.0001, t + dur);
+    o.connect(g); g.connect(bdayGain);
+    o.start(t); o.stop(t + dur + 0.05);
+    t += dur;
+  });
+  const totalMs = (t - actx.currentTime + 0.9) * 1000;   /* 歌长 + 0.9s 间奏后循环 */
+  bdayTimer = setTimeout(()=>{
+    bdayTimer = null;
+    if(settings.music && isFrogBirthday() && actx) startBirthdayBgm();
+  }, totalMs);
+}
 
 const midi = m => 440 * Math.pow(2, (m - 69) / 12);
 
@@ -3366,6 +3425,16 @@ scheduleHint();
 applyLang();     /* 铺文案 + 高亮语言分段控件 + 刷新开始页/关卡面板/顶部栏 */
 applyVolumes();  /* 把存档音量回填到滑块（音频链在 initAudio 里初始化） */
 { const vt = $('#ver-tag'); if(vt) vt.textContent = 'v' + GAME_VER; }  /* 版本号单点维护：只改 GAME_VER */
+/* 生日彩蛋提示：10 月 2 日当天首次进入 toast 一次（按日期存档去重） */
+if(isFrogBirthday()){
+  const bkey = 'bday_toast_' + new Date().toDateString();
+  let bseen = false;
+  try { bseen = !!localStorage.getItem(bkey); } catch(e){}
+  if(!bseen){
+    try { localStorage.setItem(bkey, '1'); } catch(e){}
+    setTimeout(()=>toast(T('bday_toast')), 1200);
+  }
+}
 
 /* ---------- 公告弹窗（内容由 notice.js 配置） ---------- */
 /* 读公告字段：双语对象 {zh,en} 按当前语言取，纯字符串原样返回 */
