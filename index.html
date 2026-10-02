@@ -721,6 +721,22 @@
     50% { transform:translateY(-6px) rotate(2deg); }
   }
   #mascot-space-overlay .panel { width:min(520px, 94vw); }
+  /* 3D 容器：正方形画布，圆角，浅蓝渐变底（和首页天空呼应） */
+  #mascot-3d-container {
+    position:relative; width:min(340px, 74vw); height:min(340px, 74vw);
+    margin:0 auto; border-radius:12px; overflow:hidden;
+    background:linear-gradient(180deg,#bfeaff 0%,#e2f7ff 100%);
+    box-shadow:inset 0 2px 6px rgba(255,255,255,.6), 0 4px 12px rgba(60,110,60,.2);
+  }
+  #mascot-3d-canvas { width:100%; height:100%; display:block; cursor:grab; }
+  #mascot-3d-canvas:active { cursor:grabbing; }
+  #mascot-3d-loading {
+    position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+    color:#2b7fb8; font-weight:800; font-size:15px; pointer-events:none;
+  }
+  /* 3D 就绪后隐藏 2D 立绘和 loading；失败时显示 img 作为兜底 */
+  #mascot-space-overlay.mascot-3d-ready #mascot-space-img,
+  #mascot-space-overlay.mascot-3d-ready #mascot-3d-loading { display:none; }
   #mascot-space-img {
     display:block; width:min(340px, 74vw); height:auto; margin:0 auto;
     filter:drop-shadow(0 8px 18px rgba(60,110,60,.4));
@@ -1112,6 +1128,10 @@ var _hmt = _hmt || [];
   <div class="panel">
     <div class="panel-title"><span class="star">⭐</span><span data-i18n="mascot_space">奶蛙空间</span><span class="star">⭐</span></div>
     <button class="panel-close" data-close="mascot-space-overlay">✕</button>
+    <div id="mascot-3d-container">
+      <canvas id="mascot-3d-canvas"></canvas>
+      <div id="mascot-3d-loading" data-i18n="mascot_3d_loading">3D 加载中...</div>
+    </div>
     <img id="mascot-space-img" src="naiwa/start/start_bj.webp" alt="" draggable="false">
     <div id="mascot-space-hint" data-i18n="mascot_space_hint">这里是奶蛙的小空间，更多互动 coming soon~</div>
   </div>
@@ -1302,6 +1322,7 @@ const I18N = {
     fanqun:'粉丝群', fanqun_hint:'长按二维码识别加入',
     wallpapers:'壁纸', wp_hint_grid:'点击查看大图', wp_hint_view:'长按图片保存到相册，设为壁纸',
     mascot_space:'奶蛙空间', mascot_space_hint:'这里是奶蛙的小空间，更多互动 coming soon~',
+    mascot_3d_loading:'3D 加载中...',
     rock_hard:'石头太硬了，砸不动！在它旁边消除试试',
     share_win:'成功通关 ·', share_try:'挑战 ·',
     start:'开始', pick_level:'选择关卡',
@@ -1350,6 +1371,7 @@ const I18N = {
     fanqun:'Fan Club', fanqun_hint:'Long-press the QR code to join',
     wallpapers:'Wallpapers', wp_hint_grid:'Tap to view full size', wp_hint_view:'Long-press the image to save & set as wallpaper',
     mascot_space:'Naiwa Space', mascot_space_hint:'A little corner for the Milk Frog. More interactions coming soon~',
+    mascot_3d_loading:'Loading 3D...',
     rock_hard:'The rock is too hard! Clear tiles next to it instead',
     share_win:'Level Clear ·', share_try:'Challenge ·',
     start:'Start Game', pick_level:'Levels',
@@ -3374,6 +3396,8 @@ function closeOverlay(id){
   document.getElementById(id).classList.remove('show');
   /* 面板收起来时把插图一起撤掉，免得下次开局还挂着上一局的胜负图 */
   if(id === 'result-overlay') hideEndFx();
+  /* 奶蛙空间关闭时暂停 3D 渲染循环，省性能 */
+  if(id === 'mascot-space-overlay' && window.stopMascot3D) window.stopMascot3D();
 }
 
 /* ---------- 关卡选择 ----------
@@ -3421,7 +3445,7 @@ function refreshHome(){
 }
 
 function openLevels(){ SFX.click(); renderLevelSelect(); $('#levels-overlay').classList.add('show'); }
-function openMascotSpace(){ SFX.click(); track('mascot','open','home'); $('#mascot-space-overlay').classList.add('show'); }
+function openMascotSpace(){ SFX.click(); track('mascot','open','home'); $('#mascot-space-overlay').classList.add('show'); if(window.startMascot3D) window.startMascot3D(); }
 
 /* ---------- 开始页 ---------- */
 function goHome(){
@@ -3905,6 +3929,156 @@ function viewWallpaper(i){
     a.addEventListener('error', step, { once:true });
   });
 }
+</script>
+
+<!-- 3D 奶蛙空间：three.js 占位框架。模型接口预留 loadMascotModel(glbUrl)，
+     拿到 Hunyuan3D 生成的 GLB 后替换占位几何体即可。 -->
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/"
+  }
+}
+</script>
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+let renderer, scene, camera, controls, frogGroup;
+let isInitialized = false;
+let isAnimating = false;
+let mascotModel = null;   // GLB 加载后替换占位几何体
+
+function initMascot3D() {
+  const container = document.getElementById('mascot-3d-container');
+  const canvas = document.getElementById('mascot-3d-canvas');
+  const loading = document.getElementById('mascot-3d-loading');
+  if (!container || !canvas) return;
+
+  const w = container.clientWidth, h = container.clientHeight;
+
+  scene = new THREE.Scene();
+  scene.background = new THREE.Color(0xbfeaff);
+
+  camera = new THREE.PerspectiveCamera(45, w / h, 0.1, 100);
+  camera.position.set(0, 0.4, 3.2);
+
+  renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+  renderer.setSize(w, h);
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+  // 灯光：环境光打底 + 方向光出层次
+  scene.add(new THREE.AmbientLight(0xffffff, 0.65));
+  const dirLight = new THREE.DirectionalLight(0xffffff, 0.85);
+  dirLight.position.set(2, 3, 2);
+  scene.add(dirLight);
+
+  // ---- 占位奶蛙：黄色椭球身体 + 黑眼睛 ----
+  const bodyGeo = new THREE.SphereGeometry(1, 32, 32);
+  bodyGeo.scale(0.75, 1.15, 0.55);
+  const bodyMat = new THREE.MeshStandardMaterial({
+    color: 0xffd54d, roughness: 0.72, metalness: 0.05,
+  });
+  const body = new THREE.Mesh(bodyGeo, bodyMat);
+
+  const eyeGeo = new THREE.SphereGeometry(0.1, 16, 16);
+  const eyeMat = new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.3 });
+  const leftEye = new THREE.Mesh(eyeGeo, eyeMat);
+  leftEye.position.set(-0.32, 0.42, 0.5);
+  const rightEye = new THREE.Mesh(eyeGeo, eyeMat);
+  rightEye.position.set(0.32, 0.42, 0.5);
+
+  // 嘴巴：小弧线（Torus 截一段）
+  const mouthGeo = new THREE.TorusGeometry(0.18, 0.035, 8, 16, Math.PI * 0.9);
+  const mouthMat = new THREE.MeshStandardMaterial({ color: 0xd4a017, roughness: 0.6 });
+  const mouth = new THREE.Mesh(mouthGeo, mouthMat);
+  mouth.position.set(0, 0.12, 0.56);
+  mouth.rotation.z = Math.PI;
+
+  // 手脚：小胶囊
+  const limbGeo = new THREE.CapsuleGeometry(0.08, 0.28, 4, 12);
+  const limbMat = bodyMat;
+  const mkLimb = (x, y, z, rotZ) => {
+    const m = new THREE.Mesh(limbGeo, limbMat);
+    m.position.set(x, y, z);
+    m.rotation.z = rotZ;
+    return m;
+  };
+  const armL = mkLimb(-0.68, 0.05, 0.15, 0.6);
+  const armR = mkLimb(0.68, 0.05, 0.15, -0.6);
+  const legL = mkLimb(-0.28, -0.95, 0.1, 0.15);
+  const legR = mkLimb(0.28, -0.95, 0.1, -0.15);
+
+  frogGroup = new THREE.Group();
+  frogGroup.add(body, leftEye, rightEye, mouth, armL, armR, legL, legR);
+  scene.add(frogGroup);
+
+  // 控制器：拖拽旋转，禁止缩放/平移
+  controls = new OrbitControls(camera, canvas);
+  controls.enableDamping = true;
+  controls.dampingFactor = 0.06;
+  controls.enableZoom = false;
+  controls.enablePan = false;
+  controls.autoRotate = true;
+  controls.autoRotateSpeed = 1.5;
+
+  // 点击交互：点中奶蛙 → 跳一下
+  canvas.addEventListener('pointerdown', (e) => {
+    if (!frogGroup) return;
+    const rect = canvas.getBoundingClientRect();
+    const x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+    const y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+    const raycaster = new THREE.Raycaster();
+    raycaster.setFromCamera(new THREE.Vector2(x, y), camera);
+    const hits = raycaster.intersectObject(frogGroup, true);
+    if (hits.length) {
+      // 简单跳跃动画：scale 脉冲
+      frogGroup.scale.set(1.15, 0.85, 1.15);
+      setTimeout(() => frogGroup.scale.set(0.9, 1.1, 0.9), 100);
+      setTimeout(() => frogGroup.scale.set(1, 1, 1), 220);
+    }
+  });
+
+  // 隐藏 loading 和 2D 兜底图
+  loading.style.display = 'none';
+  document.getElementById('mascot-space-overlay').classList.add('mascot-3d-ready');
+  isInitialized = true;
+}
+
+function animate() {
+  if (!isAnimating) return;
+  requestAnimationFrame(animate);
+  if (frogGroup) {
+    // 待机呼吸：身体轻微缩放
+    const t = performance.now() * 0.001;
+    frogGroup.scale.y = 1 + Math.sin(t * 2.2) * 0.025;
+  }
+  controls.update();
+  renderer.render(scene, camera);
+}
+
+function startMascot3D() {
+  if (!isInitialized) initMascot3D();
+  if (isAnimating) return;
+  isAnimating = true;
+  animate();
+}
+
+function stopMascot3D() {
+  isAnimating = false;
+}
+
+/* GLB 模型替换接口：拿到 Hunyuan3D 生成的模型后调用 loadMascotModel(url)。
+   目前占位，后续接 GLTFLoader。 */
+function loadMascotModel(glbUrl) {
+  console.log('[mascot3d] loadMascotModel:', glbUrl);
+  // TODO: 引入 GLTFLoader 加载 GLB，替换 frogGroup
+}
+
+window.startMascot3D = startMascot3D;
+window.stopMascot3D = stopMascot3D;
+window.loadMascotModel = loadMascotModel;
 </script>
 </body>
 </html>
