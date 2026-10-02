@@ -10,9 +10,10 @@
 <style>
   * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; user-select:none; }
   html,body { height:100%; }
+  html { background:#a9c8f2; }   /* 兜底色：#home-hill 超出视口把页面撑高时，滚动区不露白 */
   body {
     font-family: "PingFang SC","Microsoft YaHei",sans-serif;
-    background: radial-gradient(circle at 50% 20%, #d3e4fb 0%, #a9c8f2 45%, #8ab0e8 100%);
+    background: radial-gradient(circle at 50% 20%, #d3e4fb 0%, #a9c8f2 45%, #8ab0e8 100%) fixed;
     display:flex; justify-content:center; align-items:flex-start;
     min-height:100%; overflow-x:hidden;
   }
@@ -1136,6 +1137,7 @@ const I18N = {
     notice_ok:'知道了', notice:'公告',
     share_result:'分享战绩', share_title:'分享战绩', share_hint:'长按图片保存或转发', result_score_label:'本局得分',
     fanqun:'粉丝群', fanqun_hint:'长按二维码识别加入',
+    share_win:'成功通关 ·', share_try:'挑战 ·',
     start:'开始', pick_level:'选择关卡',
     home_sub:'滑 动 消 除 · 轻 松 一 夏',
     progress_pre:'当前进度：第 ', progress_post:' 关',
@@ -1180,6 +1182,7 @@ const I18N = {
     notice_ok:'OK', notice:'Notice',
     share_result:'Share Score', share_title:'Share Score', share_hint:'Long-press the image to save or share', result_score_label:'Score',
     fanqun:'Fan Club', fanqun_hint:'Long-press the QR code to join',
+    share_win:'Level Clear ·', share_try:'Challenge ·',
     start:'Start Game', pick_level:'Levels',
     home_sub:'Swipe · Match · Relax',
     progress_pre:'Level ', progress_post:' · Current Progress',
@@ -3451,7 +3454,7 @@ function paintShareCard(ctx, W, H, mascot){
   /* 关卡 + 结果词 */
   ctx.font = '800 54px "PingFang SC","Microsoft YaHei",sans-serif';
   ctx.fillStyle = '#2b5a9e';
-  ctx.fillText((st.win ? '成功通关 · ' : '挑战 · ') + T('level_no', { n: st.level }), W/2, 292);
+  ctx.fillText(T(st.win ? 'share_win' : 'share_try') + ' ' + T('level_no', { n: st.level }), W/2, 292);
 
   /* 三颗星：胜利按星级点亮，失败全灰 */
   for(let i=0;i<3;i++){
