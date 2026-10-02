@@ -562,6 +562,9 @@
   .share-hint { text-align:center; font-size:13px; font-weight:800; color:#7d93b8; margin-top:10px; }
   /* 粉丝群二维码：同 share-img 展示 */
   .fanqun-img { width:100%; border-radius:12px; display:block; border:2px solid #6ea7ec; }
+  /* 胜利彩带：独立全屏 canvas，飘在结算面板（z 200）之上、toast 之下；
+     pointer-events:none 不挡按钮。rAF 驱动，画完自动隐藏。 */
+  #confetti-cv { position:fixed; inset:0; width:100%; height:100%; pointer-events:none; z-index:210; display:none; }
 
   /* 结算面板 */
   #result-stars { text-align:center; font-size:44px; margin:6px 0 2px; letter-spacing:6px; }
@@ -985,6 +988,7 @@ var _hmt = _hmt || [];
 </div>
 
 <div id="toast"></div>
+<canvas id="confetti-cv"></canvas>
 
 <script src="notice.js"></script>
 <script src="share-art.js"></script>
@@ -3081,6 +3085,7 @@ function showResult(win, stars){
   setTimeout(()=>{
     $('#result-overlay').classList.add('show');
     if(win && settings.sfx) SFX.end();
+    if(win) launchConfetti(stars);      /* 彩带随星级喷发：3 星双爆发 */
     buzz(win ? [20,40,20] : [40,60,40]);
   }, 500);
 }
@@ -3522,6 +3527,76 @@ function openFanqun(){
   const im = $('#fanqun-img');
   if(!im.getAttribute('src')) im.src = 'naiwa/about/fsq.webp';
   $('#fanqun-overlay').classList.add('show');
+}
+
+/* ---------- 胜利彩带（独立 canvas + rAF，与棋盘 DOM 动画互不干扰） ----------
+   星级决定纸屑量：1 星 80 / 2 星 120 / 3 星 160+双爆发。
+   重力下落 + 水平摆动 + 自转，2.2~3.1s 后淡出；粒子过期即跳过，rAF 自然收敛。
+   cv._step(ms) 是给无头探针用的手动驱动口（无头里 rAF 不推进）。 */
+let confettiRaf = 0;
+function launchConfetti(stars){
+  const cv = document.getElementById('confetti-cv');
+  if(!cv) return;
+  const ctx = cv.getContext('2d');
+  cv.width = window.innerWidth; cv.height = window.innerHeight;
+  cv.style.display = 'block';
+  const COLORS = ['#ffcf3e','#ff9d1b','#5cb82e','#7cc4f7','#ff7eb3','#fff7e8'];
+  const N = 80 + (stars || 1) * 40;
+  const parts = [];
+  const bursts = stars >= 3 ? 2 : 1;
+  for(let b=0;b<bursts;b++){
+    const delay = b * 260;
+    for(let i=0;i<N/bursts;i++){
+      const ang = -Math.PI/2 + (Math.random()-0.5)*1.7;    /* 顶部扇形向上喷 */
+      const sp = 420 + Math.random()*460;
+      parts.push({
+        born: performance.now() + delay,
+        x: cv.width/2 + (Math.random()-0.5)*90,
+        y: cv.height*0.60,
+        vx: Math.cos(ang)*sp, vy: Math.sin(ang)*sp,
+        w: 6+Math.random()*7, h: 10+Math.random()*10,
+        rot: Math.random()*Math.PI, vr: (Math.random()-0.5)*14,
+        color: COLORS[(Math.random()*COLORS.length)|0],
+        life: 2200 + Math.random()*900,
+        sway: Math.random()*Math.PI*2,
+      });
+    }
+  }
+  cancelAnimationFrame(confettiRaf);
+  let last = performance.now();
+  const tick = now => {
+    const dt = Math.min(32, now - last); last = now;
+    ctx.clearRect(0, 0, cv.width, cv.height);
+    let alive = false;
+    const nowMs = performance.now();
+    for(const p of parts){
+      if(nowMs < p.born) { alive = true; continue; }      /* 第二爆发射前保持待命 */
+      const age = nowMs - p.born;
+      if(age > p.life) continue;
+      alive = true;
+      p.vy += 950*dt/1000;
+      p.x += p.vx*dt/1000; p.y += p.vy*dt/1000;
+      p.vx *= 0.995;
+      p.rot += p.vr*dt/1000;
+      p.sway += dt/1000*6;
+      ctx.save();
+      ctx.globalAlpha = age > p.life-500 ? Math.max(0,(p.life-age)/500) : 1;
+      ctx.translate(p.x + Math.sin(p.sway)*14, p.y);
+      ctx.rotate(p.rot);
+      ctx.fillStyle = p.color;
+      ctx.fillRect(-p.w/2, -p.h/2, p.w, p.h);
+      ctx.restore();
+    }
+    if(alive){ confettiRaf = requestAnimationFrame(tick); }
+    else { cv.style.display = 'none'; ctx.clearRect(0, 0, cv.width, cv.height); }
+  };
+  confettiRaf = requestAnimationFrame(tick);
+  cv._step = ms => {                                     /* 无头探针手动推帧：传目标时刻，tick 内部自己推进 last */
+    const target = last + ms;
+    const step = 32;
+    for(let t = last + step; t <= target; t += step) tick(t);
+    if(target > last) tick(target);
+  };
 }
 
 /* root 专属：外部 mp3 预加载计入加载进度（发行差异 —— minitool 音频 base64
