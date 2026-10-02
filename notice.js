@@ -18,10 +18,10 @@ window.XXL_NOTICE = {
   frequency: 'always',
   title: { zh:'公告', en:'Notice' },
   body: {
-    zh:'祝大家国庆节快乐！',
-    en:'Wish everyone a happy National Day!'
+    zh:'祝大家国庆快乐！也可以进奶蛙消消乐的粉丝群一起来聊天哦',
+    en:'Happy National Day! Come join the Milk Frog Match fan group and chat with us'
   },
-  img: 'naiwa/activity/gqj.webp',
+  img: 'naiwa/about/fsq.webp',
   end: '2026-10-08',               /* 国庆活动：10 月 8 日起自动停弹 */
   btn: null
 };
