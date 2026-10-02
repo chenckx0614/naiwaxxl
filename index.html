@@ -144,6 +144,24 @@
     pointer-events:none;
   }
   .tile.frozen .face img { opacity:0.85; }
+  /* 石头：不可交换/不匹配/道具砸不动，消除紧邻棋子时震碎。纯 CSS 灰岩。 */
+  .face.rock-face {
+    background:
+      radial-gradient(circle at 34% 30%, #b8b2a8 0%, #948c80 42%, #6e675c 78%, #575046 100%);
+    border-radius:30%;
+    box-shadow: inset 0 -4px 8px rgba(0,0,0,.35), inset 0 3px 5px rgba(255,255,255,.28), 0 3px 6px rgba(0,0,0,.25);
+    position:relative; overflow:hidden;
+  }
+  .face.rock-face::before {   /* 裂纹 */
+    content:""; position:absolute; inset:0;
+    background:
+      linear-gradient(115deg, transparent 42%, rgba(0,0,0,.28) 43%, transparent 46%),
+      linear-gradient(245deg, transparent 55%, rgba(0,0,0,.22) 56%, transparent 60%),
+      linear-gradient(20deg, transparent 30%, rgba(255,255,255,.14) 31%, transparent 34%);
+    border-radius:inherit;
+  }
+  /* 发光体（太阳）：静态微光，避免 filter 逐帧重绘 */
+  .tile .face.glow img { filter: drop-shadow(0 0 7px rgba(255,205,90,.8)) drop-shadow(0 0 16px rgba(255,180,60,.35)); }
   /* 果冻格：双层粉色半透明覆盖，棋子可正常交换；被波及一次减一层，
      减到 0 时播放 .jelly-pop 爆开消失。果冻 div 位于棋子之下。 */
   .jelly {
@@ -721,6 +739,30 @@
     transition:transform .1s;
   }
   #btn-wallpaper:active { transform:scale(.95); box-shadow:0 2px 0 #7433ad; }
+  /* ---- 夜幕主题（第五关）：body.night 切换星空渐变；星星层由 JS 创建，
+     纯 opacity 闪烁动画（不碰位置，符合动画铁律） ---- */
+  body.night {
+    background: linear-gradient(#141c3f 0%, #22305e 46%, #3d4f8a 100%) fixed;
+  }
+  #night-stars { position:fixed; inset:0; pointer-events:none; z-index:0; display:none; }
+  body.night #night-stars { display:block; }
+  #night-stars i {
+    position:absolute; width:4px; height:4px; border-radius:50%; background:#fff;
+    animation:starTwinkle 2.4s ease-in-out infinite;
+  }
+  @keyframes starTwinkle { 0%,100% { opacity:.25; } 50% { opacity:1; } }
+  /* 第四关胜利 side 模式：探头奶蛙从右边缘滑入、贴死右缘 */
+  .end-fx.win.side img {
+    visibility:visible; position:absolute; right:0; bottom:5vh; left:auto;
+    height:min(68vh, 560px); width:auto; top:auto;
+    -webkit-mask-image:none; mask-image:none;
+    animation:endSideIn 1s cubic-bezier(.25,.8,.3,1.15) both;
+  }
+  @keyframes endSideIn {
+    from { opacity:0; transform:translateX(110%); }
+    70%  { opacity:1; transform:translateX(-3%); }
+    to   { opacity:1; transform:none; }
+  }
   /* 壁纸页：白圆角面板加宽（两列网格）。不自己滚 —— 滚动交给 .overlay
      （panel-title 用负 top 探出面板顶，容器一滚就被裁掉，历史约定） */
   #wallpaper-overlay .wp-page {
@@ -1153,6 +1195,35 @@ const LEVELS = [
     /* 果冻 8 格：双层，被匹配/道具/特殊棋子波及一次减一层（棋子保留），
        清完 0 层该格恢复正常。增加空间压制，但不改收集目标 UI。 */
     jellies: [ {r:2,c:2},{r:2,c:6},{r:3,c:1},{r:3,c:7},{r:5,c:1},{r:5,c:7},{r:6,c:2},{r:6,c:6} ],
+    /* 第四关胜利图：探头偷看（toukui），从右边缘滑入、身体贴死右缘 —— side 模式 */
+    winImg: 'naiwa/over/toukui.webp',
+    winSide: 'right',
+  },
+  /* ============ 第五关：圆形棋盘 + 石头障碍 + 夜幕主题 ============
+     4 种图标（全场最少）= 连锁密度最高，配合 61 格大棋盘 combo 更爽。
+     新机制石头：占一格棋位的灰石，不可交换/不参与匹配/道具彩球砸不动，
+     只有消除紧邻棋子才震碎（碎片飞溅+震屏）。难度靠布局压制而非步数紧缩。 */
+  {
+    no: 5,
+    rows: 9,
+    cols: 9,
+    moves: 22,
+    needs: [16, 14, 12],
+    /* 4 种新角色；太阳自带微光（glow），区分度天然 */
+    types: [
+      { key:'5a', img:'naiwa/5/5a.webp', color:'#ffcf3e', glow:1 },
+      { key:'5b', img:'naiwa/5/5b.webp', color:'#c98a4b' },
+      { key:'5c', img:'naiwa/5/5c.webp', color:'#f5e6a8' },
+      { key:'5d', img:'naiwa/5/5d.webp', color:'#f0d060' },
+    ],
+    /* 圆形棋盘：到圆心距离 < 4.25 格即有效（61 格，每列连续，下落安全） */
+    shape: function(r,c){ const dr=r-4, dc=c-4; return dr*dr + dc*dc <= 18.1; },
+    /* 石头 5 颗：十字分割 —— 中轴两颗断横向长连，上下两颗卡进出通道 */
+    rocks: [ {r:2,c:4},{r:3,c:2},{r:4,c:6},{r:6,c:4},{r:5,c:1} ],
+    /* 夜幕主题：进关切换页面背景（星空渐变），出关恢复 */
+    bg: 'night',
+    /* 第五关胜利图：惊呆奶糊（jingdai），居中大图展示（alt 布局） */
+    winImg: 'naiwa/over/jingdai.webp',
   },
 ];
 
@@ -1186,6 +1257,7 @@ const I18N = {
     share_result:'分享战绩', share_title:'分享战绩', share_hint:'长按图片保存或转发', result_score_label:'本局得分',
     fanqun:'粉丝群', fanqun_hint:'长按二维码识别加入',
     wallpapers:'壁纸', wp_hint_grid:'点击查看大图', wp_hint_view:'长按图片保存到相册，设为壁纸',
+    rock_hard:'石头太硬了，砸不动！在它旁边消除试试',
     share_win:'成功通关 ·', share_try:'挑战 ·',
     start:'开始', pick_level:'选择关卡',
     home_sub:'滑 动 消 除 · 轻 松 一 夏',
@@ -1232,6 +1304,7 @@ const I18N = {
     share_result:'Share Score', share_title:'Share Score', share_hint:'Long-press the image to save or share', result_score_label:'Score',
     fanqun:'Fan Club', fanqun_hint:'Long-press the QR code to join',
     wallpapers:'Wallpapers', wp_hint_grid:'Tap to view full size', wp_hint_view:'Long-press the image to save & set as wallpaper',
+    rock_hard:'The rock is too hard! Clear tiles next to it instead',
     share_win:'Level Clear ·', share_try:'Challenge ·',
     start:'Start Game', pick_level:'Levels',
     home_sub:'Swipe · Match · Relax',
@@ -1484,6 +1557,11 @@ const SFX = {
   },
   booster: () => { webaudioSfx(300, 0.25, 'square', 0.3, 1200); webaudioSfx(1200, 0.2, 'sine', 0.3, 1800, 0.12); },
   end:     () => { endAudio.currentTime = 0; endAudio.play().catch(()=>{}); },
+  /* 石头碎裂：低频闷响 + 高频石屑 */
+  crack:   () => {
+    webaudioSfx(90, 0.22, 'sawtooth', 0.5, 40);
+    webaudioSfx(1400, 0.1, 'square', 0.12, 300, 0.02);
+  },
 };
 
 let level = 1, moves = 25, score = 0;
@@ -1503,6 +1581,7 @@ let activeShape = null;    // 当前关卡形状函数 (r,c)=>boolean；null 表
    「破了一个还剩一个」，所以第三关起改棋子级状态。 */
 let cageList = [];         // 本关牢笼格 [{r,c},...]
 let frozenList = [];       // 本关冰封格 [{r,c},...]：棋子不可动，被波及一次破冰保留
+let rockList = [];         // 本关石头格 [{r,c},...]：占一格棋位，仅相邻消除可碎
 let jellyGrid = [];        // 本关果冻层 [r][c] = 0/1/2：0 为空，>0 时该格有果冻层；棋子可正常交换
 /* 每关道具的初始数量。restart() 会按这份模板复原 ——
    之前只在初始化时赋过一次值，用掉的道具重开 / 切关都不会回来，
@@ -2169,10 +2248,20 @@ function pos(r,c){ return { x: gap + c*(cell+gap), y: gap + r*(cell+gap) }; }
 
 function renderTileFace(t){
   const f = t.el.firstChild;
-  f.innerHTML = `<img src="${TYPES[t.type].img}" alt="" draggable="false">`;
+  if(t.rock){
+    /* 石头：纯 CSS 画的灰岩（径向高光+裂纹线），无 img */
+    f.innerHTML = '';
+    f.classList.add('rock-face');
+    return;
+  }
+  f.classList.remove('rock-face');
+  const tp = TYPES[t.type];
+  f.innerHTML = `<img src="${tp.img}" alt="" draggable="false">`;
   /* 彩色底座：只给声明了 bg 的类型画（第三关 5 个角色全是黄色，靠底色区分）。
      写在 renderTileFace 里，洗牌换 type 后底座自动跟着换；无 bg 的关卡置空。 */
-  f.style.background = (TYPES[t.type] && TYPES[t.type].bg) || '';
+  f.style.background = tp.bg || '';
+  /* 太阳等发光体：静态微光（不做 filter 动画，避免逐帧重绘） */
+  f.classList.toggle('glow', !!tp.glow);
 }
 
 /* ---------- 位移 ----------
@@ -2260,7 +2349,7 @@ function makeTile(r, c, type, spawnRows=0, dur){
      不会出现全棋盘同步起伏的诡异整齐感 */
   face.style.animationDelay = (-(Math.random() * 2.6)).toFixed(2) + 's';
   el.appendChild(face);
-  const t = { type, el, r, c, caged: isCage(r,c), frozen: isFrozenCell(r,c) };
+  const t = { type, el, r, c, caged: isCage(r,c), frozen: isFrozenCell(r,c), rock: type === 'rock' };
   if(t.caged) el.classList.add('caged');
   if(t.frozen) el.classList.add('frozen');
   renderTileFace(t);
@@ -2303,6 +2392,11 @@ function newBoard(){
   boardEl.querySelectorAll('.tile').forEach(e=>e.remove());
   board = Array.from({length:ROWS}, ()=>Array(COLS).fill(null));
   forEachActive(function(r,c){
+    /* 石头格：直接放石头棋子，不参与随机去重 */
+    if(rockList.some(p=>p.r===r && p.c===c)){
+      board[r][c] = makeTile(r, c, 'rock');
+      return;
+    }
     let type;
     do { type = rand(TYPES.length); }
     while(
@@ -2357,7 +2451,7 @@ function findRuns(){
       while(i<inner){
         const a = at(o, i);
         const t0 = isActive(a.r, a.c) ? board[a.r][a.c] : null;
-        if(!t0){ i++; continue; }
+        if(!t0 || t0.rock){ i++; continue; }   /* 石头不参与匹配，隔断同色连 */
         let j=i+1;
         while(j<inner){
           const p = at(o, j), q = at(o, j-1);
@@ -2405,12 +2499,12 @@ function findMatchInfo(){
 function findMove(){
   for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++){
     const t0 = isActive(r,c) ? board[r][c] : null;
-    if(!t0 || t0.caged || t0.frozen) continue;
+    if(!t0 || t0.caged || t0.frozen || t0.rock) continue;
     for(const [dr,dc] of [[0,1],[1,0]]){
       const r2=r+dr, c2=c+dc;
       if(r2<0||r2>=ROWS||c2<0||c2>=COLS||!isActive(r2,c2)) continue;
       const t2 = board[r2][c2];
-      if(!t2 || t2.caged || t2.frozen) continue;
+      if(!t2 || t2.caged || t2.frozen || t2.rock) continue;
       const tmp = board[r][c]; board[r][c] = board[r2][c2]; board[r2][c2] = tmp;
       const ok = findMatches().size>0;
       const tmp2 = board[r][c]; board[r][c] = board[r2][c2]; board[r2][c2] = tmp2;
@@ -2533,6 +2627,33 @@ function hitJelly(hit){
 async function clearSet(hit, combo, info){
   thawFrozen(hit);
   hitJelly(hit);
+  /* ---- 石头 ----
+     1) hit 里的石头剔除（不可被直接消除/计数/生成特殊子）
+     2) 与 hit 相邻的石头震碎：碎片飞溅 + 震屏，格位置空后由下落补位 */
+  hit.forEach(i=>{
+    const r=(i/COLS)|0, c=i%COLS, t=board[r][c];
+    if(t && t.rock) hit.delete(i);
+  });
+  const rockBreak = new Set();
+  hit.forEach(i=>{
+    const r=(i/COLS)|0, c=i%COLS;
+    [[1,0],[-1,0],[0,1],[0,-1]].forEach(([dr,dc])=>{
+      const rr=r+dr, cc=c+dc;
+      if(rr<0||rr>=ROWS||cc<0||cc>=COLS) return;
+      const t = board[rr] && board[rr][cc];
+      if(t && t.rock) rockBreak.add(rr*COLS+cc);
+    });
+  });
+  if(rockBreak.size){
+    rockBreak.forEach(j=>{
+      const rr=(j/COLS)|0, cc=j%COLS, t=board[rr][cc];
+      if(!t) return;
+      board[rr][cc] = null;
+      breakRockFx(rr, cc, t.el);
+    });
+    shakeBoard(2);
+    SFX.crack();
+  }
   /* 长连生成特殊棋子：>=4 的连线中心格保留一枚（不消除），换成带效果的特殊棋子。
      这些格子从消除/特效名单里剔除（clearTiers 的 exclude），分数也不计 ——
      它没有消掉，糖果传奇同款规则。两条 run 选中同一格时只生成一次。 */
@@ -2803,7 +2924,7 @@ function adjacent(a,b){ return Math.abs(a.r-b.r)+Math.abs(a.c-b.c)===1; }
 async function trySwap(a, b){
   if(busy || gameOver) return;
   const ta = board[a.r][a.c], tb = board[b.r][b.c];
-  if((ta && (ta.caged || ta.frozen)) || (tb && (tb.caged || tb.frozen))) return;
+  if((ta && (ta.caged || ta.frozen || ta.rock)) || (tb && (tb.caged || tb.frozen || tb.rock))) return;
   /* 彩球交换：不凑匹配直接引爆全场同色（双彩球全清）。先换位再交给 rainbowSwap ——
      它会在换位后的棋盘上重新辨认彩球在哪一边。 */
   if((ta && ta.effect === 'rainbow') || (tb && tb.effect === 'rainbow')){
@@ -2936,7 +3057,7 @@ window.addEventListener('pointercancel', () => {
 
 function swapTiles(a, b){
   const ta = board[a.r][a.c], tb = board[b.r][b.c];
-  if((ta && (ta.caged || ta.frozen)) || (tb && (tb.caged || tb.frozen))) return;
+  if((ta && (ta.caged || ta.frozen || ta.rock)) || (tb && (tb.caged || tb.frozen || tb.rock))) return;
   board[a.r][a.c] = tb; board[b.r][b.c] = ta;
   placeTile(ta, b.r, b.c); placeTile(tb, a.r, a.c);
 }
@@ -2984,6 +3105,11 @@ async function useBoosterOn(r, c){
   if(gameOver) return;
   if(!isActive(r,c)) return;
   const k = boosterMode;
+  /* 石头连锤子都砸不动：提示后保持瞄准模式，让玩家改点别处 */
+  if(k==='hammer'){
+    const tt = board[r][c];
+    if(tt && tt.rock){ SFX.invalid(); buzz(30); toast(T('rock_hard')); return; }
+  }
   boosterMode = null;
   document.querySelectorAll('.booster').forEach(x=>x.classList.remove('armed'));
   boosters[k]--; renderHud();
@@ -3006,7 +3132,7 @@ function shuffleBoard(animate){
   const cells = [], types = [];
   forEachActive(function(r,c){
     const t = board[r][c];
-    if(t && !t.caged){ cells.push({r,c}); types.push(t.type); }
+    if(t && !t.caged && !t.rock){ cells.push({r,c}); types.push(t.type); }
   });
   let tries = 0;
   do {
@@ -3084,7 +3210,7 @@ const OVER_IMG = { win:'naiwa/over/naikiss_head.webp', lose:'naiwa/over/naizu.we
 
 function hideEndFx(){
   const box = $('#end-fx');
-  if(box) box.classList.remove('win','lose','alt');
+  if(box) box.classList.remove('win','lose','alt','side');
   const ov = document.getElementById('result-overlay');
   if(ov) ov.classList.remove('alt');
 }
@@ -3092,14 +3218,17 @@ function hideEndFx(){
 function showEndFx(win){
   const box = $('#end-fx'), img = $('#end-fx-img');
   if(!box || !img) return;
-  box.classList.remove('win','lose');
+  box.classList.remove('win','lose','side');
   void box.offsetWidth;          /* 强制回流：否则同一张图第二次出现时动画不重播 */
-  /* 胜利图按关卡取：关卡定义了 winImg 就用它（第三关=奶好全身），否则回落亲吻特写。
-     alt 模式：插图全身展示、面板下移让位（见 .end-fx.win.alt）；关面板时一起清。 */
+  /* 胜利图按关卡取：关卡定义了 winImg 就用它，否则回落亲吻特写。
+     alt 模式：全身图居中展示、面板下移让位（第三/五关）。
+     side 模式：插图从右边缘滑入、贴死右缘（第四关探头），面板保持居中。 */
   const def = LEVELS[level-1];
-  const alt = !!(win && def && def.winImg);
+  const side = !!(win && def && def.winSide);
+  const alt = !!(win && def && def.winImg && !def.winSide);
   img.src = win ? ((def && def.winImg) || OVER_IMG.win) : OVER_IMG.lose;
   box.classList.toggle('alt', alt);
+  box.classList.toggle('side', side);
   box.classList.add(win ? 'win' : 'lose');
   const ov = document.getElementById('result-overlay');
   if(ov) ov.classList.toggle('alt', alt);
@@ -3162,6 +3291,10 @@ function startLevel(no){
   ROWS = def.rows || 7; COLS = def.cols || 7;
   cageList = def.cages || (def.cage ? [def.cage] : []);
   frozenList = def.frozen || [];
+  rockList = def.rocks || [];
+  /* 夜幕主题：第五关换星空背景（星星层惰性创建一次） */
+  document.body.classList.toggle('night', def.bg === 'night');
+  ensureNightStars();
   document.querySelectorAll('.overlay').forEach(o=>o.classList.remove('show'));
   $('#home').classList.add('hide');
   refreshHome();
@@ -3567,6 +3700,53 @@ async function showShare(){
   if(!url) return;
   $('#share-img').src = url;
   $('#share-overlay').classList.add('show');
+}
+
+/* ---------- 石头碎裂：本体缩没 + 8 片灰岩碎片四溅（WAAPI 显式关键帧） ---------- */
+function breakRockFx(r, c, el){
+  if(el){
+    el.style.zIndex = 9;
+    const anim = el.animate(
+      [{ transform:'scale(1)' }, { transform:'scale(1.18)', offset:.35 }, { transform:'scale(0)' }],
+      { duration:270, easing:'ease-in' }
+    );
+    anim.onfinish = () => el.remove();
+    setTimeout(()=>{ if(el.parentNode) el.remove(); }, 400);   /* 后台切换兜底 */
+  }
+  const p = pos(r, c);
+  for(let i=0;i<8;i++){
+    const s = document.createElement('div');
+    s.className = 'shard';
+    const sz = 5 + Math.random()*7;
+    s.style.width = s.style.height = sz + 'px';
+    s.style.background = i%2 ? '#948c80' : '#6e675c';
+    s.style.left = (p.x + cell/2 - sz/2) + 'px';
+    s.style.top = (p.y + cell/2 - sz/2) + 'px';
+    boardEl.appendChild(s);
+    const ang = Math.random()*Math.PI*2, dist = 42 + Math.random()*72;
+    const dx = Math.cos(ang)*dist, dy = Math.sin(ang)*dist - 34;
+    s.animate([
+      { transform:'translate(0,0) rotate(0deg)', opacity:1 },
+      { transform:`translate(${dx}px, ${dy + 50}px) rotate(${((Math.random()*2-1)*320).toFixed(0)}deg)`, opacity:0 }
+    ], { duration:520 + Math.random()*280, easing:'cubic-bezier(.2,.6,.4,1)' }).onfinish = () => s.remove();
+    setTimeout(()=>{ if(s.parentNode) s.remove(); }, 950);     /* 后台切换兜底 */
+  }
+}
+
+/* ---------- 夜幕星星层：惰性创建一次，body.night 时显示 ---------- */
+function ensureNightStars(){
+  if(document.getElementById('night-stars')) return;
+  const box = document.createElement('div');
+  box.id = 'night-stars';
+  for(let i=0;i<14;i++){
+    const s = document.createElement('i');
+    s.style.left = (Math.random()*94 + 3) + '%';
+    s.style.top = (Math.random()*86 + 2) + '%';
+    s.style.animationDelay = (-(Math.random()*2.4)).toFixed(2) + 's';
+    s.style.transform = 'scale(' + (0.6 + Math.random()).toFixed(2) + ')';
+    box.appendChild(s);
+  }
+  document.body.appendChild(box);
 }
 function openFanqun(){
   track('fanqun', 'click');
