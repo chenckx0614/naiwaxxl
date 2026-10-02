@@ -698,6 +698,31 @@
     z-index:2; margin-top:18px; background:rgba(255,255,255,.85); color:#2f6fd0; font-weight:900;
     padding:6px 22px; border-radius:999px; font-size:16px; box-shadow:0 3px 6px rgba(60,100,170,.25);
   }
+  /* 奶蛙空间入口：首页右下角浮动待机立绘，点击进空间 */
+  #mascot-space-trigger {
+    position:absolute; right:16px; bottom:16px; z-index:5;
+    width:86px; height:86px; border:none; padding:0; border-radius:50%;
+    background:none; cursor:pointer; overflow:visible;
+    filter:drop-shadow(0 4px 8px rgba(60,110,60,.4));
+    animation:mascotIdle 2.4s ease-in-out infinite;
+    -webkit-tap-highlight-color:transparent;
+  }
+  #mascot-space-trigger img {
+    width:100%; height:100%; object-fit:contain; display:block; pointer-events:none;
+  }
+  #mascot-space-trigger:active { transform:scale(.92); animation:none; }
+  @keyframes mascotIdle {
+    0%,100% { transform:translateY(0) rotate(-2deg); }
+    50% { transform:translateY(-6px) rotate(2deg); }
+  }
+  #mascot-space-overlay .panel { width:min(360px, 92vw); }
+  #mascot-space-img {
+    display:block; width:min(260px, 70vw); height:auto; margin:0 auto;
+    filter:drop-shadow(0 6px 14px rgba(60,110,60,.35));
+  }
+  #mascot-space-hint {
+    text-align:center; color:#7a6a4a; font-size:14px; font-weight:700; margin-top:18px;
+  }
   /* 开始按钮：手绘 blob 图（naiwa/start/start_btn.webp）铺底，文字叠在图上。
      blob 自带立体感 —— 原渐变/圆角/box-shadow 全去掉，投影用 drop-shadow
      跟随 blob 形状；宽高比贴图（2.15:1），pulse/active 反馈保留。 */
@@ -883,6 +908,7 @@ var _hmt = _hmt || [];
   <button id="btn-start"><img class="btn-face" src="naiwa/start/start_btn.webp" alt="" draggable="false"><span data-i18n="start">开始</span></button>
   <button id="btn-levels" onclick="openLevels()" data-i18n="pick_level">选择关卡</button>
   <button id="btn-wallpaper" onclick="openWallpaper()" data-i18n="wallpapers">🎨 壁纸</button>
+  <button id="mascot-space-trigger" onclick="openMascotSpace()" title="奶蛙空间" data-i18n-title="mascot_space"><img src="naiwa/start/start_bj.webp" alt="" draggable="false"></button>
   <div id="home-level-tag"><span id="home-level-pre">当前进度：第 </span><span id="home-level">1</span><span id="home-level-post"> 关</span></div>
   <div id="home-best"></div>
 </div>
@@ -1076,6 +1102,16 @@ var _hmt = _hmt || [];
   <button class="panel-close" data-close="wp-view-overlay">✕</button>
 </div>
 
+<!-- 奶蛙空间：首页右下角入口打开的轻量陪伴空间 -->
+<div class="overlay" id="mascot-space-overlay">
+  <div class="panel">
+    <div class="panel-title"><span class="star">⭐</span><span data-i18n="mascot_space">奶蛙空间</span><span class="star">⭐</span></div>
+    <button class="panel-close" data-close="mascot-space-overlay">✕</button>
+    <img id="mascot-space-img" src="naiwa/start/start_bj.webp" alt="" draggable="false">
+    <div id="mascot-space-hint" data-i18n="mascot_space_hint">这里是奶蛙的小空间，更多互动 coming soon~</div>
+  </div>
+</div>
+
 <div id="toast"></div>
 <canvas id="confetti-cv"></canvas>
 
@@ -1260,6 +1296,7 @@ const I18N = {
     share_result:'分享战绩', share_title:'分享战绩', share_hint:'长按图片保存或转发', result_score_label:'本局得分',
     fanqun:'粉丝群', fanqun_hint:'长按二维码识别加入',
     wallpapers:'壁纸', wp_hint_grid:'点击查看大图', wp_hint_view:'长按图片保存到相册，设为壁纸',
+    mascot_space:'奶蛙空间', mascot_space_hint:'这里是奶蛙的小空间，更多互动 coming soon~',
     rock_hard:'石头太硬了，砸不动！在它旁边消除试试',
     share_win:'成功通关 ·', share_try:'挑战 ·',
     start:'开始', pick_level:'选择关卡',
@@ -1307,6 +1344,7 @@ const I18N = {
     share_result:'Share Score', share_title:'Share Score', share_hint:'Long-press the image to save or share', result_score_label:'Score',
     fanqun:'Fan Club', fanqun_hint:'Long-press the QR code to join',
     wallpapers:'Wallpapers', wp_hint_grid:'Tap to view full size', wp_hint_view:'Long-press the image to save & set as wallpaper',
+    mascot_space:'Naiwa Space', mascot_space_hint:'A little corner for the Milk Frog. More interactions coming soon~',
     rock_hard:'The rock is too hard! Clear tiles next to it instead',
     share_win:'Level Clear ·', share_try:'Challenge ·',
     start:'Start Game', pick_level:'Levels',
@@ -3378,6 +3416,7 @@ function refreshHome(){
 }
 
 function openLevels(){ SFX.click(); renderLevelSelect(); $('#levels-overlay').classList.add('show'); }
+function openMascotSpace(){ SFX.click(); track('mascot','open','home'); $('#mascot-space-overlay').classList.add('show'); }
 
 /* ---------- 开始页 ---------- */
 function goHome(){
