@@ -1275,6 +1275,32 @@ function setLang(v){
  * ============================================================ */
 let actx = null, sfxGain = null;
 
+/* ---------- 数据埋点（百度统计自定义事件，root 专属） ----------
+   后台 tongji.baidu.com → 自定义事件，看每关通过率/分享与粉丝群使用率。
+   minitool 合规版无统计（CSP 挡外链），埋点只在这份代码里。 */
+const GAME_VER = '1.1.0';
+function track(cat, act, label){
+  try { if(window._hmt) _hmt.push(['_trackEvent', cat, act, label || '']); } catch(e){}
+}
+/* 玩家端 JS 报错自动上报：label 带版本号方便对版本排查；同一错误指纹只报
+   一次，防止死循环刷量。error 抓同步异常与资源错误，unhandledrejection 抓
+   Promise 未处理拒绝 —— 两条路都常见。 */
+const _errSeen = new Set();
+function reportError(kind, msg){
+  try {
+    const key = kind + ':' + msg;
+    if(_errSeen.has(key)) return;
+    _errSeen.add(key);
+    track('js_error', kind, 'v' + GAME_VER + ' ' + msg.slice(0, 120));
+  } catch(e){}
+}
+window.addEventListener('error', e => {
+  reportError('error', (e.message || 'unknown') + ' @' + String(e.filename||'').split('/').pop() + ':' + (e.lineno||0));
+});
+window.addEventListener('unhandledrejection', e => {
+  reportError('promise', String(e.reason && e.reason.message || e.reason).slice(0, 120));
+});
+
 /* 外部音频文件。显式 preload=auto + load()：省流量模式/部分 webview 下
    new Audio(src) 可能只拉元数据，等首次 play 才真下载 → 音效明显延迟。
    数据是否就位由后面的预加载段计入进度条（canplaythrough 计数）。 */
@@ -3040,6 +3066,7 @@ function showResult(win, stars){
     best: Math.max(prevBest, score),
     next: win ? (level < LEVELS.length ? 'next_level' : 'go_home') : 'none',
   };
+  track('level', win ? 'win' : 'lose', 'L' + level + (win ? ' s' + stars : ''));
   paintResult();
   if(win){
     /* 记进度：星星保留历史最好成绩，并解锁下一关（不会超出关卡表） */
@@ -3074,6 +3101,7 @@ function doRevive(){
 function startLevel(no){
   const def = LEVELS[no-1];
   if(!def){ toast(T('level_wip', { n:no })); return; }
+  track('level', 'start', 'L' + no);
   level = def.no;
   TYPES = def.types;
   activeShape = def.shape || null;
@@ -3329,6 +3357,7 @@ newBoard();
 scheduleHint();
 applyLang();     /* 铺文案 + 高亮语言分段控件 + 刷新开始页/关卡面板/顶部栏 */
 applyVolumes();  /* 把存档音量回填到滑块（音频链在 initAudio 里初始化） */
+{ const vt = $('#ver-tag'); if(vt) vt.textContent = 'v' + GAME_VER; }  /* 版本号单点维护：只改 GAME_VER */
 
 /* ---------- 公告弹窗（内容由 notice.js 配置） ---------- */
 /* 读公告字段：双语对象 {zh,en} 按当前语言取，纯字符串原样返回 */
@@ -3371,6 +3400,7 @@ function maybeShowNotice(){
   } else { btn.style.display = 'none'; btn.removeAttribute('href'); }
   $('#notice-overlay').classList.add('show');
   markNoticeSeen();    /* 显示即记：once 弹过就算，不纠结玩家怎么关的 */
+  track('notice', 'show', String(N.id || ''));
 }
 
 /* ---------- 分享战绩卡（canvas 绘制；吉祥物图同源加载，file:// 下 canvas 会被污染，
@@ -3478,12 +3508,14 @@ async function drawShareCard(){
   }
 }
 async function showShare(){
+  track('share', 'click', 'L' + (resultState ? resultState.level : ''));
   const url = await drawShareCard();
   if(!url) return;
   $('#share-img').src = url;
   $('#share-overlay').classList.add('show');
 }
 function openFanqun(){
+  track('fanqun', 'click');
   const im = $('#fanqun-img');
   if(!im.getAttribute('src')) im.src = 'naiwa/about/fsq.webp';
   $('#fanqun-overlay').classList.add('show');
