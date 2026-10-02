@@ -710,6 +710,32 @@
     transition:transform .1s;
   }
   #btn-levels:active { transform:scale(.95); box-shadow:0 2px 0 #35609f; }
+  /* 壁纸入口：比选择关卡小一号的紫粉胶囊，紧贴其下 */
+  #btn-wallpaper {
+    margin-top:10px; border:none; cursor:pointer; font-family:inherit;
+    font-size:15px; font-weight:900; color:#fff; letter-spacing:2px;
+    padding:8px 26px; border-radius:999px;
+    background:linear-gradient(#c98ff5,#9b4edd);
+    box-shadow:0 4px 0 #7433ad, inset 0 2px 3px rgba(255,255,255,.55), 0 6px 12px rgba(110,50,170,.3);
+    text-shadow:0 2px 3px rgba(90,40,150,.45);
+    transition:transform .1s;
+  }
+  #btn-wallpaper:active { transform:scale(.95); box-shadow:0 2px 0 #7433ad; }
+  /* 壁纸页：白圆角面板加宽（两列网格），内部可滚 */
+  #wallpaper-overlay .wp-page {
+    width:min(560px, 96vw); max-height:86vh; overflow-y:auto;
+    background:#f2f8ff; border:4px solid #6ea7ec; border-radius:22px;
+    padding:44px 16px 18px; position:relative; margin:auto;
+    box-shadow:0 8px 24px rgba(30,60,120,.4), inset 0 0 0 2px #fff;
+  }
+  .wp-grid { display:flex; flex-wrap:wrap; justify-content:center; }
+  .wp-grid img {
+    width:calc(50% - 6px); margin:3px; border-radius:12px;
+    border:2px solid #6ea7ec; display:block; cursor:pointer;
+  }
+  .wp-view-img { max-width:94vw; max-height:80vh; border-radius:14px; display:block; margin:auto; box-shadow:0 10px 30px rgba(0,0,0,.45); }
+  #wp-view-overlay { z-index:210; }
+  #wp-view-overlay .panel-close { position:fixed; top:14px; right:14px; }
 
   /* ---------- 关卡选择面板 ---------- */
   #level-grid { display:flex; flex-wrap:wrap; margin:6px -6px 0; }
@@ -810,6 +836,7 @@ var _hmt = _hmt || [];
   <div id="home-sub" data-i18n="home_sub">滑 动 消 除 · 轻 松 一 夏</div>
   <button id="btn-start"><img class="btn-face" src="naiwa/start/start_btn.webp" alt="" draggable="false"><span data-i18n="start">开始</span></button>
   <button id="btn-levels" onclick="openLevels()" data-i18n="pick_level">选择关卡</button>
+  <button id="btn-wallpaper" onclick="openWallpaper()" data-i18n="wallpapers">🎨 壁纸</button>
   <div id="home-level-tag"><span id="home-level-pre">当前进度：第 </span><span id="home-level">1</span><span id="home-level-post"> 关</span></div>
   <div id="home-best"></div>
 </div>
@@ -987,6 +1014,22 @@ var _hmt = _hmt || [];
   </div>
 </div>
 
+<!-- 壁纸画廊：网格预览，点开高清大图长按保存 -->
+<div class="overlay" id="wallpaper-overlay">
+  <div class="wp-page">
+    <div class="panel-title"><span class="star">⭐</span><span data-i18n="wallpapers">壁纸</span><span class="star">⭐</span></div>
+    <button class="panel-close" data-close="wallpaper-overlay">✕</button>
+    <div class="wp-grid" id="wp-grid"></div>
+    <div class="share-hint" data-i18n="wp_hint_grid">点击查看大图</div>
+  </div>
+</div>
+<!-- 大图查看：1080 高清，长按保存 -->
+<div class="overlay" id="wp-view-overlay">
+  <img class="wp-view-img" id="wp-view-img" alt="" draggable="false">
+  <div class="share-hint" style="color:#fff; text-shadow:0 1px 3px rgba(0,0,0,.5);" data-i18n="wp_hint_view">长按图片保存到相册，设为壁纸</div>
+  <button class="panel-close" data-close="wp-view-overlay">✕</button>
+</div>
+
 <div id="toast"></div>
 <canvas id="confetti-cv"></canvas>
 
@@ -1141,6 +1184,7 @@ const I18N = {
     notice_ok:'知道了', notice:'公告',
     share_result:'分享战绩', share_title:'分享战绩', share_hint:'长按图片保存或转发', result_score_label:'本局得分',
     fanqun:'粉丝群', fanqun_hint:'长按二维码识别加入',
+    wallpapers:'壁纸', wp_hint_grid:'点击查看大图', wp_hint_view:'长按图片保存到相册，设为壁纸',
     share_win:'成功通关 ·', share_try:'挑战 ·',
     start:'开始', pick_level:'选择关卡',
     home_sub:'滑 动 消 除 · 轻 松 一 夏',
@@ -1186,6 +1230,7 @@ const I18N = {
     notice_ok:'OK', notice:'Notice',
     share_result:'Share Score', share_title:'Share Score', share_hint:'Long-press the image to save or share', result_score_label:'Score',
     fanqun:'Fan Club', fanqun_hint:'Long-press the QR code to join',
+    wallpapers:'Wallpapers', wp_hint_grid:'Tap to view full size', wp_hint_view:'Long-press the image to save & set as wallpaper',
     share_win:'Level Clear ·', share_try:'Challenge ·',
     start:'Start Game', pick_level:'Levels',
     home_sub:'Swipe · Match · Relax',
@@ -3597,6 +3642,25 @@ function launchConfetti(stars){
     for(let t = last + step; t <= target; t += step) tick(t);
     if(target > last) tick(target);
   };
+}
+
+/* ---------- 壁纸画廊：网格预览（480p webp）+ 点击看高清（1080p webp，点开才加载） ---------- */
+const WALLPAPERS = [1,2,3,4,5,6];
+function openWallpaper(){
+  track('wallpaper', 'open');
+  const grid = $('#wp-grid');
+  if(!grid.dataset.ready){
+    grid.innerHTML = WALLPAPERS.map(i =>
+      `<img src="naiwa/wallpaper/${i}p.webp" alt="" draggable="false" data-i="${i}" onclick="viewWallpaper(${i})">`
+    ).join('');
+    grid.dataset.ready = '1';
+  }
+  $('#wallpaper-overlay').classList.add('show');
+}
+function viewWallpaper(i){
+  track('wallpaper', 'view', String(i));
+  $('#wp-view-img').src = `naiwa/wallpaper/${i}.webp`;
+  $('#wp-view-overlay').classList.add('show');
 }
 
 /* root 专属：外部 mp3 预加载计入加载进度（发行差异 —— minitool 音频 base64
