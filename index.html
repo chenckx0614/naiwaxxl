@@ -465,7 +465,10 @@
   #result-overlay.alt .panel { margin-top:52vh; }
   .end-fx.win.alt img {
     position:absolute; left:0; right:0; margin:auto;   /* 水平居中 */
-    bottom:calc(52vh - 24px);       /* 图底正好压在标题顶(52vh-24)上，零间隙 */
+    bottom:calc(48vh - 24px);       /* 图底正好压在标题顶上，零间隙。标题顶 =
+                                       overlay padding-top(44) + 52vh - 20（牌子探出 24、含边差 4），
+                                       换算成 bottom 锚点就是 48vh-24 —— 之前漏算 padding-top，
+                                       图底悬在牌子上方约 35px，出现一条肉眼可见的缝 */
     max-height:calc(52vh - 44px);
     /* 全身图底边是完整的椅子，不是裁切线 —— 去掉渐隐遮罩，完整呈现 */
     -webkit-mask-image:none; mask-image:none;
