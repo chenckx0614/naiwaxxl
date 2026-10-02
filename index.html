@@ -12,6 +12,7 @@
   html,body { height:100%; }
   html { background:#a9c8f2; }   /* 兜底色：#home-hill 超出视口把页面撑高时，滚动区不露白 */
   body {
+    --theme-color: #4a90d9;
     font-family: "PingFang SC","Microsoft YaHei",sans-serif;
     background: radial-gradient(circle at 50% 20%, #d3e4fb 0%, #a9c8f2 45%, #8ab0e8 100%) fixed;
     display:flex; justify-content:center; align-items:flex-start;
@@ -822,6 +823,23 @@
     animation:starTwinkle 2.4s ease-in-out infinite;
   }
   @keyframes starTwinkle { 0%,100% { opacity:.25; } 50% { opacity:1; } }
+
+  /* ---------- 消除瞬间全屏闪光（五连 / 石头 / 彩虹交换等大场面）----------
+     用 body::after 实现，不会遮挡按钮，只给画面一层高亮/主题色辉光。
+     默认 z-index 放在最底层内容之上、所有面板之下（z-index:1），
+     确保结算面板出现时闪光已经消失，不会糊在面板上。 */
+  #screen-flash {
+    position:fixed; inset:0; pointer-events:none; z-index:1; opacity:0;
+    background:radial-gradient(circle at 50% 45%, rgba(255,255,255,.55) 0%, var(--theme-color, #4a90d9) 38%, rgba(255,255,255,0) 72%);
+  }
+  #screen-flash.show { animation:screenFlash .22s ease-out forwards; }
+  @keyframes screenFlash {
+    0%   { opacity:0; transform:scale(.92); }
+    18%  { opacity:.34; }
+    42%  { opacity:.22; }
+    100% { opacity:0; transform:scale(1.08); }
+  }
+
   /* 第四关胜利 side 模式：探头奶蛙从右边缘滑入、贴死右缘 */
   .end-fx.win.side img {
     visibility:visible; position:absolute; right:0; bottom:5vh; left:auto;
@@ -957,6 +975,9 @@ var _hmt = _hmt || [];
 </div>
 
 <div id="app">
+  <!-- 全屏闪光层：大消除时由 JS 触发 -->
+  <div id="screen-flash"></div>
+
   <!-- 顶部栏 -->
   <div id="topbar">
     <div class="stat-panel">
@@ -1194,6 +1215,7 @@ const LEVELS = [
     no: 1,
     moves: 25,
     needs: [15, 12, 10],
+    themeColor: '#4a90d9',
     types: [
       { key:'b', img:'naiwa/1/b.webp', color:'#7ec3f5' },
       { key:'d', img:'naiwa/1/d.webp', color:'#ff9d1b' },
@@ -1217,6 +1239,7 @@ const LEVELS = [
     no: 2,
     moves: 20,
     needs: [18, 14, 11],
+    themeColor: '#7c3aed',
     types: [
       { key:'a', img:'naiwa/1/a.webp', color:'#ffd45e' },
       { key:'g', img:'naiwa/1/g.webp', color:'#c98ff5' },
@@ -1246,6 +1269,7 @@ const LEVELS = [
     cols: 8,
     moves: 22,
     needs: [20, 16, 13],
+    themeColor: '#38bdf8',
     types: [
       { key:'a3', img:'naiwa/3/a3.webp', color:'#7ed957' },
       { key:'b3', img:'naiwa/3/b3.webp', color:'#3f9ddb' },
@@ -1267,6 +1291,7 @@ const LEVELS = [
     cols: 9,
     moves: 24,
     needs: [22, 18, 16],
+    themeColor: '#f59e0b',
     types: [
       { key:'a4', img:'naiwa/4/a4.webp', color:'#f0e6d8' },
       { key:'b4', img:'naiwa/4/b4.webp', color:'#e6b800' },
@@ -1299,6 +1324,7 @@ const LEVELS = [
     cols: 9,
     moves: 22,
     needs: [16, 14, 12],
+    themeColor: '#1e3a8a',
     /* 4 种新角色；太阳自带微光（glow），区分度天然 */
     types: [
       { key:'5a', img:'naiwa/5/5a.webp', color:'#ffcf3e', glow:1 },
@@ -1968,6 +1994,9 @@ function clusterCells(cells){
   return out;
 }
 
+/* 当前关卡主题色，screenFlash / 大特效 secondary 色用。 */
+function getThemeColor(){ return (currentLevelDef() || {}).themeColor || '#4a90d9'; }
+
 /* 通用碎片：left/top 定位到中心、keyframes 自带位移。
    回收走 onfinish + setTimeout 双保险（切后台 WAAPI 整体暂停，onfinish 不会来）。 */
 function addShard(cx, cy, color, sz, keyframes, dur, easing){
@@ -2088,6 +2117,16 @@ function fxQuadGroup(cells, color){
   ring(.95, 0,   460, .95);      /* 内圈：先炸 */
   ring(.74, 120, 400, .8);       /* 外圈：压着内圈的后半程再炸一次 */
 
+  /* 第三圈：用关卡主题色做一圈暗色描边尾迹，让四连在不同关卡看起来风格不同 */
+  fxNode('fx-wave', {
+    left:(cen.x - span/2) + 'px', top:(cen.y - span/2) + 'px',
+    width:span + 'px', height:span + 'px', color:getThemeColor()
+  }, [
+    { transform:'scale(.18)', opacity:0 },
+    { transform:'scale(.42)', opacity:.55, offset:.35 },
+    { transform:'scale(.90)', opacity:0 }
+  ], { duration: 520, delay: 180, easing:'cubic-bezier(.18,.7,.34,1)' });
+
   /* 中心白光：只做一小团（原来放大到 1.4 倍整组尺寸 + 0.85 不透明度，
      会把四枚棋子连人带脸糊成一坨白），峰值也压低、往后挪到塌缩那一刻 */
   fxNode('fx-flash', {
@@ -2100,7 +2139,7 @@ function fxQuadGroup(cells, color){
     { transform:'scale(1.1)', opacity:0 }
   ], { duration: 440, easing:'ease-out' });
 
-  shardsOut(cen.x, cen.y, color, 12, cell * 1.6);
+  shardsOut(cen.x, cen.y, color, 16, cell * 1.6);
 }
 
 function fxVortexGroup(cells, color){
@@ -2117,6 +2156,17 @@ function fxVortexGroup(cells, color){
     { transform:'rotate(-430deg) scale(.62)', opacity:.75, offset:.62 },
     { transform:'rotate(-720deg) scale(.06)', opacity:0 }
   ], { duration: FX_VORTEX_MS, easing:'cubic-bezier(.4,.05,.55,.95)' });
+
+  /* 外环：主题色慢速反旋，给旋涡加一个「气场」边界 */
+  fxNode('fx-vortex', Object.assign({
+    background: conicGrad(vivid(getThemeColor())),
+    opacity: .65
+  }, box), [
+    { transform:'rotate(0deg) scale(1.45)', opacity:0 },
+    { transform:'rotate(80deg) scale(1.1)', opacity:.55, offset:.25 },
+    { transform:'rotate(240deg) scale(.78)', opacity:.35, offset:.62 },
+    { transform:'rotate(420deg) scale(.2)', opacity:0 }
+  ], { duration: FX_VORTEX_MS + 120, easing:'cubic-bezier(.45,0,.6,1)' });
 
   /* 涡轮核心：中心一个小的实心环反向转（直径约 2 枚棋子，太大就变成"一个大圆圈"了） */
   const rc = cell * 1.05;
@@ -2140,7 +2190,7 @@ function fxVortexGroup(cells, color){
     { transform:'scale(1.25)', opacity:0 }
   ], { duration: 340, delay: FX_VORTEX_MS - 300, easing:'ease-out' });
 
-  shardsIn(cen.x, cen.y, color, R * 0.9, 16);
+  shardsIn(cen.x, cen.y, color, R * 0.9, 20);
 }
 
 /* ---------- 手感三件套：震屏 / 落地挤压 / hit-stop ---------- */
@@ -2155,19 +2205,28 @@ const LEFT_MOVE_SCORE = 50;
 
 /* 震屏。#board 本身没有 inline transform（棋子/特效都定位在它内部的子元素上），
    在容器上跑 WAAPI 位移关键帧带着全场一起震，不会触发
-   「CSS 关键帧覆盖 .tile 定位 → 棋子飞向棋盘左上角」那条铁律。 */
+   「CSS 关键帧覆盖 .tile 定位 → 棋子飞向棋盘左上角」那条铁律。
+   lv=1 轻震（四连 / 深连锁），lv=2 重震（五连 / 石头破裂），lv=3 超强震（双彩球 / 大波次）。
+   重震额外带一点旋转 + 缩放冲击，让屏幕有「被拍了一巴掌」的体感。 */
 function shakeBoard(lv){
   if(!settings.anim || !boardEl.animate || lv < 1) return;
-  const amp = lv === 2 ? 8 : 4;
+  const amp = lv >= 3 ? 14 : lv === 2 ? 9 : 5;
   const kf = [];
-  for(let i=0;i<7;i++){
-    const dec = 1 - i/7;
+  const frames = lv >= 3 ? 10 : 8;
+  for(let i=0;i<frames;i++){
+    const dec = 1 - i/frames;
     const dx = (i%2 ? 1 : -1) * amp * dec;
-    const dy = (i%2 ? -1 : 1) * amp * 0.35 * dec;
-    kf.push({ transform:'translate('+dx.toFixed(2)+'px,'+dy.toFixed(2)+'px)' });
+    const dy = (i%2 ? -1 : 1) * amp * (0.38 + (lv >= 3 ? 0.12 : 0)) * dec;
+    let t = 'translate('+dx.toFixed(2)+'px,'+dy.toFixed(2)+'px)';
+    if(lv >= 2){
+      const rot = (i%2 ? 1 : -1) * (lv >= 3 ? 1.8 : 1.1) * dec;
+      const scl = 1 + (i === 0 ? (lv >= 3 ? 0.018 : 0.01) : 0) * dec;
+      t += ' rotate('+rot.toFixed(2)+'deg) scale('+scl.toFixed(3)+')';
+    }
+    kf.push({ transform:t });
   }
-  kf.push({ transform:'translate(0,0)' });
-  boardEl.animate(kf, { duration: 220 + lv*90, easing:'linear' });
+  kf.push({ transform:'translate(0,0) rotate(0deg) scale(1)' });
+  boardEl.animate(kf, { duration: 240 + lv*80, easing:'linear' });
 }
 
 /* 落地挤压（squash & stretch）：下落到位瞬间 .face 压扁再回弹，给棋子重量感。
@@ -2181,6 +2240,17 @@ function squashFace(el){
     { transform:'scale(.94,1.08)', offset:.55 },
     { transform:'scale(1,1)' }
   ], { duration:180, easing:'ease-out' });
+}
+
+/* 屏幕闪光：大场面（五连 / 石头 / 双彩球）时整屏一亮。
+   用 class 触发 CSS 动画，同一时刻多次触发会先移除 class 再挂上，保证每次都能亮。 */
+function screenFlash(){
+  const el = document.getElementById('screen-flash');
+  if(!el || !settings.anim) return;
+  el.classList.remove('show');
+  void el.offsetWidth;
+  el.classList.add('show');
+  setTimeout(()=> el.classList.remove('show'), 280);
 }
 
 /* ---------- 特殊棋子：四连条纹 / 五连彩球 ----------
@@ -2288,7 +2358,9 @@ async function rainbowSwap(a, b){
     rainbowCells(other.type).forEach(function(p){ hit.add(p.r*COLS + p.c); });
   }
   SFX.vortex();
-  shakeBoard(2);
+  const doubleRainbow = !!(other && other.effect === 'rainbow');
+  shakeBoard(doubleRainbow ? 3 : 2);
+  if(doubleRainbow) screenFlash();
   buzz([14,26,14]);
   await clearSet(hit, 1, null);
   await dropAndFill(1);
@@ -2745,8 +2817,9 @@ async function clearSet(hit, combo, info){
       board[rr][cc] = null;
       breakRockFx(rr, cc, t.el);
     });
-    shakeBoard(2);
+    shakeBoard(rockBreak.size >= 2 ? 3 : 2);
     SFX.crack();
+    screenFlash();
   }
   /* 长连生成特殊棋子：>=4 的连线中心格保留一枚（不消除），换成带效果的特殊棋子。
      这些格子从消除/特效名单里剔除（clearTiers 的 exclude），分数也不计 ——
@@ -2776,9 +2849,14 @@ async function clearSet(hit, combo, info){
   SFX.clear(combo, topTier);
   if(combo>1) showCombo(combo);
   showScore(hit, gained, topTier);
-  /* 震屏与档位/连锁挂钩：四连轻震、五连重震、普通三连只在连锁较深时轻震 */
-  shakeBoard(topTier === 2 ? 2 : topTier === 1 ? 1 : (combo >= 3 ? 1 : 0));
+  /* 震屏与档位/连锁挂钩：四连轻震、五连重震、普通三连只在连锁较深时轻震。
+     连锁越深震感越狠：五连在深连锁时升级到 lv.3 超强震；screenFlash 在五连 / 四连深连锁时亮屏。 */
+  let shakeLv = topTier === 2 ? 2 : topTier === 1 ? 1 : (combo >= 3 ? 1 : 0);
+  if(topTier === 2 && combo >= 3) shakeLv = 3;
+  if(topTier === 1 && combo >= 4) shakeLv = 2;
+  shakeBoard(shakeLv);
   buzz(topTier===2 ? [14,26,14] : topTier===1 ? 26 : (combo > 1 ? 22 : 12));
+  if(topTier === 2 || (topTier === 1 && combo >= 3)) screenFlash();
   // 收集目标（生成格没消掉，不计收集进度）
   hit.forEach(i=>{
     if(spawnIdx.has(i)) return;
@@ -3388,6 +3466,7 @@ function startLevel(no){
   rockList = def.rocks || [];
   /* 夜幕主题：第五关换星空背景（星星层惰性创建一次） */
   document.body.classList.toggle('night', def.bg === 'night');
+  document.body.style.setProperty('--theme-color', def.themeColor || '#4a90d9');
   ensureNightStars();
   document.querySelectorAll('.overlay').forEach(o=>o.classList.remove('show'));
   $('#home').classList.add('hide');
@@ -3476,6 +3555,8 @@ function openMascotSpace(){ SFX.click(); track('mascot','open','home'); $('#masc
 /* ---------- 开始页 ---------- */
 function goHome(){
   document.querySelectorAll('.overlay').forEach(o=>o.classList.remove('show'));
+  document.body.classList.remove('night');
+  document.body.style.removeProperty('--theme-color');
   refreshHome();
   $('#home').classList.remove('hide');
 }
