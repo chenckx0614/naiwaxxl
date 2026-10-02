@@ -3972,11 +3972,12 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
-let renderer, scene, camera, controls, frogGroup, placeholderGroup;
+let renderer, scene, camera, controls, frogGroup, placeholderGroup, mascotGroup;
 let isInitialized = false;
 let isAnimating = false;
 let mascotModel = null;   // GLB 加载后替换占位几何体
 let mixer = null;         // GLB 骨骼动画播放器（如果有的话）
+let baseScale = 1;        // normalize 后的基础缩放，呼吸动画基于它（防止覆盖导致压扁）
 
 function initMascot3D() {
   const container = document.getElementById('mascot-3d-container');
@@ -4069,9 +4070,10 @@ function initMascot3D() {
     raycaster.setFromCamera(new THREE.Vector2(x, y), camera);
     const hits = raycaster.intersectObject(frogGroup, true);
     if (hits.length) {
-      frogGroup.scale.set(1.15, 0.85, 1.15);
-      setTimeout(() => frogGroup.scale.set(0.9, 1.1, 0.9), 100);
-      setTimeout(() => frogGroup.scale.set(1, 1, 1), 220);
+      // 点击跳一下：基于 baseScale 的 scale 脉冲（防止覆盖 normalize 导致压扁）
+      frogGroup.scale.set(baseScale * 1.15, baseScale * 0.85, baseScale * 1.15);
+      setTimeout(() => frogGroup.scale.set(baseScale * 0.9, baseScale * 1.1, baseScale * 0.9), 100);
+      setTimeout(() => frogGroup.scale.set(baseScale, baseScale, baseScale), 220);
     }
   });
 
@@ -4093,8 +4095,8 @@ function animate() {
     mixer.update(0.016);   // 骨骼动画按固定帧率推进
   }
   if (frogGroup) {
-    // 待机呼吸：身体轻微缩放（无骨骼动画时的程序化兜底）
-    frogGroup.scale.y = 1 + Math.sin(t * 2.2) * 0.025;
+    // 待机呼吸：基于 normalize 后的 baseScale 轻微缩放（防止覆盖导致压扁）
+    frogGroup.scale.y = baseScale * (1 + Math.sin(t * 2.2) * 0.025);
   }
   controls.update();
   renderer.render(scene, camera);
@@ -4128,11 +4130,14 @@ function loadMascotModel(glbUrl) {
       const scale = 2.0 / maxDim;   // 统一缩放到最大边 ~2 单位
       model.scale.setScalar(scale);
       model.position.set(-center.x * scale, -center.y * scale, -center.z * scale);
+      baseScale = scale;   // 存起来，呼吸/跳跃动画基于它（防止 scale.y 覆盖导致压扁）
 
-      // 移除占位体，加入 GLB（保持模型原始 PBR 材质，不做二次微调）
+      // 外层 Group 负责 normalize，内层模型负责动画（分离不冲突）
+      mascotGroup = new THREE.Group();
+      mascotGroup.add(model);
       scene.remove(placeholderGroup);
-      scene.add(model);
-      frogGroup = model;
+      scene.add(mascotGroup);
+      frogGroup = mascotGroup;   // 交互目标指向外层 Group
       mascotModel = model;
       /* GLB 加载成功：加标记 class，方便探针/调试确认 */
       document.getElementById('mascot-space-overlay').classList.add('mascot-glb-loaded');
