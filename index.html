@@ -3991,27 +3991,25 @@ function initMascot3D() {
   scene.background = new THREE.Color(0xbfeaff);
 
   camera = new THREE.PerspectiveCamera(45, w / h, 0.1, 100);
-  camera.position.set(0, 0.3, 2.4);
+  camera.position.set(0, 0.8, 2.6);
+  camera.lookAt(0, 0.6, 0);   // 看向模型脸部高度
 
   renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
   renderer.setSize(w, h);
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
-  // 灯光：三点打光（主光+补光+轮廓光）让模型更立体
-  // 主光：前方偏右上，强度最高，出主要明暗
-  const keyLight = new THREE.DirectionalLight(0xffffff, 1.0);
+  // 灯光：提亮版——主光 + 补光 + 轮廓光 + 半球环境光（用户反馈暗淡，整体提亮）
+  const keyLight = new THREE.DirectionalLight(0xffffff, 2.0);
   keyLight.position.set(2, 3, 2);
   scene.add(keyLight);
-  // 补光：左前方，强度减半，柔化主光阴影
-  const fillLight = new THREE.DirectionalLight(0xffffff, 0.45);
+  const fillLight = new THREE.DirectionalLight(0xffffff, 1.0);
   fillLight.position.set(-2, 1, 1.5);
   scene.add(fillLight);
-  // 轮廓光：后方，勾勒边缘，让模型从背景里跳出来
-  const rimLight = new THREE.DirectionalLight(0xffeecc, 0.35);
+  const rimLight = new THREE.DirectionalLight(0xffeecc, 0.6);
   rimLight.position.set(0, 1, -2);
   scene.add(rimLight);
-  // 环境光：很低的底光，避免死黑
-  scene.add(new THREE.AmbientLight(0xffffff, 0.35));
+  const hemiLight = new THREE.HemisphereLight(0xe6f4ff, 0xc8e6c9, 0.9);
+  scene.add(hemiLight);
 
   // ---- 占位奶蛙：黄色椭球身体 + 黑眼睛（GLB 加载失败时的兜底） ----
   const bodyGeo = new THREE.SphereGeometry(1, 32, 32);
@@ -4130,6 +4128,10 @@ function loadMascotModel(glbUrl) {
       const scale = 2.0 / maxDim;   // 统一缩放到最大边 ~2 单位
       model.scale.setScalar(scale);
       model.position.set(-center.x * scale, -center.y * scale, -center.z * scale);
+      /* 模型方向：先不旋转，看原始朝向再调 */
+      // model.rotation.y = Math.PI;
+      /* 模型偏高（脸在视野上方被裁），额外下移让全身居中 */
+      model.position.y -= 0.6;
       baseScale = scale;   // 存起来，呼吸/跳跃动画基于它（防止 scale.y 覆盖导致压扁）
 
       // 外层 Group 负责 normalize，内层模型负责动画（分离不冲突）
