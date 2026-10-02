@@ -29,3 +29,8 @@ minitool.zip
 # 素材原图：线上只发 webp（根目录 naiwa 与 minitool 均如此）。
 # 新素材请转 webp 后再入库；png 原图留在本地作重转备份，不进仓库。
 naiwa/**/*.png
+
+# 3D 模型源文件：未压缩原版（70MB）与三视图留本地作重转备份，
+# 线上只发压缩版 naiwa_lite.glb（1.39MB）。
+naiwa/naiwa3d/naiwa.glb
+naiwa/naiwa3d/*.jpg
