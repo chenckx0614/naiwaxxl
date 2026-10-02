@@ -193,16 +193,6 @@
     content:""; position:absolute; inset:-3px; border-radius:12px;
     border:3px solid #ffb400; box-shadow:0 0 10px #ffd54d;
   }
-  /* 选中棋子外加一个旋转光环，让等待交换的棋子更显眼 */
-  .tile.selected .face::before {
-    content:""; position:absolute; inset:-22%; border-radius:50%;
-    border:3px solid rgba(255,180,0,.42);
-    border-top-color:rgba(255,255,255,.92);
-    border-right-color:rgba(255,255,255,.55);
-    animation:selRing .85s linear infinite;
-    z-index:-1;
-  }
-  @keyframes selRing { to { transform:rotate(360deg); } }
   /* 消除收缩：时长与 app.js 的 POP_MS 保持一致（下落会在这段时间的前半程就开始） */
   .tile.clearing .face { animation:pop .2s forwards; }
   .tile.hint .face { animation:bounce .5s infinite alternate; }
