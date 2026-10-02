@@ -193,14 +193,24 @@
     content:""; position:absolute; inset:-3px; border-radius:12px;
     border:3px solid #ffb400; box-shadow:0 0 10px #ffd54d;
   }
+  /* 选中棋子外加一个旋转光环，让等待交换的棋子更显眼 */
+  .tile.selected .face::before {
+    content:""; position:absolute; inset:-22%; border-radius:50%;
+    border:3px solid rgba(255,180,0,.42);
+    border-top-color:rgba(255,255,255,.92);
+    border-right-color:rgba(255,255,255,.55);
+    animation:selRing .85s linear infinite;
+    z-index:-1;
+  }
+  @keyframes selRing { to { transform:rotate(360deg); } }
   /* 消除收缩：时长与 app.js 的 POP_MS 保持一致（下落会在这段时间的前半程就开始） */
   .tile.clearing .face { animation:pop .2s forwards; }
   .tile.hint .face { animation:bounce .5s infinite alternate; }
   @keyframes pop {
-    0%   { transform:scale(1) rotate(0deg); opacity:1; }
-    42%  { transform:scale(1.30) rotate(-7deg); opacity:1; }
-    72%  { transform:scale(.80) rotate(6deg); opacity:.85; }
-    100% { transform:scale(0) rotate(14deg); opacity:0; }
+    0%   { transform:scale(1) rotate(0deg); opacity:1; filter:brightness(1); }
+    42%  { transform:scale(1.30) rotate(-7deg); opacity:1; filter:brightness(1.45) drop-shadow(0 0 8px rgba(255,255,255,.55)); }
+    72%  { transform:scale(.80) rotate(6deg); opacity:.85; filter:brightness(1.12); }
+    100% { transform:scale(0) rotate(14deg); opacity:0; filter:brightness(1); }
   }
   /* 消除粒子碎片：JS 动态生成，飞散后立刻移除（见 burst） */
   .shard { position:absolute; border-radius:2px; pointer-events:none; z-index:6; }
@@ -294,6 +304,12 @@
   }
   @keyframes rainbowPulse { 0%,100% { opacity:.82; } 50% { opacity:1; } }
 
+  /* 特殊棋子生成时的上冲天光柱 */
+  .fx-beam {
+    position:absolute; width:20px; height:60px; border-radius:50% 50% 0 0;
+    pointer-events:none; z-index:6; transform-origin:50% 100%;
+  }
+
   /* 滑向不可去的格子（棋盘外 / 菱形缺角 / 牢笼）时的轻反馈。
      只抖内层 .face —— .tile 的 transform 是 inline 定位，CSS 动画一旦落在 .tile 上
      会把它整个覆盖，棋子会飞到棋盘左上角。 */
@@ -303,6 +319,20 @@
     30% { transform:translateX(-4px); }
     70% { transform:translateX(4px); }
     100% { transform:translateX(0); }
+  }
+
+  /* 棋盘涟漪：从中心向外扩散的主题色环 */
+  .fx-ripple {
+    position:absolute; border-radius:50%; pointer-events:none; z-index:4;
+    border:3px solid var(--theme-color, #4a90d9);
+    box-shadow:0 0 22px var(--theme-color, #4a90d9), inset 0 0 14px rgba(255,255,255,.35);
+  }
+  /* 匹配成功瞬间的连线闪光 */
+  .fx-match-beam {
+    position:absolute; height:7px; border-radius:4px; pointer-events:none; z-index:6;
+    background:linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,.95) 45%, rgba(255,255,255,0) 100%);
+    box-shadow:0 0 8px rgba(255,255,255,.85), 0 0 16px var(--theme-color, #4a90d9);
+    transform-origin:0 50%;
   }
 
   /* ---------- 底部道具栏 ----------
@@ -2253,6 +2283,60 @@ function screenFlash(){
   setTimeout(()=> el.classList.remove('show'), 280);
 }
 
+/* 棋盘涟漪：从棋盘中心向外扩散的主题色冲击环，四连/五连时各来一圈。
+   节点挂在 #board 里（不是 .tile），不碰任何棋子的 inline transform。 */
+function boardRipple(lv){
+  if(!settings.anim || !boardEl) return;
+  const w = boardEl.offsetWidth, h = boardEl.offsetHeight;
+  const d = document.createElement('div');
+  d.className = 'fx-ripple';
+  const size = Math.max(w, h) * 1.3;
+  d.style.left = (w/2 - size/2) + 'px';
+  d.style.top = (h/2 - size/2) + 'px';
+  d.style.width = size + 'px';
+  d.style.height = size + 'px';
+  d.style.borderColor = lv >= 2 ? '#ffffff' : getThemeColor();
+  boardEl.appendChild(d);
+  const dur = lv >= 2 ? 520 : 420;
+  const a = d.animate([
+    { transform:'scale(.22)', opacity:0 },
+    { transform:'scale(.55)', opacity:lv >= 2 ? .45 : .32, offset:.35 },
+    { transform:'scale(1.18)', opacity:0 }
+  ], { duration:dur, easing:'cubic-bezier(.25,.7,.45,1)' });
+  const kill = ()=>{ if(d.parentNode) d.parentNode.removeChild(d); };
+  a.onfinish = kill;
+  setTimeout(kill, dur + 200);
+}
+
+/* 匹配成功瞬间的连线闪光：沿每条 >=3 连线扫一道光，随后消除才爆开。
+   只挂 boardEl，不碰棋子定位。 */
+function matchBeams(runs){
+  if(!settings.anim || !runs || !runs.length) return;
+  runs.forEach(run=>{
+    const first = run.cells[0], last = run.cells[run.cells.length-1];
+    const p1 = pos(first.r, first.c), p2 = pos(last.r, last.c);
+    const cx1 = p1.x + cell/2, cy1 = p1.y + cell/2;
+    const cx2 = p2.x + cell/2, cy2 = p2.y + cell/2;
+    const dx = cx2 - cx1, dy = cy2 - cy1;
+    const len = Math.hypot(dx, dy);
+    const ang = Math.atan2(dy, dx);
+    const d = document.createElement('div');
+    d.className = 'fx-match-beam';
+    d.style.left = cx1 + 'px';
+    d.style.top = (cy1 - 3.5) + 'px';
+    d.style.width = len + 'px';
+    boardEl.appendChild(d);
+    const a = d.animate([
+      { transform:'rotate('+ang+'rad) scaleX(0)', opacity:0 },
+      { transform:'rotate('+ang+'rad) scaleX(1)', opacity:.95, offset:.35 },
+      { transform:'rotate('+ang+'rad) scaleX(0)', opacity:0 }
+    ], { duration:260, easing:'cubic-bezier(.25,.7,.45,1)' });
+    const kill = ()=>{ if(d.parentNode) d.parentNode.removeChild(d); };
+    a.onfinish = kill;
+    setTimeout(kill, 460);
+  });
+}
+
 /* ---------- 特殊棋子：四连条纹 / 五连彩球 ----------
    长连不再只是"当场好看"：消掉一条 >=4 的连线时，其中心格留下一枚带效果的特殊
    棋子（横四连 → 清列条纹、竖四连 → 清行条纹、五连 → 彩球）。规则刻意简单自洽：
@@ -2329,7 +2413,8 @@ function applyEffectFace(t){
   if(f) f.className = 'face' + (t.effect ? ' eff-' + t.effect : '');
 }
 
-/* 生成特殊棋子瞬间的闪光（WAAPI 显式关键帧，无需回收 —— 不带 fill 会自己回弹） */
+/* 生成特殊棋子瞬间的闪光 + 上冲天光柱（WAAPI 显式关键帧）。
+   光柱是独立的 fx-beam 节点，不碰 .tile 的 inline transform。 */
 function spawnFx(el){
   if(!settings.anim) return;
   const f = el.firstChild;
@@ -2339,6 +2424,25 @@ function spawnFx(el){
     { transform:'scale(1.45)', filter:'brightness(2.2)', offset:.35 },
     { transform:'scale(1)', filter:'brightness(1)' }
   ], { duration:420, easing:'ease-out' });
+
+  const rect = el.getBoundingClientRect();
+  const wrap = boardEl.getBoundingClientRect();
+  const cx = rect.left - wrap.left + rect.width/2;
+  const cy = rect.top - wrap.top + rect.height/2;
+  const beam = document.createElement('div');
+  beam.className = 'fx-beam';
+  beam.style.left = (cx - 10) + 'px';
+  beam.style.top = (cy - 28) + 'px';
+  beam.style.background = 'linear-gradient(180deg, rgba(255,255,255,.95) 0%, ' + hexA(getThemeColor(), .75) + ' 42%, rgba(255,255,255,0) 100%)';
+  boardEl.appendChild(beam);
+  const anim = beam.animate([
+    { transform:'translateY(0) scaleY(.4) scaleX(.6)', opacity:0 },
+    { transform:'translateY(-36px) scaleY(1.1) scaleX(1)', opacity:.9, offset:.35 },
+    { transform:'translateY(-84px) scaleY(1.45) scaleX(.55)', opacity:0 }
+  ], { duration:520, easing:'cubic-bezier(.2,.7,.4,1)' });
+  const kill = ()=>{ if(beam.parentNode) beam.parentNode.removeChild(beam); };
+  anim.onfinish = kill;
+  setTimeout(kill, 700);
 }
 
 /* 彩球交换：不检查匹配，直接触发全场同色消除。双彩球 = 全场清。
@@ -2857,6 +2961,7 @@ async function clearSet(hit, combo, info){
   shakeBoard(shakeLv);
   buzz(topTier===2 ? [14,26,14] : topTier===1 ? 26 : (combo > 1 ? 22 : 12));
   if(topTier === 2 || (topTier === 1 && combo >= 3)) screenFlash();
+  boardRipple(topTier);
   // 收集目标（生成格没消掉，不计收集进度）
   hit.forEach(i=>{
     if(spawnIdx.has(i)) return;
@@ -3006,6 +3111,7 @@ async function resolveBoard(){
       let ms = HITSTOP_MS[top];
       if(combo >= 3) ms = (ms / 2) | 0;
       if(ms > 0) await sleep(ms);
+      matchBeams(info.runs);
     }
     await clearSet(info.hit, combo, info);
     await dropAndFill(combo);
