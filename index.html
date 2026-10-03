@@ -545,11 +545,17 @@
   .set-row { display:flex; align-items:center; gap:10px; padding:10px 0; }
   .set-row + .set-row { border-top:2px dashed #f0dfba; }
   .set-row .s-icon {
-    width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center;
-    font-size:19px; flex-shrink:0;
-    background:radial-gradient(circle at 35% 30%, #ffe08a, #ffb400);
-    box-shadow:inset 0 -2px 3px rgba(150,90,0,.35), 0 2px 3px rgba(0,0,0,.15);
+    width:36px; height:36px; border-radius:12px; display:flex; align-items:center; justify-content:center;
+    flex-shrink:0;
   }
+  /* 线性小图标：统一 19px、stroke 跟 currentColor，底色按功能分色（淡彩圆角方块） */
+  .set-row .s-icon svg { width:19px; height:19px; display:block; }
+  .ic-music { background:#e7f0ff; color:#3d86e8; }
+  .ic-sfx   { background:#e4f6f2; color:#2ba392; }
+  .ic-hint  { background:#fff5dd; color:#e09f1f; }
+  .ic-anim  { background:#f1ebff; color:#8b5cd6; }
+  .ic-vibe  { background:#ffede4; color:#e06a42; }
+  .ic-lang  { background:#e7f0ff; color:#3d86e8; }
   .set-row .s-name { flex:1; font-weight:800; color:#8a5a1e; font-size:16px; }
 
   /* 开关 */
@@ -623,11 +629,13 @@
   #result-score { text-align:center; font-size:15px; font-weight:900; color:#e07a1f; margin-top:6px; }
   #result-bonus { text-align:center; font-size:13px; font-weight:800; color:#3d9a4e; margin-top:2px; min-height:16px; }
   /* 设置面板按打开来源显隐对局语义按钮：主页打开时没有进行中的对局，
-     「返回大厅 / 继续游戏」没有意义，只留「重新开始」；游戏内打开带 in-game 全显示。
+     「返回大厅 / 重新开始 / 继续游戏」都没有意义，整组隐藏。
      用 data-i18n 属性选择器 —— 两版按钮的绑定机制不同（data-action vs onclick），
      这个属性是两版唯一共同点。 */
   #settings-overlay:not(.in-game) .btn[data-i18n="home"],
-  #settings-overlay:not(.in-game) .btn[data-i18n="resume"] { display:none; }
+  #settings-overlay:not(.in-game) .btn[data-i18n="restart"],
+  #settings-overlay:not(.in-game) .btn[data-i18n="resume"],
+  #settings-overlay:not(.in-game) .panel-btns { display:none; }
   #home-best { margin-top:8px; font-size:14px; font-weight:800; color:#7a5a2a; letter-spacing:1px; }
   #home-best:empty { display:none; }
   /* 加分时顶栏数字弹一下 */
@@ -896,8 +904,9 @@
     transition:transform .15s ease, box-shadow .15s ease;
   }
   .wp-grid img:active { transform:scale(.97); }
-  .wp-view-img { max-width:94vw; max-height:80vh; border-radius:14px; display:block; margin:auto; box-shadow:0 10px 30px rgba(0,0,0,.45); }
-  #wp-view-overlay { z-index:210; }
+  .wp-view-img { max-width:94vw; max-height:72vh; border-radius:14px; display:block; margin:0 auto; box-shadow:0 10px 30px rgba(0,0,0,.45); }
+  /* 纵向排列：大图在上，「长按保存」提示紧跟在图片正下方（横向 flex 会把提示挤到图片右边） */
+  #wp-view-overlay { z-index:210; flex-direction:column; }
   #wp-view-overlay .panel-close { position:fixed; top:14px; right:14px; }
 
   /* ---------- 关卡选择面板 ---------- */
@@ -1047,12 +1056,12 @@ var _hmt = _hmt || [];
     <div class="sec-title" data-i18n="sec_audio">音效设置</div>
     <div class="set-card">
       <div class="set-row">
-        <div class="s-icon">🎵</div><div class="s-name" data-i18n="bgm">背景音乐</div>
+        <div class="s-icon ic-music"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg></div><div class="s-name" data-i18n="bgm">背景音乐</div>
         <input class="vol" type="range" min="0" max="100" step="5" value="100" data-vol="music" aria-label="music volume">
         <button class="switch on" data-set="music"></button>
       </div>
       <div class="set-row">
-        <div class="s-icon">🔊</div><div class="s-name" data-i18n="sfx">音效</div>
+        <div class="s-icon ic-sfx"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg></div><div class="s-name" data-i18n="sfx">音效</div>
         <input class="vol" type="range" min="0" max="100" step="5" value="100" data-vol="sfx" aria-label="sound volume">
         <button class="switch on" data-set="sfx"></button>
       </div>
@@ -1061,16 +1070,16 @@ var _hmt = _hmt || [];
     <div class="sec-title" data-i18n="sec_game">游戏设置</div>
     <div class="set-card">
       <div class="set-row">
-        <div class="s-icon">💡</div><div class="s-name" data-i18n="hint">提示</div>
+        <div class="s-icon ic-hint"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18h6"/><path d="M10 21h4"/><path d="M12 3a6 6 0 0 0-3.6 10.8c.9.7 1.6 1.6 1.6 2.7V17h4v-.5c0-1.1.7-2 1.6-2.7A6 6 0 0 0 12 3z"/></svg></div><div class="s-name" data-i18n="hint">提示</div>
         <button class="switch on" data-set="hint"></button>
       </div>
       <div class="set-row">
-        <div class="s-icon" style="background:radial-gradient(circle at 35% 30%, #d9a7ff, #9b4edd);">🎬</div>
+        <div class="s-icon ic-anim"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><polygon points="10 8.5 16 12 10 15.5 10 8.5"/></svg></div>
         <div class="s-name" data-i18n="anim">关卡动画</div>
         <button class="switch on" data-set="anim"></button>
       </div>
       <div class="set-row">
-        <div class="s-icon" style="background:radial-gradient(circle at 35% 30%, #ffd28a, #f5a623);">📳</div>
+        <div class="s-icon ic-vibe"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="3" width="6" height="18" rx="2"/><path d="M5 8v8"/><path d="M2 10v4"/><path d="M19 8v8"/><path d="M22 10v4"/></svg></div>
         <div class="s-name" data-i18n="vibe">震动</div>
         <button class="switch on" data-set="vibe"></button>
       </div>
@@ -1079,7 +1088,7 @@ var _hmt = _hmt || [];
     <div class="sec-title" data-i18n="sec_other">其他设置</div>
     <div class="set-card">
       <div class="set-row">
-        <div class="s-icon" style="background:radial-gradient(circle at 35% 30%, #a9d8ff, #3d9be9);">🌐</div>
+        <div class="s-icon ic-lang"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3a13.5 13.5 0 0 1 3.5 9 13.5 13.5 0 0 1-3.5 9 13.5 13.5 0 0 1-3.5-9A13.5 13.5 0 0 1 12 3z"/></svg></div>
         <div class="s-name" data-i18n="language">语言</div>
         <div class="seg" id="lang-seg">
           <button class="seg-btn on" type="button" data-lang="zh">中文</button>
