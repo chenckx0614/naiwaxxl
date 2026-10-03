@@ -557,6 +557,7 @@
   .ic-vibe  { background:#ffede4; color:#e06a42; }
   .ic-lang  { background:#e7f0ff; color:#3d86e8; }
   .set-row .s-name { flex:1; font-weight:800; color:#8a5a1e; font-size:16px; }
+  .set-row.ns { opacity:.5; }   /* 设备不支持的功能（如 iOS 无震动）整行淡显 */
 
   /* 开关 */
   .switch {
@@ -1447,6 +1448,7 @@ const I18N = {
     revive:'复活 +5 步',
     revived:'复活成功，加油！',
     home_best:'最高分 {n}',
+    vibe_ns:'当前设备不支持震动反馈',
     lang_now:'语言：简体中文',
     vol_music:'音乐音量', vol_sfx:'音效音量',
     crash_tip:'出了点小问题，点这里重新加载',
@@ -1496,6 +1498,7 @@ const I18N = {
     revive:'Revive +5',
     revived:'Revived — keep going!',
     home_best:'Best {n}',
+    vibe_ns:'Vibration is not supported on this device',
     lang_now:'Language: English',
     vol_music:'Music volume', vol_sfx:'Sound volume',
     crash_tip:'Something went wrong. Tap to reload',
@@ -3737,8 +3740,17 @@ document.querySelectorAll('.switch').forEach(sw=>{
     if(sw.dataset.set==='hint'){ clearHint(); if(settings.hint) scheduleHint(); }
     if(sw.dataset.set==='music'){ settings.music ? startBgm() : stopBgm(); }
     if(sw.dataset.set==='anim'){ applyAnimSetting(); }
+    if(sw.dataset.set==='vibe' && !VIBE_OK){ toast(T('vibe_ns')); }
   });
 });
+/* 设备不支持震动（iOS / 桌面端没有震动马达）：行置灰示意，点击时给提示。
+   注意桌面 Chrome 也有 navigator.vibrate 函数（调用只是无效返回 false），
+   所以要用「试震 0ms 看返回值」探测，而不是查函数存在。 */
+const VIBE_OK = typeof navigator.vibrate === 'function' && navigator.vibrate(0) === true;
+if(!VIBE_OK){
+  const vr = document.querySelector('.switch[data-set="vibe"]');
+  if(vr) vr.closest('.set-row').classList.add('ns');
+}
 /* 语言切换：中文 / English，选择存 localStorage，下次进来还是上次那档 */
 document.querySelectorAll('#lang-seg .seg-btn').forEach(b=>{
   b.addEventListener('click', ()=>setLang(b.dataset.lang));
