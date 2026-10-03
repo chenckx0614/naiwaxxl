@@ -18,10 +18,13 @@ window.XXL_NOTICE = {
   frequency: 'always',
   title: { zh:'公告', en:'Notice' },
   body: {
-    zh:'祝大家国庆快乐！',
-    en:'Happy National Day!'
+    zh:'祝大家国庆快乐！也可以关注我的抖音催更哦~',
+    en:'Happy National Day! Follow me on Douyin for updates~'
   },
-  img: null,                          /* 不要配图：渲染时自动隐藏 img 且不预载 */
+  img: 'naiwa/about/dy.webp',
   end: '2026-10-08',               /* 国庆活动：10 月 8 日起自动停弹 */
-  btn: null
+  btn: {
+    text: { zh:'去抖音催更', en:'Find me on Douyin' },
+    url: 'https://v.douyin.com/4Cgv0y6hX8I/'
+  }
 };
