@@ -448,6 +448,12 @@
     overflow-y:auto;          /* 面板比视口高时可滚 —— 否则小屏上顶部标题和底部按钮都会被裁掉 */
   }
   .overlay.show { display:flex; }
+  /* 关闭动画：.closing 保持可见并播缩小淡出，播完由 closeOverlay 的定时器收起。
+     快速「关→开」由 openOverlay 作废挂着的关闭定时器，不会把刚开的面板关没。 */
+  .overlay.closing { display:flex; animation:overlayOut .19s ease forwards; }
+  .overlay.closing .panel { animation:panelOut .19s ease forwards; }
+  @keyframes overlayOut { to { opacity:0; } }
+  @keyframes panelOut { from { transform:scale(1); opacity:1; } to { transform:scale(.9); opacity:0; } }
 
   /* ---------- 结算插图（胜负特效） ----------
      放在遮罩内部、面板下面（z-index 比 .panel 小）：
@@ -517,17 +523,18 @@
   @keyframes panelIn { from { transform:scale(.85); opacity:0;} to { transform:scale(1); opacity:1;} }
   .panel-title {
     position:absolute; top:-24px; left:50%; transform:translateX(-50%);
-    background:linear-gradient(180deg,#7db4f2,#4f87d8); color:#fff; font-size:26px; font-weight:900;
-    padding:7px 36px; border-radius:999px; border:2px solid rgba(63,111,192,.5);
-    box-shadow:0 8px 18px rgba(63,111,192,.38), inset 0 1.5px 0 rgba(255,255,255,.55); text-shadow:0 1.5px 2px rgba(0,0,0,.22);
+    background:linear-gradient(180deg,#7db4f2,#4f87d8); color:#fff; font-size:22px; font-weight:900;
+    padding:6px 30px; border-radius:999px; border:2px solid rgba(63,111,192,.5);
+    box-shadow:0 6px 14px rgba(63,111,192,.32), inset 0 1.5px 0 rgba(255,255,255,.55); text-shadow:0 1.5px 2px rgba(0,0,0,.2);
+    letter-spacing:1px;
     display:flex; align-items:center; gap:10px; white-space:nowrap;
   }
   .panel-title .star { font-size:20px; }
   .panel-close {
-    position:absolute; top:-18px; right:-14px; width:44px; height:44px; border-radius:50%;
+    position:absolute; top:-16px; right:-12px; width:40px; height:40px; border-radius:50%;
     background:linear-gradient(180deg,#ff8a8a,#e83e3e); border:2px solid rgba(183,31,31,.5); color:#fff;
-    font-size:22px; font-weight:900; cursor:pointer;
-    box-shadow:0 6px 14px rgba(183,31,31,.35), inset 0 1.5px 0 rgba(255,255,255,.55);
+    font-size:19px; font-weight:900; cursor:pointer;
+    box-shadow:0 5px 12px rgba(183,31,31,.35), inset 0 1.5px 0 rgba(255,255,255,.55);
   }
   .panel-close:active { transform:scale(.9); }
 
@@ -1034,7 +1041,7 @@ var _hmt = _hmt || [];
 <!-- 设置弹窗 -->
 <div class="overlay" id="settings-overlay">
   <div class="panel">
-    <div class="panel-title"><span class="star">⭐</span><span data-i18n="settings">设置</span><span class="star">⭐</span></div>
+    <div class="panel-title"><span data-i18n="settings">设置</span></div>
     <button class="panel-close" data-close="settings-overlay">✕</button>
 
     <div class="sec-title" data-i18n="sec_audio">音效设置</div>
@@ -1098,7 +1105,7 @@ var _hmt = _hmt || [];
 <!-- 关卡选择弹窗 -->
 <div class="overlay" id="levels-overlay">
   <div class="panel">
-    <div class="panel-title"><span class="star">⭐</span><span data-i18n="levels_title">选择关卡</span><span class="star">⭐</span></div>
+    <div class="panel-title"><span data-i18n="levels_title">选择关卡</span></div>
     <button class="panel-close" data-close="levels-overlay">✕</button>
     <div id="level-grid"></div>
     <div id="level-tip" data-i18n="levels_tip">素材还在做，更多关卡敬请期待 🐸</div>
@@ -1108,7 +1115,7 @@ var _hmt = _hmt || [];
 <!-- 作者弹窗 -->
 <div class="overlay" id="author-overlay">
   <div class="panel">
-    <div class="panel-title"><span class="star">⭐</span><span data-i18n="author">作者</span><span class="star">⭐</span></div>
+    <div class="panel-title"><span data-i18n="author">作者</span></div>
     <button class="panel-close" data-close="author-overlay">✕</button>
     <div class="author-card">
       <div class="author-name">奶蛙消消乐</div>
@@ -1123,7 +1130,7 @@ var _hmt = _hmt || [];
 <!-- 公告弹窗：内容由 notice.js 配置（改公告只改那个文件），启动时按频率弹出 -->
 <div class="overlay" id="notice-overlay">
   <div class="panel">
-    <div class="panel-title"><span class="star">⭐</span><span id="notice-title">公告</span><span class="star">⭐</span></div>
+    <div class="panel-title"><span id="notice-title">公告</span></div>
     <button class="panel-close" data-close="notice-overlay">✕</button>
     <div class="notice-body" id="notice-body"></div>
     <img class="notice-img" id="notice-img" alt="" draggable="false">
@@ -1139,7 +1146,7 @@ var _hmt = _hmt || [];
   <!-- 结算插图：赢 → 屏幕正中浮现；输 → 从右边伸出来。在面板之前，所以层级在面板下面 -->
   <div class="end-fx" id="end-fx" aria-hidden="true"><img id="end-fx-img" alt=""></div>
   <div class="panel">
-    <div class="panel-title" id="result-title"><span class="star">⭐</span>胜利<span class="star">⭐</span></div>
+    <div class="panel-title" id="result-title">胜利</div>
     <div id="result-level"></div>
     <div id="result-stars"></div>
     <div id="result-text"></div>
@@ -1157,7 +1164,7 @@ var _hmt = _hmt || [];
 <!-- 分享战绩弹窗：canvas 生成战绩卡，长按图片即可保存/转发 -->
 <div class="overlay" id="share-overlay">
   <div class="panel">
-    <div class="panel-title"><span class="star">⭐</span><span data-i18n="share_title">分享战绩</span><span class="star">⭐</span></div>
+    <div class="panel-title"><span data-i18n="share_title">分享战绩</span></div>
     <button class="panel-close" data-close="share-overlay">✕</button>
     <img class="share-img" id="share-img" alt="" draggable="false">
     <div class="share-hint" data-i18n="share_hint">长按图片保存或转发</div>
@@ -1167,7 +1174,7 @@ var _hmt = _hmt || [];
 <!-- 粉丝群弹窗：群二维码，长按识别加入 -->
 <div class="overlay" id="fanqun-overlay">
   <div class="panel">
-    <div class="panel-title"><span class="star">⭐</span><span data-i18n="fanqun">粉丝群</span><span class="star">⭐</span></div>
+    <div class="panel-title"><span data-i18n="fanqun">粉丝群</span></div>
     <button class="panel-close" data-close="fanqun-overlay">✕</button>
     <img class="fanqun-img" id="fanqun-img" alt="" draggable="false">
     <div class="share-hint" data-i18n="fanqun_hint">长按二维码识别加入</div>
@@ -1177,7 +1184,7 @@ var _hmt = _hmt || [];
 <!-- 壁纸画廊：网格预览，点开高清大图长按保存 -->
 <div class="overlay" id="wallpaper-overlay">
   <div class="wp-page">
-    <div class="panel-title"><span class="star">⭐</span><span data-i18n="wallpapers">壁纸</span><span class="star">⭐</span></div>
+    <div class="panel-title"><span data-i18n="wallpapers">壁纸</span></div>
     <button class="panel-close" data-close="wallpaper-overlay">✕</button>
     <div class="wp-grid" id="wp-grid"></div>
     <div class="share-hint" data-i18n="wp_hint_grid">点击查看大图</div>
@@ -1193,7 +1200,7 @@ var _hmt = _hmt || [];
 <!-- 奶蛙空间：首页右下角入口打开的轻量陪伴空间 -->
 <div class="overlay" id="mascot-space-overlay">
   <div class="panel">
-    <div class="panel-title"><span class="star">⭐</span><span data-i18n="mascot_space">奶蛙空间</span><span class="star">⭐</span></div>
+    <div class="panel-title"><span data-i18n="mascot_space">奶蛙空间</span></div>
     <button class="panel-close" data-close="mascot-space-overlay">✕</button>
     <div id="mascot-3d-container">
       <canvas id="mascot-3d-canvas"></canvas>
@@ -2482,7 +2489,7 @@ function toast(msg){
 /* ---------- 作者信息 ---------- */
 function showAuthor(){
   if(typeof SFX !== 'undefined') SFX.click();
-  $('#author-overlay').classList.add('show');
+  $('#author-overlay') && openOverlay('author-overlay');
 }
 
 /* 设置里的「动画」开关：关闭时全局去掉 transform 过渡，进入无动画模式 */
@@ -3447,9 +3454,7 @@ let resultState = null;
 function paintResult(){
   if(!resultState) return;
   const st = resultState;
-  const mark = st.win ? '⭐' : '💧';
-  $('#result-title').innerHTML = '<span class="star">' + mark + '</span>' + (st.win ? T('victory') : T('failure'))
-                               + '<span class="star">' + mark + '</span>';
+  $('#result-title').textContent = st.win ? T('victory') : T('failure');
   $('#result-level').textContent = T('level_no', { n: st.level });
   $('#result-stars').innerHTML = st.win
     ? [1,2,3].map(i=>`<span class="${i<=st.stars?'':'dim'}">⭐</span>`).join('')
@@ -3530,7 +3535,7 @@ function showResult(win, stars){
   persist();
   showEndFx(win);            /* 先把插图摆好，面板一显示动画就跟着开始 */
   setTimeout(()=>{
-    $('#result-overlay').classList.add('show');
+    openOverlay('result-overlay');
     if(win && settings.sfx) SFX.end();
     if(win) launchConfetti(stars);      /* 彩带随星级喷发：3 星双爆发 */
     buzz(win ? [20,40,20] : [40,60,40]);
@@ -3568,7 +3573,7 @@ function startLevel(no){
   document.body.classList.toggle('night', def.bg === 'night');
   document.body.style.setProperty('--theme-color', def.themeColor || '#4a90d9');
   ensureNightStars();
-  document.querySelectorAll('.overlay').forEach(o=>o.classList.remove('show'));
+  document.querySelectorAll('.overlay.show').forEach(o=>closeOverlay(o.id));
   $('#home').classList.add('hide');
   refreshHome();
   restart();
@@ -3597,12 +3602,34 @@ function restart(){
 }
 
 /* ---------- 弹窗 ---------- */
+/* 统一开/关入口。关闭走「缩小淡出」动画（.closing，190ms 后收起）；
+   openOverlay 会作废挂着的关闭定时器并清掉 closing 残留，
+   保证快速「关→开」不会把刚打开的面板又关掉。 */
+function openOverlay(id){
+  const o = document.getElementById(id);
+  if(!o) return;
+  o._closeTok = (o._closeTok || 0) + 1;
+  o.classList.remove('closing');
+  o.classList.add('show');
+}
 function closeOverlay(id){
-  document.getElementById(id).classList.remove('show');
+  const o = document.getElementById(id);
+  if(!o) return;
   /* 面板收起来时把插图一起撤掉，免得下次开局还挂着上一局的胜负图 */
   if(id === 'result-overlay') hideEndFx();
   /* 奶蛙空间关闭时暂停 3D 渲染循环，省性能 */
   if(id === 'mascot-space-overlay' && window.stopMascot3D) window.stopMascot3D();
+  if(!o.classList.contains('show')){ o.classList.remove('closing'); return; }
+  /* 设置里关了动画（或环境不支持 WAAPI）就直接收 */
+  if(!settings.anim || !o.animate){ o.classList.remove('show'); o.classList.remove('closing'); return; }
+  if(o.classList.contains('closing')) return;
+  o.classList.add('closing');
+  const token = o._closeTok = (o._closeTok || 0) + 1;
+  setTimeout(()=>{
+    if(o._closeTok !== token) return;   /* 期间又被 openOverlay 打开过，别动 */
+    o.classList.remove('show');
+    o.classList.remove('closing');
+  }, 200);
 }
 
 /* ---------- 关卡选择 ----------
@@ -3649,12 +3676,12 @@ function refreshHome(){
   renderLevelSelect();
 }
 
-function openLevels(){ SFX.click(); renderLevelSelect(); $('#levels-overlay').classList.add('show'); }
-function openMascotSpace(){ SFX.click(); track('mascot','open','home'); $('#mascot-space-overlay').classList.add('show'); if(window.startMascot3D) window.startMascot3D(); }
+function openLevels(){ SFX.click(); renderLevelSelect(); openOverlay('levels-overlay'); }
+function openMascotSpace(){ SFX.click(); track('mascot','open','home'); openOverlay('mascot-space-overlay'); if(window.startMascot3D) window.startMascot3D(); }
 
 /* ---------- 开始页 ---------- */
 function goHome(){
-  document.querySelectorAll('.overlay').forEach(o=>o.classList.remove('show'));
+  document.querySelectorAll('.overlay.show').forEach(o=>closeOverlay(o.id));
   document.body.classList.remove('night');
   document.body.style.removeProperty('--theme-color');
   refreshHome();
@@ -3674,15 +3701,15 @@ $('#level-grid').addEventListener('click', e=>{
   if(LEVELS[no-1]) startLevel(no);
   else { SFX.invalid(); toast(T('level_wip', { n:no })); }
 });
-$('#gear-btn').addEventListener('click', ()=>{ SFX.click(); const o = $('#settings-overlay'); o.classList.add('show'); o.classList.add('in-game'); });
-$('#home-gear').addEventListener('click', ()=>{ SFX.click(); const o = $('#settings-overlay'); o.classList.add('show'); o.classList.remove('in-game'); });
+$('#gear-btn').addEventListener('click', ()=>{ SFX.click(); openOverlay('settings-overlay'); $('#settings-overlay').classList.add('in-game'); });
+$('#home-gear').addEventListener('click', ()=>{ SFX.click(); openOverlay('settings-overlay'); $('#settings-overlay').classList.remove('in-game'); });
 /* 点空白处关弹窗 —— 结算面板例外：本局已经结束、棋盘被 gameOver 锁着，
    空白处一点就把面板关掉，玩家就再也找不到入口了（表现为「点哪都没反应」）。
    所以结算面板只能通过里面的按钮离开。 */
 document.querySelectorAll('.overlay').forEach(o=>o.addEventListener('click', e=>{
   if(e.target!==o) return;
   if(o.id === 'result-overlay') return;
-  o.classList.remove('show');
+  closeOverlay(o.id);
 }));
 
 /* 面板关闭按钮：HTML 用 data-close 标目标面板 —— 此前 JS 里从没写过处理器，
@@ -3863,7 +3890,7 @@ function maybeShowNotice(){
     btn.textContent = noticePick(N.btn.text) || N.btn.url;
     btn.style.display = 'inline-block';
   } else { btn.style.display = 'none'; btn.removeAttribute('href'); }
-  $('#notice-overlay').classList.add('show');
+  openOverlay('notice-overlay');
   markNoticeSeen();    /* 显示即记：once 弹过就算，不纠结玩家怎么关的 */
   track('notice', 'show', String(N.id || ''));
 }
@@ -3977,7 +4004,7 @@ async function showShare(){
   const url = await drawShareCard();
   if(!url) return;
   $('#share-img').src = url;
-  $('#share-overlay').classList.add('show');
+  openOverlay('share-overlay');
 }
 
 /* ---------- 石头碎裂：本体缩没 + 8 片灰岩碎片四溅（WAAPI 显式关键帧） ---------- */
@@ -4030,7 +4057,7 @@ function openFanqun(){
   track('fanqun', 'click');
   const im = $('#fanqun-img');
   if(!im.getAttribute('src')) im.src = 'naiwa/about/fsq3.webp';
-  $('#fanqun-overlay').classList.add('show');
+  openOverlay('fanqun-overlay');
 }
 
 /* ---------- 胜利彩带（独立 canvas + rAF，与棋盘 DOM 动画互不干扰） ----------
@@ -4114,12 +4141,12 @@ function openWallpaper(){
     ).join('');
     grid.dataset.ready = '1';
   }
-  $('#wallpaper-overlay').classList.add('show');
+  openOverlay('wallpaper-overlay');
 }
 function viewWallpaper(i){
   track('wallpaper', 'view', String(i));
   $('#wp-view-img').src = `naiwa/wallpaper/${i}.webp`;
-  $('#wp-view-overlay').classList.add('show');
+  openOverlay('wp-view-overlay');
 }
 
 /* root 专属：外部 mp3 预加载计入加载进度（发行差异 —— minitool 音频 base64
