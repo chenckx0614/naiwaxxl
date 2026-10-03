@@ -21,7 +21,7 @@ window.XXL_NOTICE = {
     zh:'祝大家国庆快乐！也可以关注我的抖音催更哦~',
     en:'Happy National Day! Follow me on Douyin for updates~'
   },
-  img: 'naiwa/about/dy.webp',
+  img: null,                          /* 不要配图：渲染时自动隐藏 img 且不预载 */
   end: '2026-10-08',               /* 国庆活动：10 月 8 日起自动停弹 */
   btn: {
     text: { zh:'去抖音催更', en:'Find me on Douyin' },
