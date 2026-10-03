@@ -267,7 +267,7 @@
   /* 特殊棋子：条纹 / 彩球。覆盖层全在 ::after —— face 本体不挂任何 CSS 动画，
      pop/bump 这些按类切换的动画不受干扰。彩球用四段 linear-gradient 而不是
      conic-gradient（后者 Chrome 69+ 才有，minitool 基线 61）。 */
-  .tile .face.eff-row, .tile .face.eff-col, .tile .face.eff-rainbow {
+  .tile .face.eff-row, .tile .face.eff-col, .tile .face.eff-rainbow, .tile .face.eff-bomb {
     position:relative; overflow:hidden;
   }
   .face.eff-row::after, .face.eff-col::after {
@@ -293,6 +293,26 @@
     animation:rainbowPulse 1.5s ease-in-out infinite;
   }
   @keyframes rainbowPulse { 0%,100% { opacity:.82; } 50% { opacity:1; } }
+  /* 炸弹（L/T 交叉生成）：旋转的橙色虚线圈 = 引信预警，一看就想凑 */
+  .face.eff-bomb::after {
+    content:''; position:absolute; top:3%; right:3%; bottom:3%; left:3%;
+    border-radius:50%;
+    border:3px dashed rgba(255,122,40,.95);
+    box-shadow:0 0 12px rgba(255,150,40,.7), inset 0 0 10px rgba(255,150,40,.45);
+    animation:bombSpin 2.4s linear infinite;
+  }
+  @keyframes bombSpin { to { transform:rotate(360deg); } }
+
+  /* 炸弹爆破特效（fxBombBlast）：冲击波环 + 白闪核心，挂在 boardEl 下的独立节点 */
+  .fx-blast-ring {
+    position:absolute; border-radius:50%; pointer-events:none; z-index:6;
+    border:4px solid #ffd24d;
+    box-shadow:0 0 26px rgba(255,170,50,.85), inset 0 0 14px rgba(255,170,50,.6);
+  }
+  .fx-blast-core {
+    position:absolute; border-radius:50%; pointer-events:none; z-index:7;
+    background:radial-gradient(circle, #fff 0%, rgba(255,214,90,.92) 45%, rgba(255,120,40,0) 75%);
+  }
 
   /* 特殊棋子生成时的上冲天光柱 */
   .fx-beam {
@@ -862,6 +882,26 @@
     animation:starTwinkle 2.4s ease-in-out infinite;
   }
   @keyframes starTwinkle { 0%,100% { opacity:.25; } 50% { opacity:1; } }
+  /* ---- 黄昏主题（第六关）：body.sunset 切换橙紫渐变；飘云 + 落日光晕由 JS 创建。
+     云的位移是纯 CSS 关键帧（装饰层，不是 .tile，不犯动画铁律） ---- */
+  body.sunset {
+    background: linear-gradient(#5b3a8f 0%, #a5527e 36%, #e8825f 66%, #ffd08a 100%) fixed;
+  }
+  #sunset-sky {
+    position:fixed; top:0; right:0; bottom:0; left:0;
+    pointer-events:none; z-index:0; display:none; overflow:hidden;
+  }
+  body.sunset #sunset-sky { display:block; }
+  #sunset-sky .sun {
+    position:absolute; left:68%; top:10%; width:110px; height:110px; border-radius:50%;
+    background:radial-gradient(circle, #fff6dc 0%, #ffd08a 42%, rgba(255,150,90,.35) 68%, rgba(255,150,90,0) 78%);
+  }
+  #sunset-sky .cloud {
+    position:absolute; height:14px; border-radius:999px;
+    background:rgba(255,232,210,.42); filter:blur(2px);
+    animation:cloudDrift linear infinite;
+  }
+  @keyframes cloudDrift { from { transform:translateX(-20vw); } to { transform:translateX(115vw); } }
 
   /* ---------- 消除瞬间全屏闪光（五连 / 石头 / 彩虹交换等大场面）----------
      用 body::after 实现，不会遮挡按钮，只给画面一层高亮/主题色辉光。
@@ -1383,6 +1423,42 @@ const LEVELS = [
     bg: 'night',
     /* 第五关胜利图：惊呆奶糊（jingdai），居中大图展示（alt 布局） */
     winImg: 'naiwa/over/jingdai.webp',
+  },
+  /* ============ 第六关：黄昏祭典 ============
+     史上最大棋盘：10×10 切角方形 88 格（四角各切 3 格，每列连续、下落安全）。
+     素材混编 1/3/4 关老面孔（蓝/绿/黄/粉/紫），5 种类型连锁密度中等偏上。
+     新机制①炸弹（全关生效，第六关能大量用上）：横竖两条 3~4 连交叉成 L/T 型
+     （合计 >=5 格）时，在交点生成「炸弹」特殊棋子；它被匹配 / 被其他特殊棋子
+     波及时引爆 3×3 爆破，还能连锁点燃别的特殊棋子（走 expandSpecials 链）。
+     新主题②黄昏（bg:'sunset'）：橙紫渐变 + 落日光晕 + 飘云层（ensureSunsetSky）。
+     障碍组合：石头 6 颗 + 中央冰霜果冻芯（2×2 双层果冻上盖冰封，要打两层）
+     + 外围单层果冻 4 格。难度靠棋盘大小与障碍密度，步数给足 26 步。 */
+  {
+    no: 6,
+    rows: 10,
+    cols: 10,
+    moves: 26,
+    needs: [20, 18, 15],
+    themeColor: '#a855f7',
+    types: [
+      { key:'6a', img:'naiwa/1/b.webp',  color:'#7ec3f5', bg:'#d8ecff' },
+      { key:'6b', img:'naiwa/4/b4.webp', color:'#e8e8f0', bg:'#eef0fa' },
+      { key:'6c', img:'naiwa/1/a.webp',  color:'#ffd54d', bg:'#fff6cf' },
+      { key:'6d', img:'naiwa/4/f4.webp', color:'#ff8eb0', bg:'#ffe4ef' },
+      { key:'6e', img:'naiwa/1/g.webp',  color:'#9b6fd0', bg:'#e9defc' },
+    ],
+    shape: function(r,c){ const rr=Math.min(r,ROWS-1-r), cc=Math.min(c,COLS-1-c); return rr+cc>=2; },
+    /* 石头 6 颗：两颗一组卡在中轴上下，两颗压边角通道 */
+    rocks: [ {r:2,c:4},{r:2,c:5},{r:7,c:4},{r:7,c:5},{r:4,c:1},{r:5,c:8} ],
+    /* 冰封 6 枚：中央 2×2（冰霜宝钻芯）+ 两个远角 */
+    frozen: [ {r:4,c:4},{r:4,c:5},{r:5,c:4},{r:5,c:5},{r:1,c:2},{r:8,c:7} ],
+    /* 果冻：中央 2×2 双层（本关的「宝钻」），外围 4 格单层 */
+    jellies: [ {r:4,c:4},{r:4,c:5},{r:5,c:4},{r:5,c:5},
+               {r:3,c:2,layer:1},{r:3,c:7,layer:1},{r:6,c:2,layer:1},{r:6,c:7,layer:1} ],
+    /* 黄昏主题：进关切换橙紫渐变 + 飘云层，出关恢复 */
+    bg: 'sunset',
+    /* 第六关胜利图：奶坐（naizu），居中大图展示（alt 布局） */
+    winImg: 'naiwa/over/naizu.webp',
   },
 ];
 
@@ -2396,8 +2472,16 @@ function expandSpecials(hit, tier){
       if(!t || !t.effect || t.__fired) return;
       t.__fired = true;
       triggered++;
+      /* 炸弹起爆：3×3 波及 + 独立爆破特效（冲击波环 + 白闪核心 + 双色碎片）。
+         特效在 hit-stop 期间起播，随消除一起轰出来，节奏正好。 */
+      if(t.effect === 'bomb'){
+        const def = TYPES[t.type] || {};
+        fxBombBlast(r, c, def.color || '#ffffff');
+        shakeBoard(3); screenFlash(); buzz([20,40,20]); SFX.crack();
+      }
       const cells = t.effect === 'row' ? lineCells(r, c, 'row')
                   : t.effect === 'col' ? lineCells(r, c, 'col')
+                  : t.effect === 'bomb' ? bombCells(r, c)
                   : rainbowCells(t.type);
       cells.forEach(function(p){
         const j = p.r*COLS + p.c;
@@ -2419,6 +2503,51 @@ function pickSpawnCell(run){
     if(t && !t.caged) return p;
   }
   return null;
+}
+
+/* 炸弹波及：以自身为中心的 3×3（石头的处理交给 clearSet 的相邻碎裂逻辑） */
+function bombCells(r, c){
+  const cells = [];
+  for(let dr=-1;dr<=1;dr++) for(let dc=-1;dc<=1;dc++){
+    const rr=r+dr, cc=c+dc;
+    if(rr>=0 && rr<ROWS && cc>=0 && cc<COLS && isActive(rr,cc)) cells.push({ r:rr, c:cc });
+  }
+  return cells;
+}
+
+/* 炸弹爆破特效：以格子中心为圆心的冲击波环 + 白闪核心 + 两把碎片。
+   全部挂在 boardEl 下的独立节点（不碰 .tile 的 inline transform），
+   回收 onfinish + setTimeout 双保险。 */
+function fxBombBlast(r, c, color){
+  if(!settings.anim || !boardEl) return;
+  const p = pos(r, c), cx = p.x + cell/2, cy = p.y + cell/2;
+  const size = cell * 1.25;
+  const mk = function(cls, css){
+    const d = document.createElement('div');
+    d.className = cls;
+    d.style.cssText = 'left:' + (cx - size/2) + 'px;top:' + (cy - size/2) + 'px;width:' + size + 'px;height:' + size + 'px;' + css;
+    boardEl.appendChild(d);
+    return d;
+  };
+  const ring = mk('fx-blast-ring', 'border-color:' + color + ';');
+  const core = mk('fx-blast-core', '');
+  const a1 = ring.animate([
+    { transform:'scale(.3)', opacity:.95 },
+    { transform:'scale(1)', opacity:.75, offset:.3 },
+    { transform:'scale(2.7)', opacity:0 }
+  ], { duration:520, easing:'cubic-bezier(.2,.7,.4,1)' });
+  const a2 = core.animate([
+    { transform:'scale(.4)', opacity:1 },
+    { transform:'scale(1.15)', opacity:.5, offset:.35 },
+    { transform:'scale(.2)', opacity:0 }
+  ], { duration:280, easing:'ease-out' });
+  burst(r, c, color);
+  burst(r, c, '#ffd24d');
+  const kill = function(){
+    [ring, core].forEach(function(e){ if(e.parentNode) e.parentNode.removeChild(e); });
+  };
+  a1.onfinish = kill; a2.onfinish = kill;
+  setTimeout(kill, 760);
 }
 
 /* 把 effect 画到棋子脸上：face 加 eff-xxx 类。覆盖层全在 ::after 上 ——
@@ -2476,6 +2605,7 @@ async function rainbowSwap(a, b){
     hit.add(selfPos.r*COLS + selfPos.c);                     /* 彩球本身 */
     rainbowCells(other.type).forEach(function(p){ hit.add(p.r*COLS + p.c); });
   }
+  expandSpecials(hit, tier);   /* 波及到的炸弹 / 条纹要跟着连锁引爆 */
   SFX.vortex();
   const doubleRainbow = !!(other && other.effect === 'rainbow');
   shakeBoard(doubleRainbow ? 3 : 2);
@@ -2909,6 +3039,36 @@ function hitJelly(hit){
   if(broke) toast(T('jelly_break'));
 }
 
+/* L/T 交叉检测：横竖两条 3~4 连共用一格、合计 >=5 格 → 在交点生成「炸弹」特殊棋子。
+   规则对齐糖果传奇的 L/T = 包裹糖：交叉比两条直线各拿一条 4 连更划算。
+   - 直线 >=5 的优先级更高：任一条 run >=5 就放弃这组交叉（那条 run 自己会出彩球）。
+   - 交点格不能是牢笼（特殊子不能 born in cage，同 pickSpawnCell 的约束）。
+   - 命中的两条 run 记入 runUsed，调用方跳过它们的条纹/彩球生成。
+   独立成纯函数：无头探针可以直接构造棋盘调它验证，不用跑完整消除链。 */
+function detectBombSpawns(info, spawnIdx, spawns, runUsed){
+  const hs = [], vs = [];
+  info.runs.forEach(function(run){
+    if(run.len >= 3 && run.len <= 4) (run.dir === 'h' ? hs : vs).push(run);
+  });
+  hs.forEach(function(h){
+    vs.forEach(function(v){
+      const shared = h.cells.filter(function(p){
+        return v.cells.some(function(q){ return q.r === p.r && q.c === p.c; });
+      });
+      if(!shared.length) return;
+      if(h.len + v.len - 1 < 5) return;
+      const p = shared[0];
+      const t0 = board[p.r] && board[p.r][p.c];
+      if(!t0 || t0.caged) return;
+      const j = p.r*COLS + p.c;
+      if(spawnIdx.has(j)) return;
+      runUsed.add(h); runUsed.add(v);
+      spawnIdx.add(j);
+      spawns.push({ r:p.r, c:p.c, type:p.type, effect:'bomb' });
+    });
+  });
+}
+
 async function clearSet(hit, combo, info){
   thawFrozen(hit);
   hitJelly(hit);
@@ -2945,8 +3105,12 @@ async function clearSet(hit, combo, info){
      它没有消掉，糖果传奇同款规则。两条 run 选中同一格时只生成一次。 */
   const spawnIdx = new Set();
   const spawns = [];
+  const runUsed = new Set();
   if(info && info.runs){
+    /* L/T 交叉 → 炸弹：先于条纹/彩球生成。被交叉征用的整条 run 不再生成自己的特殊子 */
+    detectBombSpawns(info, spawnIdx, spawns, runUsed);
     info.runs.forEach(function(run){
+      if(runUsed.has(run)) return;
       if(run.len < 4) return;
       const p = pickSpawnCell(run);
       if(!p) return;
@@ -3414,6 +3578,7 @@ async function useBoosterOn(r, c){
     if(rr>=0&&rr<ROWS&&cc>=0&&cc<COLS && isActive(rr,cc)) hit.add(rr*COLS+cc);
   }
   busy = true;
+  expandSpecials(hit, new Map());   /* 道具波及到的炸弹也要连锁引爆 */
   await clearSet(hit, 0);
   await dropAndFill(1);
   busy = false;
@@ -3583,8 +3748,10 @@ function startLevel(no){
   cageList = def.cages || (def.cage ? [def.cage] : []);
   frozenList = def.frozen || [];
   rockList = def.rocks || [];
-  /* 夜幕主题：第五关换星空背景（星星层惰性创建一次） */
+  /* 主题背景：第五关夜幕 / 第六关黄昏，进关切换，出关恢复 */
   document.body.classList.toggle('night', def.bg === 'night');
+  document.body.classList.toggle('sunset', def.bg === 'sunset');
+  if(def.bg === 'sunset') ensureSunsetSky();
   document.body.style.setProperty('--theme-color', def.themeColor || '#4a90d9');
   ensureNightStars();
   document.querySelectorAll('.overlay.show').forEach(o=>closeOverlay(o.id));
@@ -3697,6 +3864,7 @@ function openMascotSpace(){ SFX.click(); track('mascot','open','home'); openOver
 function goHome(){
   document.querySelectorAll('.overlay.show').forEach(o=>closeOverlay(o.id));
   document.body.classList.remove('night');
+  document.body.classList.remove('sunset');
   document.body.style.removeProperty('--theme-color');
   refreshHome();
   $('#home').classList.remove('hide');
@@ -4073,6 +4241,28 @@ function ensureNightStars(){
     s.style.animationDelay = (-(Math.random()*2.4)).toFixed(2) + 's';
     s.style.transform = 'scale(' + (0.6 + Math.random()).toFixed(2) + ')';
     box.appendChild(s);
+  }
+  document.body.appendChild(box);
+}
+/* ---------- 黄昏飘云层（第六关）：惰性创建一次，body.sunset 时显示 ----------
+   落日光晕一颗 + 三朵不同高度的慢速飘云（CSS 关键帧位移，负 delay 错开相位）。 */
+function ensureSunsetSky(){
+  if(document.getElementById('sunset-sky')) return;
+  const box = document.createElement('div');
+  box.id = 'sunset-sky';
+  const sun = document.createElement('i');
+  sun.className = 'sun';
+  box.appendChild(sun);
+  for(let i=0;i<3;i++){
+    const c = document.createElement('i');
+    c.className = 'cloud';
+    const w = 90 + Math.random()*130;
+    c.style.width = w.toFixed(0) + 'px';
+    c.style.top = (8 + i*14 + Math.random()*6).toFixed(1) + '%';
+    c.style.left = '0';
+    c.style.animationDuration = (70 + Math.random()*50).toFixed(0) + 's';
+    c.style.animationDelay = (-Math.random()*80).toFixed(1) + 's';
+    box.appendChild(c);
   }
   document.body.appendChild(box);
 }
