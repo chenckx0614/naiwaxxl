@@ -1051,17 +1051,7 @@
     position:absolute; width:4px; height:4px; border-radius:50%; background:#fff;
     animation:starTwinkle 2.4s ease-in-out infinite;
   }
-  #sky-galaxy i.meteor {
-    position:absolute; width:3px; height:80px; border-radius:3px;
-    background:linear-gradient(180deg, rgba(255,255,255,0), #cbb2ff 50%, #fff);
-    transform:rotate(38deg); opacity:0;
-    animation:meteorFall 5.5s ease-in infinite;
-  }
-  @keyframes meteorFall {
-    0%, 86% { transform:rotate(38deg) translate(0,0); opacity:0; }
-    88%     { opacity:.95; }
-    100%    { transform:rotate(38deg) translate(-46vw,60vh); opacity:0; }
-  }
+
 
   /* ---------- 消除瞬间全屏闪光（五连 / 石头 / 彩虹交换等大场面）----------
      用 body::after 实现，不会遮挡按钮，只给画面一层高亮/主题色辉光。
@@ -1697,12 +1687,12 @@ const LEVELS = [
                {r:2,c:4,layer:1},{r:2,c:6,layer:1},{r:6,c:4,layer:1},{r:6,c:6,layer:1},
                {r:3,c:5,layer:1},{r:5,c:5,layer:1},{r:1,c:5,layer:1},{r:7,c:5,layer:1} ],
     bg: 'party',
-    /* 第八关胜利图：黑发近景（a11），居中大图展示 */
-    winImg: 'naiwa/8/win.webp',
+    /* 第八关胜利图：亲吻特写（naikiss_head），居中大图展示 */
+    winImg: 'naiwa/over/naikiss_head.webp',
   },
   /* ============ 第九关：终局之门 ============
-     10×10 全满 100 格，系列最终关。素材 naiwa/9 只给 3 种类型 ——
-     连锁密度拉满：几乎每一步都会引发跨全场的连环爆炸，「混沌终局」就是特色。
+     10×10 全满 100 格，系列最终关。素材 naiwa/9 给 4 种类型 ——
+     连锁密度很高但不失控（3 种会概率性触发无限连锁）。
      全机制毕业考：四角牢笼 + 石头 6 + 冰封 6 + 中央冰霜果冻芯 2×2 双层。
      星云主题 bg:'galaxy'：深紫黑渐变 + 星空 + 流星。 */
   {
@@ -1716,6 +1706,7 @@ const LEVELS = [
       { key:'9a', img:'naiwa/9/a.webp', color:'#ffd54d', bg:'#fff3c4' },
       { key:'9b', img:'naiwa/9/b.webp', color:'#cfd4e0', bg:'#eef1fa' },
       { key:'9c', img:'naiwa/9/c.webp', color:'#ffb8c8', bg:'#ffe4ee' },
+      { key:'9d', img:'naiwa/9/d.webp', color:'#9b7fd0', bg:'#e9defc' },
     ],
     cages: [ { r:0, c:0 }, { r:0, c:9 }, { r:9, c:0 }, { r:9, c:9 } ],
     rocks: [ {r:3,c:2},{r:3,c:7},{r:6,c:2},{r:6,c:7},{r:4,c:2},{r:5,c:7} ],
@@ -5024,10 +5015,6 @@ function ensureSkyDecor(kind){
       s.style.transform = 'scale(' + (0.6 + Math.random()).toFixed(2) + ')';
       box.appendChild(s);
     }
-    const m = document.createElement('i');
-    m.className = 'meteor';
-    m.style.left = '78%'; m.style.top = '6%';
-    box.appendChild(m);
   }
   document.body.appendChild(box);
 }
