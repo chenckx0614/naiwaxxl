@@ -4195,7 +4195,8 @@ var PacGame = (function(){
   var GHOST_STARTS = [{ x:7, y:7 }, { x:9, y:7 }];   /* 出生点全在开阔行，别踩墙 */
 
   var cv, ctx, pacImg, dotImg;
-  var walls = [], pellets = {}, left = 0;
+  var pellets = {}, left = 0;
+  var animT = 0, pops = [], deathT = -1;   /* 动画时钟 / 吃豆粒子 / 死亡动画计时 */
   var player, ghosts, score, lives, running, started, over;
   var raf = 0, lastTs = 0, state = 'ready', paused = false;   /* ready | play | caught | win | lose */
 
@@ -4315,6 +4316,8 @@ var PacGame = (function(){
     var key = e.cx + ',' + e.cy;
     if(e === player && pellets[key]){
       delete pellets[key]; left--; score += 10;
+      pops.push({ x:(e.cx+0.5)*TS, y:(e.cy+0.5)*TS, t:animT });
+      if(pops.length > 24) pops.shift();
       updateHud();
       if(left <= 0){ finish(true); return; }
     }
@@ -4352,11 +4355,11 @@ var PacGame = (function(){
     });
     if(lives <= 0){ finish(false); return; }
     /* 中弹：暂停出提示弹窗，点「继续」再走 —— 不再无声传送 */
-    paused = true;
+    paused = true; deathT = 0;
     setTimeout(function(){
       if(state === 'play'){ showMask('caught'); }
       else { paused = false; }   /* 期间正好通关/失败就别再弹了 */
-    }, 600);
+    }, 750);
   }
 
   var dt_step = 0;
@@ -4366,6 +4369,9 @@ var PacGame = (function(){
     var dt = Math.min(0.04, (ts - lastTs) / 1000);
     lastTs = ts;
     dt_step = dt;
+    if(!paused) animT += dt;
+    if(paused && deathT >= 0) deathT += dt;   /* 死亡旋转动画推进 */
+    if(!running) return;
     if(!over && !paused){
       stepEnt(player, 4.6, playerChoose);
       ghosts.forEach(function(g){ stepEnt(g, 3.3, ghostChoose); });
@@ -4398,35 +4404,80 @@ var PacGame = (function(){
       for(var key in pellets){
         var pr = key.split(','); 
         var x = (+pr[0] + 0.5) * TS, y = (+pr[1] + 0.5) * TS, s = TS*0.4;
+        ctx.globalAlpha = 0.72 + 0.28 * Math.sin(animT*3 + (x+y)*0.05);   /* 波纹式呼吸闪烁 */
         ctx.drawImage(dotImg, x - s/2, y - s/2, s, s);
       }
+      ctx.globalAlpha = 1;
+    }
+    /* 吃豆粒子：扩散淡出的光圈 */
+    for(var pi = pops.length-1; pi >= 0; pi--){
+      var pc = pops[pi], age = animT - pc.t;
+      if(age > 0.28){ pops.splice(pi,1); continue; }
+      ctx.globalAlpha = 1 - age/0.28;
+      ctx.fillStyle = '#ffe08a';
+      ctx.beginPath();
+      ctx.arc(pc.x, pc.y, TS*0.18 + age*TS*1.4, 0, 7);
+      ctx.fill();
+      ctx.globalAlpha = 1;
     }
     /* 鬼 */
-    ghosts.forEach(function(g){
+    ghosts.forEach(function(g, gi){
       var p = entPos(g);
+      var bob = Math.sin(animT*5 + gi*1.7) * 2.2;          /* 上下漂浮 */
+      var sq = 1 + Math.sin(animT*9 + gi*2.1) * 0.05;      /* 呼吸挤压 */
+      ctx.save();
+      ctx.translate(p.x, p.y + bob);
+      ctx.scale(2 - sq, sq);
       ctx.fillStyle = g.color;
       ctx.beginPath();
-      ctx.arc(p.x, p.y - 2, TS*0.42, Math.PI, 0);
-      ctx.lineTo(p.x + TS*0.42, p.y + TS*0.34);
-      /* 底部波浪裙边 */
+      ctx.arc(0, -2, TS*0.42, Math.PI, 0);
+      ctx.lineTo(TS*0.42, TS*0.34);
       for(var i=0;i<3;i++){
-        ctx.lineTo(p.x + TS*0.42 - (i*2+1)*TS*0.14, p.y + TS*0.2);
-        ctx.lineTo(p.x + TS*0.42 - (i+1)*2*TS*0.14, p.y + TS*0.34);
+        ctx.lineTo(TS*0.42 - (i*2+1)*TS*0.14, TS*0.2);
+        ctx.lineTo(TS*0.42 - (i+1)*2*TS*0.14, TS*0.34);
       }
       ctx.closePath();
       ctx.fill();
       ctx.fillStyle = '#fff';
-      ctx.beginPath(); ctx.arc(p.x - 6, p.y - 4, 4.5, 0, 7); ctx.fill();
-      ctx.beginPath(); ctx.arc(p.x + 6, p.y - 4, 4.5, 0, 7); ctx.fill();
+      ctx.beginPath(); ctx.arc(-6, -4, 4.5, 0, 7); ctx.fill();
+      ctx.beginPath(); ctx.arc(6, -4, 4.5, 0, 7); ctx.fill();
       ctx.fillStyle = '#222';
       var ex = g.dir ? g.dir.x * 2 : 0;
-      ctx.beginPath(); ctx.arc(p.x - 6 + ex, p.y - 4, 2.2, 0, 7); ctx.fill();
-      ctx.beginPath(); ctx.arc(p.x + 6 + ex, p.y - 4, 2.2, 0, 7); ctx.fill();
+      ctx.beginPath(); ctx.arc(-6 + ex, -4, 2.2, 0, 7); ctx.fill();
+      ctx.beginPath(); ctx.arc(6 + ex, -4, 2.2, 0, 7); ctx.fill();
+      ctx.restore();
     });
-    /* 玩家 */
+    /* 玩家：嘴巴开合 + 移动挤压 + 死亡旋转缩小 */
     if(pacImg && pacImg.complete){
       var pp = entPos(player), s = TS*0.72;
-      ctx.drawImage(pacImg, pp.x - s, pp.y - s, s*2, s*2);
+      var moving = !!(player.dir && (player.tx !== player.cx || player.ty !== player.cy));
+      var dying = paused && deathT >= 0;
+      ctx.save();
+      ctx.translate(pp.x, pp.y);
+      if(dying){
+        var dk = Math.min(1, deathT / 0.7);
+        ctx.rotate(dk * 9);
+        var dsc = 1 - dk*0.92;
+        ctx.scale(dsc, dsc);
+        ctx.globalAlpha = 1 - dk*0.5;
+      } else if(moving){
+        var wob = Math.sin(animT*14) * 0.045;
+        ctx.scale(1 + wob, 1 - wob);   /* 移动时的挤压拉伸 */
+      }
+      ctx.drawImage(pacImg, -s, -s, s*2, s*2);
+      ctx.restore();
+      /* 嘴巴开合：朝行进方向叠一块背景色楔形，随步频张合；站立闭合 */
+      if(moving && !dying){
+        var d2 = player.dir;
+        var ang = d2.x === 1 ? 0 : d2.x === -1 ? Math.PI : (d2.y === 1 ? Math.PI/2 : -Math.PI/2);
+        var open = Math.abs(Math.sin(animT * 9)) * 0.5 + 0.1;
+        ctx.fillStyle = '#101430';
+        ctx.beginPath();
+        ctx.moveTo(pp.x, pp.y);
+        ctx.arc(pp.x, pp.y, s*1.08, ang - open, ang + open);
+        ctx.closePath();
+        ctx.fill();
+      }
     }
   }
 
@@ -4450,7 +4501,7 @@ var PacGame = (function(){
   function start(){
     reset();
     started = true; running = true; lastTs = 0;
-    paused = false;
+    paused = false; animT = 0; pops = []; deathT = -1;
     showMask('none');
     state = 'play';
     SFX.booster && SFX.booster();
@@ -4468,6 +4519,7 @@ var PacGame = (function(){
     reset();
     showMask('ready');
     running = false; lastTs = 0;
+    animT = 0; pops = []; deathT = -1; paused = false;
     draw();   /* ready 态画一帧静态棋盘做背景 */
   }
 
@@ -4483,6 +4535,7 @@ var PacGame = (function(){
         showMask('none');
         state = 'play';
         paused = false;
+        deathT = -1;
         return;
       }
       start();
