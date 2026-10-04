@@ -814,18 +814,30 @@
   }
   #pacman-trigger:active { transform:scale(.92); }
 
-  /* ---- 吃豆人小游戏 ---- */
-  .pac-panel { max-width:470px; }
-  .pac-hud {
-    display:flex; align-items:center; justify-content:center; margin:0 0 8px;
-    font-size:14px; font-weight:900; color:#8a5a1e;
+  /* ---- 吃豆人小游戏（整页模式：隐藏首页进入）---- */
+  #pacman-screen {
+    position:fixed; top:0; right:0; bottom:0; left:0; z-index:40;
+    background:linear-gradient(#0e1230 0%, #16205c 55%, #22348f 100%);
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap:10px; padding:56px 12px 16px; overflow-y:auto;
   }
-  .pac-hud b { color:#e07a1f; font-size:16px; margin:0 12px 0 5px; }
-  .pac-hud b:last-child { margin-right:0; color:#e05a6a; letter-spacing:2px; }
-  .pac-stage { position:relative; }
+  #pacman-screen.hide { display:none; }
+  #pac-back {
+    position:absolute; top:14px; left:14px; width:46px; height:40px; border:none; border-radius:12px;
+    background:rgba(255,255,255,.16); color:#fff; font-size:22px; font-weight:900; cursor:pointer;
+    -webkit-tap-highlight-color:transparent;
+  }
+  #pac-back:active { transform:scale(.92); }
+  .pac-hud {
+    display:flex; align-items:center; justify-content:center; margin:0 0 4px;
+    font-size:14px; font-weight:900; color:#aebdf0;
+  }
+  .pac-hud b { color:#ffd54d; font-size:16px; margin:0 12px 0 5px; }
+  .pac-hud b:last-child { margin-right:0; color:#ff8a9a; letter-spacing:2px; }
+  .pac-stage { position:relative; width:min(94vw, 470px); }
   #pac-cv {
     display:block; width:100%; border-radius:12px; background:#101430;
-    box-shadow:inset 0 2px 10px rgba(0,0,0,.5);
+    box-shadow:0 6px 24px rgba(0,0,0,.5);
   }
   .pac-mask {
     position:absolute; top:0; right:0; bottom:0; left:0; border-radius:12px;
@@ -834,18 +846,19 @@
   }
   .pac-mask.hide { display:none; }
   .pac-mask p { color:#fff; font-weight:900; font-size:17px; line-height:1.5; margin:0; }
-  .pac-dpad { position:relative; width:160px; height:142px; margin:10px auto 2px; }
+  .pac-dpad { position:relative; width:160px; height:142px; margin:8px auto 0; }
   .pac-btn {
     position:absolute; width:52px; height:46px; border-radius:10px; border:none;
-    background:linear-gradient(180deg,#eef5ff,#dbe9fb); color:#2f6fd0; font-size:17px; font-weight:900;
-    box-shadow:0 3px 0 #b8d0f0; cursor:pointer; touch-action:none;
+    background:linear-gradient(180deg,#3a4ab8,#2a3690); color:#fff; font-size:17px; font-weight:900;
+    box-shadow:0 3px 0 #1a2470; cursor:pointer; touch-action:none;
     -webkit-user-select:none; user-select:none; -webkit-tap-highlight-color:transparent;
   }
-  .pac-btn:active { transform:translateY(2px); box-shadow:0 1px 0 #b8d0f0; }
+  .pac-btn:active { transform:translateY(2px); box-shadow:0 1px 0 #1a2470; }
   .pac-u { left:54px; top:0; }
   .pac-l { left:0; top:48px; }
   .pac-r { left:108px; top:48px; }
   .pac-d { left:54px; top:96px; }
+  #pacman-screen .share-hint { color:#8fa3e0; margin-top:2px; }
   @keyframes mascotIdle {
     0%,100% { transform:translateY(0) rotate(-2deg); }
     50% { transform:translateY(-6px) rotate(2deg); }
@@ -1397,31 +1410,28 @@ var _hmt = _hmt || [];
   </div>
 </div>
 
-<!-- 吃豆人小游戏：奶蛙版吃豆，吃光豆子获胜，奖励道具 -->
-<div class="overlay" id="pacman-overlay">
-  <div class="panel pac-panel">
-    <div class="panel-title"><span data-i18n="pacman">吃豆人</span></div>
-    <button class="panel-close" data-close="pacman-overlay">✕</button>
-    <div class="pac-hud">
-      <span data-i18n="pac_score">分数</span><b id="pac-score">0</b>
-      <span data-i18n="pac_left">剩余</span><b id="pac-left">0</b>
-      <b id="pac-lives">♥♥♥</b>
-    </div>
-    <div class="pac-stage">
-      <canvas id="pac-cv" width="450" height="390"></canvas>
-      <div class="pac-mask" id="pac-mask">
-        <p id="pac-msg">吃光所有豆子，别被鬼抓住！</p>
-        <button class="btn btn-green" id="pac-start-btn">开始</button>
-      </div>
-    </div>
-    <div class="pac-dpad">
-      <button class="pac-btn pac-u" data-dir="up">▲</button>
-      <button class="pac-btn pac-l" data-dir="left">◀</button>
-      <button class="pac-btn pac-r" data-dir="right">▶</button>
-      <button class="pac-btn pac-d" data-dir="down">▼</button>
-    </div>
-    <p class="share-hint" data-i18n="pac_tip">电脑：方向键 / WASD · 手机：滑动或按钮</p>
+<!-- 吃豆人小游戏：整页模式（隐藏首页进入），吃光豆子获胜，奖励道具 -->
+<div id="pacman-screen" class="hide">
+  <button id="pac-back" title="返回">‹</button>
+  <div class="pac-hud">
+    <span data-i18n="pac_score">分数</span><b id="pac-score">0</b>
+    <span data-i18n="pac_left">剩余</span><b id="pac-left">0</b>
+    <b id="pac-lives">♥♥♥</b>
   </div>
+  <div class="pac-stage">
+    <canvas id="pac-cv" width="450" height="390"></canvas>
+    <div class="pac-mask" id="pac-mask">
+      <p id="pac-msg">吃光所有豆子，别被鬼抓住！</p>
+      <button class="btn btn-green" id="pac-start-btn">开始</button>
+    </div>
+  </div>
+  <div class="pac-dpad">
+    <button class="pac-btn pac-u" data-dir="up">▲</button>
+    <button class="pac-btn pac-l" data-dir="left">◀</button>
+    <button class="pac-btn pac-r" data-dir="right">▶</button>
+    <button class="pac-btn pac-d" data-dir="down">▼</button>
+  </div>
+  <p class="share-hint" data-i18n="pac_tip">电脑：方向键 / WASD · 手机：滑动或按钮</p>
 </div>
 
 <div id="toast"></div>
@@ -4056,8 +4066,6 @@ function closeOverlay(id){
   if(id === 'result-overlay') hideEndFx();
   /* 奶蛙空间关闭时暂停 3D 渲染循环，省性能 */
   if(id === 'mascot-space-overlay' && window.stopMascot3D) window.stopMascot3D();
-  /* 吃豆人关闭时停掉游戏循环 */
-  if(id === 'pacman-overlay' && window.PacGame) PacGame.stop();
   if(!o.classList.contains('show')){ o.classList.remove('closing'); return; }
   /* 设置里关了动画（或环境不支持 WAAPI）就直接收 */
   if(!settings.anim || !o.animate){ o.classList.remove('show'); o.classList.remove('closing'); return; }
@@ -4124,8 +4132,15 @@ function openMascotSpace(){ SFX.click(); track('mascot','open','home'); openOver
    操控：键盘方向键 / WASD，手机滑动棋盘或点方向按钮。 */
 function openPacman(){
   SFX.click();
-  openOverlay('pacman-overlay');
+  document.getElementById('home').classList.add('hide');
+  document.getElementById('pacman-screen').classList.remove('hide');
   PacGame.open();
+}
+function closePacman(){
+  PacGame.stop();
+  document.getElementById('pacman-screen').classList.add('hide');
+  document.getElementById('home').classList.remove('hide');
+  refreshHome();
 }
 
 var PacGame = (function(){
@@ -4150,7 +4165,8 @@ var PacGame = (function(){
     up:{x:0,y:-1}, down:{x:0,y:1}, left:{x:-1,y:0}, right:{x:1,y:0}
   };
   var GHOST_COLORS = ['#ff5a5a','#5ad8ff'];
-  var PLAYER_START = { x:7, y:11 }, GHOST_START = { x:7, y:6 };
+  var PLAYER_START = { x:7, y:11 };
+  var GHOST_STARTS = [{ x:7, y:7 }, { x:9, y:7 }];   /* 出生点全在开阔行，别踩墙 */
 
   var cv, ctx, pacImg, dotImg;
   var walls = [], pellets = {}, left = 0;
@@ -4176,7 +4192,8 @@ var PacGame = (function(){
     player = makeEnt(PLAYER_START.x, PLAYER_START.y);
     player.want = null;
     ghosts = GHOST_COLORS.map(function(col, i){
-      var g = makeEnt(GHOST_START.x + i, GHOST_START.y);
+      var st = GHOST_STARTS[i % GHOST_STARTS.length];
+      var g = makeEnt(st.x, st.y);
       g.color = col;
       return g;
     });
@@ -4300,8 +4317,10 @@ var PacGame = (function(){
     updateHud();
     if(lives <= 0){ finish(false); return; }
     player = makeEnt(PLAYER_START.x, PLAYER_START.y);
-    player.want = player.want || null;
-    ghosts.forEach(function(g, i){ var ng = makeEnt(GHOST_START.x + i, GHOST_START.y); ng.color = g.color; ghosts[i] = ng; });
+    ghosts = ghosts.map(function(g, i){
+      var st = GHOST_STARTS[i % GHOST_STARTS.length];
+      var ng = makeEnt(st.x, st.y); ng.color = g.color; return ng;
+    });
   }
 
   var dt_step = 0;
@@ -4410,6 +4429,7 @@ var PacGame = (function(){
   }
 
   function bindInput(){
+    document.getElementById('pac-back').addEventListener('click', function(){ closePacman(); });
     document.getElementById('pac-start-btn').addEventListener('click', function(){ start(); });
     document.querySelectorAll('.pac-btn').forEach(function(b){
       b.addEventListener('pointerdown', function(ev){
@@ -4429,8 +4449,8 @@ var PacGame = (function(){
     }, { passive:true });
     /* 键盘：只在面板打开时接管方向键 */
     document.addEventListener('keydown', function(ev){
-      var ov = document.getElementById('pacman-overlay');
-      if(!ov || !ov.classList.contains('show')) return;
+      var scr = document.getElementById('pacman-screen');
+      if(!scr || scr.classList.contains('hide')) return;
       var map = {
         ArrowUp:'up', ArrowDown:'down', ArrowLeft:'left', ArrowRight:'right',
         w:'up', s:'down', a:'left', d:'right', W:'up', S:'down', A:'left', D:'right'
