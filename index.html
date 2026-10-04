@@ -4452,24 +4452,31 @@ var PacGame = (function(){
       var pp = entPos(player), s = TS*0.72;
       var moving = !!(player.dir && (player.tx !== player.cx || player.ty !== player.cy));
       var dying = paused && deathT >= 0;
+      var d2 = player.dir || { x:-1, y:0 };   /* 素材原始朝向：左 */
+      var ang, faceRot = 0, flip = false;
+      if(d2.x === 1){ ang = 0; flip = true; }                        /* 右：镜像（眼睛保持朝上）*/
+      else if(d2.x === -1){ ang = Math.PI; }                          /* 左：原始朝向 */
+      else if(d2.y === -1){ ang = -Math.PI/2; faceRot = Math.PI/2; }  /* 上：侧转 90° */
+      else { ang = Math.PI/2; faceRot = -Math.PI/2; }                 /* 下 */
       ctx.save();
       ctx.translate(pp.x, pp.y);
       if(dying){
         var dk = Math.min(1, deathT / 0.7);
-        ctx.rotate(dk * 9);
+        ctx.rotate((flip ? Math.PI : faceRot) + dk * 9);
         var dsc = 1 - dk*0.92;
         ctx.scale(dsc, dsc);
         ctx.globalAlpha = 1 - dk*0.5;
-      } else if(moving){
-        var wob = Math.sin(animT*14) * 0.045;
-        ctx.scale(1 + wob, 1 - wob);   /* 移动时的挤压拉伸 */
+      } else {
+        if(flip) ctx.scale(-1, 1); else ctx.rotate(faceRot);
+        if(moving){
+          var wob = Math.sin(animT*14) * 0.045;
+          ctx.scale(1 + wob, 1 - wob);   /* 移动时的挤压拉伸 */
+        }
       }
       ctx.drawImage(pacImg, -s, -s, s*2, s*2);
       ctx.restore();
-      /* 嘴巴开合：朝行进方向叠一块背景色楔形，随步频张合；站立闭合 */
+      /* 嘴楔形：ang 已对齐素材嘴的朝向（镜像时随之翻转），随步频张合 */
       if(moving && !dying){
-        var d2 = player.dir;
-        var ang = d2.x === 1 ? 0 : d2.x === -1 ? Math.PI : (d2.y === 1 ? Math.PI/2 : -Math.PI/2);
         var open = Math.abs(Math.sin(animT * 9)) * 0.5 + 0.1;
         ctx.fillStyle = '#101430';
         ctx.beginPath();
