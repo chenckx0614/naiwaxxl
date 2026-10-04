@@ -798,6 +798,54 @@
     text-shadow:0 1px 3px rgba(40,80,150,.7);
   }
   #mascot-space-trigger:active { transform:scale(.92); animation:none; }
+  /* 吃豆人入口：奶蛙空间左边的小卡片 */
+  #pacman-trigger {
+    position:absolute; right:130px; bottom:14px; z-index:5;
+    width:88px; height:104px; border:none; padding:0; border-radius:16px;
+    background:rgba(255,255,255,.22); cursor:pointer; overflow:hidden;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    filter:drop-shadow(0 4px 8px rgba(60,110,60,.4));
+    -webkit-tap-highlight-color:transparent;
+  }
+  #pacman-trigger img { width:62px; height:62px; object-fit:contain; display:block; pointer-events:none; }
+  #pacman-trigger .trigger-label {
+    font-size:12px; font-weight:900; color:#fff; margin-top:2px; pointer-events:none;
+    text-shadow:0 1px 3px rgba(40,80,150,.7);
+  }
+  #pacman-trigger:active { transform:scale(.92); }
+
+  /* ---- 吃豆人小游戏 ---- */
+  .pac-panel { max-width:470px; }
+  .pac-hud {
+    display:flex; align-items:center; justify-content:center; margin:0 0 8px;
+    font-size:14px; font-weight:900; color:#8a5a1e;
+  }
+  .pac-hud b { color:#e07a1f; font-size:16px; margin:0 12px 0 5px; }
+  .pac-hud b:last-child { margin-right:0; color:#e05a6a; letter-spacing:2px; }
+  .pac-stage { position:relative; }
+  #pac-cv {
+    display:block; width:100%; border-radius:12px; background:#101430;
+    box-shadow:inset 0 2px 10px rgba(0,0,0,.5);
+  }
+  .pac-mask {
+    position:absolute; top:0; right:0; bottom:0; left:0; border-radius:12px;
+    background:rgba(13,17,45,.82); display:flex; flex-direction:column;
+    align-items:center; justify-content:center; gap:16px; padding:0 16px; text-align:center;
+  }
+  .pac-mask.hide { display:none; }
+  .pac-mask p { color:#fff; font-weight:900; font-size:17px; line-height:1.5; margin:0; }
+  .pac-dpad { position:relative; width:160px; height:142px; margin:10px auto 2px; }
+  .pac-btn {
+    position:absolute; width:52px; height:46px; border-radius:10px; border:none;
+    background:linear-gradient(180deg,#eef5ff,#dbe9fb); color:#2f6fd0; font-size:17px; font-weight:900;
+    box-shadow:0 3px 0 #b8d0f0; cursor:pointer; touch-action:none;
+    -webkit-user-select:none; user-select:none; -webkit-tap-highlight-color:transparent;
+  }
+  .pac-btn:active { transform:translateY(2px); box-shadow:0 1px 0 #b8d0f0; }
+  .pac-u { left:54px; top:0; }
+  .pac-l { left:0; top:48px; }
+  .pac-r { left:108px; top:48px; }
+  .pac-d { left:54px; top:96px; }
   @keyframes mascotIdle {
     0%,100% { transform:translateY(0) rotate(-2deg); }
     50% { transform:translateY(-6px) rotate(2deg); }
@@ -1134,6 +1182,7 @@ var _hmt = _hmt || [];
   <button id="btn-levels" onclick="openLevels()" data-i18n="pick_level">选择关卡</button>
   <button id="btn-wallpaper" onclick="openWallpaper()" data-i18n="wallpapers">🎨 壁纸</button>
   <button id="mascot-space-trigger" onclick="openMascotSpace()" title="奶蛙空间" data-i18n-title="mascot_space"><img src="naiwa/start/start_bj.webp" alt="" draggable="false"><span class="trigger-label" data-i18n="mascot_space">奶蛙空间</span></button>
+  <button id="pacman-trigger" onclick="openPacman()" title="吃豆人" data-i18n-title="pacman"><img src="naiwa/chidou/a.webp" alt="" draggable="false"><span class="trigger-label" data-i18n="pacman">吃豆人</span></button>
   <div id="home-level-tag"><span id="home-level-pre">当前进度：第 </span><span id="home-level">1</span><span id="home-level-post"> 关</span></div>
   <div id="home-best"></div>
 </div>
@@ -1345,6 +1394,33 @@ var _hmt = _hmt || [];
     </div>
     <img id="mascot-space-img" src="naiwa/start/start_bj.webp" alt="" draggable="false">
     <div id="mascot-space-hint" data-i18n="mascot_space_hint">这里是奶蛙的小空间，更多互动 coming soon~</div>
+  </div>
+</div>
+
+<!-- 吃豆人小游戏：奶蛙版吃豆，吃光豆子获胜，奖励道具 -->
+<div class="overlay" id="pacman-overlay">
+  <div class="panel pac-panel">
+    <div class="panel-title"><span data-i18n="pacman">吃豆人</span></div>
+    <button class="panel-close" data-close="pacman-overlay">✕</button>
+    <div class="pac-hud">
+      <span data-i18n="pac_score">分数</span><b id="pac-score">0</b>
+      <span data-i18n="pac_left">剩余</span><b id="pac-left">0</b>
+      <b id="pac-lives">♥♥♥</b>
+    </div>
+    <div class="pac-stage">
+      <canvas id="pac-cv" width="450" height="390"></canvas>
+      <div class="pac-mask" id="pac-mask">
+        <p id="pac-msg">吃光所有豆子，别被鬼抓住！</p>
+        <button class="btn btn-green" id="pac-start-btn">开始</button>
+      </div>
+    </div>
+    <div class="pac-dpad">
+      <button class="pac-btn pac-u" data-dir="up">▲</button>
+      <button class="pac-btn pac-l" data-dir="left">◀</button>
+      <button class="pac-btn pac-r" data-dir="right">▶</button>
+      <button class="pac-btn pac-d" data-dir="down">▼</button>
+    </div>
+    <p class="share-hint" data-i18n="pac_tip">电脑：方向键 / WASD · 手机：滑动或按钮</p>
   </div>
 </div>
 
@@ -1687,6 +1763,9 @@ const I18N = {
     result_score:'本局 {n} 分 · 最高 {s} 分',
     moves_bonus:'剩余 {n} 步 × 50 = +{b} 分',
     combo_2:'连击 x{n}！', combo_3:'漂亮！', combo_4:'厉害！', combo_5:'无敌了！', combo_6:'封神 x{n}！！！',
+    pacman:'吃豆人',
+    pac_score:'分数', pac_left:'剩余', pac_ready:'吃光所有豆子，别被鬼抓住！', pac_start:'开始', pac_again:'再来一次',
+    pac_win:'通关！奖励道具各 +1', pac_lose:'被抓住了…', pac_tip:'电脑：方向键 / WASD · 手机：滑动或按钮',
     revive:'复活 +5 步',
     revived:'复活成功，加油！',
     home_best:'最高分 {n}',
@@ -1737,6 +1816,9 @@ const I18N = {
     result_score:'This run {n} · Best {s}',
     moves_bonus:'{n} moves left × 50 = +{b}',
     combo_2:'Combo x{n}!', combo_3:'Nice!', combo_4:'Great!', combo_5:'UNSTOPPABLE!', combo_6:'GODLIKE x{n}!!!',
+    pacman:'PAC-BLOB',
+    pac_score:'Score', pac_left:'Left', pac_ready:'Eat all dots, dodge the ghosts!', pac_start:'Start', pac_again:'Play again',
+    pac_win:'Cleared! All boosters +1', pac_lose:'Caught…', pac_tip:'Desktop: arrows / WASD · Mobile: swipe or buttons',
     revive:'Revive +5',
     revived:'Revived — keep going!',
     home_best:'Best {n}',
@@ -3974,6 +4056,8 @@ function closeOverlay(id){
   if(id === 'result-overlay') hideEndFx();
   /* 奶蛙空间关闭时暂停 3D 渲染循环，省性能 */
   if(id === 'mascot-space-overlay' && window.stopMascot3D) window.stopMascot3D();
+  /* 吃豆人关闭时停掉游戏循环 */
+  if(id === 'pacman-overlay' && window.PacGame) PacGame.stop();
   if(!o.classList.contains('show')){ o.classList.remove('closing'); return; }
   /* 设置里关了动画（或环境不支持 WAAPI）就直接收 */
   if(!settings.anim || !o.animate){ o.classList.remove('show'); o.classList.remove('closing'); return; }
@@ -4033,6 +4117,332 @@ function refreshHome(){
 
 function openLevels(){ SFX.click(); renderLevelSelect(); openOverlay('levels-overlay'); }
 function openMascotSpace(){ SFX.click(); track('mascot','open','home'); openOverlay('mascot-space-overlay'); if(window.startMascot3D) window.startMascot3D(); }
+
+/* ---------- 吃豆人小游戏（奶蛙版）----------
+   网格步进制：实体永远从一格走向相邻格，到格心时再选下一步方向。
+   玩家吃光豆子获胜（奖励道具各 +1），被鬼碰到扣命，命尽失败。
+   操控：键盘方向键 / WASD，手机滑动棋盘或点方向按钮。 */
+function openPacman(){
+  SFX.click();
+  openOverlay('pacman-overlay');
+  PacGame.open();
+}
+
+var PacGame = (function(){
+  var TS = 30;                                        /* 格子边长（画布 15×13 格） */
+  var MAZE = [
+    "###############",
+    "#.............#",
+    "#.#.###.###.#.#",
+    "#.#.........#.#",
+    "#.#.##.#.##.#.#",
+    "#......#......#",
+    "##.##.#.#.##.##",
+    "#.............#",
+    "#.#.##.#.##.#.#",
+    "#.#.........#.#",
+    "#.#.###.###.#.#",
+    "#.............#",
+    "###############"
+  ];
+  var ROWS = MAZE.length, COLS = MAZE[0].length;
+  var DIRS = {
+    up:{x:0,y:-1}, down:{x:0,y:1}, left:{x:-1,y:0}, right:{x:1,y:0}
+  };
+  var GHOST_COLORS = ['#ff5a5a','#5ad8ff'];
+  var PLAYER_START = { x:7, y:11 }, GHOST_START = { x:7, y:6 };
+
+  var cv, ctx, pacImg, dotImg;
+  var walls = [], pellets = {}, left = 0;
+  var player, ghosts, score, lives, running, started, over;
+  var raf = 0, lastTs = 0, state = 'ready';   /* ready | play | win | lose */
+
+  function isWall(cx, cy){
+    if(cy < 0 || cy >= ROWS || cx < 0 || cx >= COLS) return true;
+    return MAZE[cy].charAt(cx) === '#';
+  }
+  function canGo(cx, cy, d){
+    return !isWall(cx + d.x, cy + d.y);
+  }
+  function makeEnt(cx, cy){
+    return { cx:cx, cy:cy, tx:cx, ty:cy, prog:0, dir:null };
+  }
+
+  function reset(){
+    pellets = {}; left = 0;
+    for(var r=0;r<ROWS;r++) for(var c=0;c<COLS;c++){
+      if(MAZE[r].charAt(c) === '.'){ pellets[c + ',' + r] = 1; left++; }
+    }
+    player = makeEnt(PLAYER_START.x, PLAYER_START.y);
+    player.want = null;
+    ghosts = GHOST_COLORS.map(function(col, i){
+      var g = makeEnt(GHOST_START.x + i, GHOST_START.y);
+      g.color = col;
+      return g;
+    });
+    score = 0; lives = 3; over = false;
+    updateHud();
+  }
+
+  function updateHud(){
+    document.getElementById('pac-score').textContent = score;
+    document.getElementById('pac-left').textContent = left;
+    var s = '';
+    for(var i=0;i<3;i++) s += i < lives ? '♥' : '♡';
+    document.getElementById('pac-lives').textContent = s;
+  }
+
+  function showMask(kind){
+    var mask = document.getElementById('pac-mask');
+    var msg = document.getElementById('pac-msg');
+    var btn = document.getElementById('pac-start-btn');
+    if(kind === 'ready'){
+      msg.textContent = T('pac_ready');
+      btn.textContent = T('pac_start');
+      mask.classList.remove('hide');
+    } else if(kind === 'win'){
+      msg.textContent = T('pac_win');
+      btn.textContent = T('pac_again');
+      mask.classList.remove('hide');
+    } else if(kind === 'lose'){
+      msg.textContent = T('pac_lose');
+      btn.textContent = T('pac_again');
+      mask.classList.remove('hide');
+    } else {
+      mask.classList.add('hide');
+    }
+    state = kind;
+  }
+
+  /* 玩家到格心时：优先走想要的方向，其次继续当前方向 */
+  function playerChoose(e){
+    if(e.want && canGo(e.cx, e.cy, e.want)){ e.dir = e.want; return e.want; }
+    if(e.dir && canGo(e.cx, e.cy, e.dir)) return e.dir;
+    return null;
+  }
+  /* 鬼到格心时：不回头（除非死路）；离玩家近则大概率朝玩家追 */
+  function ghostChoose(g){
+    var opts = [];
+    for(var k in DIRS){
+      var d = DIRS[k];
+      if(canGo(g.cx, g.cy, d)) opts.push(d);
+    }
+    if(!opts.length) return null;
+    if(g.dir){
+      var back = { x:-g.dir.x, y:-g.dir.y };
+      var nb = opts.filter(function(d){ return !(d.x === back.x && d.y === back.y); });
+      if(nb.length) opts = nb;
+    }
+    var dxp = player.cx - g.cx, dyp = player.cy - g.cy;
+    var near = Math.abs(dxp) + Math.abs(dyp) <= 6;
+    if(near && Math.random() < 0.8){
+      /* 追击：按「走一步后离玩家的曼哈顿距离」升序 */
+      opts.sort(function(a, b){
+        return (Math.abs(player.cx - (g.cx + a.x)) + Math.abs(player.cy - (g.cy + a.y))) -
+               (Math.abs(player.cx - (g.cx + b.x)) + Math.abs(player.cy - (g.cy + b.y)));
+      });
+      return opts[0];
+    }
+    return opts[Math.floor(Math.random() * opts.length)];
+  }
+
+  function stepEnt(e, speed, choose){
+    var guard = 0;
+    while(guard++ < 4){
+      if(e.tx === e.cx && e.ty === e.cy){
+        var nd = choose(e);
+        if(!nd) return;
+        e.dir = nd;
+        e.tx = e.cx + nd.x; e.ty = e.cy + nd.y;
+      }
+      e.prog += speed * dt_step;
+      if(e.prog < 1) return;
+      e.prog -= 1;
+      e.cx = e.tx; e.cy = e.ty;
+      onArrive(e);
+      if(e === player && over) return;
+    }
+  }
+
+  function onArrive(e){
+    var key = e.cx + ',' + e.cy;
+    if(e === player && pellets[key]){
+      delete pellets[key]; left--; score += 10;
+      updateHud();
+      if(left <= 0){ finish(true); return; }
+    }
+  }
+
+  function entPos(e){
+    return {
+      x: (e.cx + (e.tx - e.cx) * e.prog + 0.5) * TS,
+      y: (e.cy + (e.ty - e.cy) * e.prog + 0.5) * TS
+    };
+  }
+
+  function finish(win){
+    over = true; running = false;
+    if(win){
+      boosters.hammer++; boosters.bomb++; boosters.moves++;
+      renderHud();
+      toast(T('pac_win'));
+      launchConfetti(3);
+      SFX.end && SFX.end();
+      showMask('win');
+    } else {
+      showMask('lose');
+      SFX.invalid && SFX.invalid();
+    }
+  }
+
+  function hitPlayer(){
+    lives--; buzz([30,50,30]); SFX.invalid && SFX.invalid();
+    updateHud();
+    if(lives <= 0){ finish(false); return; }
+    player = makeEnt(PLAYER_START.x, PLAYER_START.y);
+    player.want = player.want || null;
+    ghosts.forEach(function(g, i){ var ng = makeEnt(GHOST_START.x + i, GHOST_START.y); ng.color = g.color; ghosts[i] = ng; });
+  }
+
+  var dt_step = 0;
+  function frame(ts){
+    if(!running) return;
+    if(!lastTs) lastTs = ts;
+    var dt = Math.min(0.04, (ts - lastTs) / 1000);
+    lastTs = ts;
+    dt_step = dt;
+    if(!over){
+      stepEnt(player, 5.6, playerChoose);
+      ghosts.forEach(function(g){ stepEnt(g, 4.3, ghostChoose); });
+      var pp = entPos(player);
+      for(var i=0;i<ghosts.length;i++){
+        var gp = entPos(ghosts[i]);
+        if(Math.abs(pp.x - gp.x) < TS*0.6 && Math.abs(pp.y - gp.y) < TS*0.6){ hitPlayer(); break; }
+      }
+    }
+    draw();
+    if(running) raf = requestAnimationFrame(frame);
+  }
+
+  function draw(){
+    if(!ctx) return;
+    ctx.clearRect(0, 0, COLS*TS, ROWS*TS);
+    ctx.fillStyle = '#101430';
+    ctx.fillRect(0, 0, COLS*TS, ROWS*TS);
+    /* 墙 */
+    for(var r=0;r<ROWS;r++) for(var c=0;c<COLS;c++){
+      if(isWall(c, r)){
+        ctx.fillStyle = '#2b3a96';
+        ctx.fillRect(c*TS+2, r*TS+2, TS-4, TS-4);
+        ctx.fillStyle = 'rgba(255,255,255,.10)';
+        ctx.fillRect(c*TS+2, r*TS+2, TS-4, 5);
+      }
+    }
+    /* 豆子 */
+    if(dotImg && dotImg.complete){
+      for(var key in pellets){
+        var pr = key.split(','); 
+        var x = (+pr[0] + 0.5) * TS, y = (+pr[1] + 0.5) * TS, s = TS*0.4;
+        ctx.drawImage(dotImg, x - s/2, y - s/2, s, s);
+      }
+    }
+    /* 鬼 */
+    ghosts.forEach(function(g){
+      var p = entPos(g);
+      ctx.fillStyle = g.color;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y - 2, TS*0.42, Math.PI, 0);
+      ctx.lineTo(p.x + TS*0.42, p.y + TS*0.34);
+      /* 底部波浪裙边 */
+      for(var i=0;i<3;i++){
+        ctx.lineTo(p.x + TS*0.42 - (i*2+1)*TS*0.14, p.y + TS*0.2);
+        ctx.lineTo(p.x + TS*0.42 - (i+1)*2*TS*0.14, p.y + TS*0.34);
+      }
+      ctx.closePath();
+      ctx.fill();
+      ctx.fillStyle = '#fff';
+      ctx.beginPath(); ctx.arc(p.x - 6, p.y - 4, 4.5, 0, 7); ctx.fill();
+      ctx.beginPath(); ctx.arc(p.x + 6, p.y - 4, 4.5, 0, 7); ctx.fill();
+      ctx.fillStyle = '#222';
+      var ex = g.dir ? g.dir.x * 2 : 0;
+      ctx.beginPath(); ctx.arc(p.x - 6 + ex, p.y - 4, 2.2, 0, 7); ctx.fill();
+      ctx.beginPath(); ctx.arc(p.x + 6 + ex, p.y - 4, 2.2, 0, 7); ctx.fill();
+    });
+    /* 玩家 */
+    if(pacImg && pacImg.complete){
+      var pp = entPos(player), s = TS*0.72;
+      ctx.drawImage(pacImg, pp.x - s, pp.y - s, s*2, s*2);
+    }
+  }
+
+  function setDir(name){
+    if(state !== 'play' || !player) return;
+    player.want = DIRS[name];
+    if(!player.dir){ playerChoose(player); }
+  }
+
+  function start(){
+    reset();
+    started = true; running = true; lastTs = 0;
+    showMask('none');
+    state = 'play';
+    SFX.booster && SFX.booster();
+    if(!raf) raf = requestAnimationFrame(frame);
+  }
+
+  function open(){
+    if(!cv){
+      cv = document.getElementById('pac-cv');
+      ctx = cv.getContext('2d');
+      pacImg = new Image(); pacImg.src = 'naiwa/chidou/a.webp';
+      dotImg = new Image(); dotImg.src = 'naiwa/chidou/b.webp';
+      bindInput();
+    }
+    reset();
+    showMask('ready');
+    running = false; lastTs = 0;
+    draw();   /* ready 态画一帧静态棋盘做背景 */
+  }
+
+  function stop(){
+    running = false;
+    if(raf){ cancelAnimationFrame(raf); raf = 0; }
+  }
+
+  function bindInput(){
+    document.getElementById('pac-start-btn').addEventListener('click', function(){ start(); });
+    document.querySelectorAll('.pac-btn').forEach(function(b){
+      b.addEventListener('pointerdown', function(ev){
+        ev.preventDefault();
+        setDir(b.dataset.dir);
+      });
+    });
+    /* 滑动 */
+    var sx = 0, sy = 0;
+    cv.addEventListener('touchstart', function(ev){
+      sx = ev.touches[0].clientX; sy = ev.touches[0].clientY;
+    }, { passive:true });
+    cv.addEventListener('touchend', function(ev){
+      var dx = ev.changedTouches[0].clientX - sx, dy = ev.changedTouches[0].clientY - sy;
+      if(Math.abs(dx) < 22 && Math.abs(dy) < 22) return;
+      setDir(Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 'right' : 'left') : (dy > 0 ? 'down' : 'up'));
+    }, { passive:true });
+    /* 键盘：只在面板打开时接管方向键 */
+    document.addEventListener('keydown', function(ev){
+      var ov = document.getElementById('pacman-overlay');
+      if(!ov || !ov.classList.contains('show')) return;
+      var map = {
+        ArrowUp:'up', ArrowDown:'down', ArrowLeft:'left', ArrowRight:'right',
+        w:'up', s:'down', a:'left', d:'right', W:'up', S:'down', A:'left', D:'right'
+      };
+      var dir = map[ev.key];
+      if(dir){ ev.preventDefault(); setDir(dir); }
+      if((ev.key === 'Enter' || ev.key === ' ') && state !== 'play'){ ev.preventDefault(); start(); }
+    });
+  }
+
+  return { open: open, stop: stop };
+})();
 
 /* ---------- 开始页 ---------- */
 function goHome(){
