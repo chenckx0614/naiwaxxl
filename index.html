@@ -859,11 +859,29 @@
   .pac-r { left:108px; top:48px; }
   .pac-d { left:54px; top:96px; }
   #pacman-screen .share-hint { color:#8fa3e0; margin-top:2px; }
+
+  /* ---- 奶蛙空间（整页模式）---- */
+  #mascot-screen {
+    position:fixed; top:0; right:0; bottom:0; left:0; z-index:40;
+    background:linear-gradient(#e8f6d8 0%, #cdeec4 45%, #a8dcb8 100%);
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap:16px; padding:64px 12px 24px; overflow-y:auto;
+  }
+  #mascot-screen.hide { display:none; }
+  #mascot-back {
+    position:absolute; top:14px; left:14px; width:46px; height:40px; border:none; border-radius:12px;
+    background:rgba(255,255,255,.55); color:#3a7a44; font-size:22px; font-weight:900; cursor:pointer;
+    -webkit-tap-highlight-color:transparent;
+  }
+  #mascot-back:active { transform:scale(.92); }
+  .mascot-screen-title { font-size:24px; font-weight:900; color:#3a7a44; letter-spacing:4px; }
+  #mascot-screen #mascot-3d-container { width:min(88vw, 480px); height:min(88vw, 480px); }
+  #mascot-screen #mascot-space-img { width:130px; }
+  #mascot-screen #mascot-space-hint { color:#4a7a58; }
   @keyframes mascotIdle {
     0%,100% { transform:translateY(0) rotate(-2deg); }
     50% { transform:translateY(-6px) rotate(2deg); }
   }
-  #mascot-space-overlay .panel { width:min(520px, 94vw); }
   /* 3D 容器：正方形画布，圆角，浅蓝渐变底（和首页天空呼应） */
   #mascot-3d-container {
     position:relative; width:min(340px, 74vw); height:min(340px, 74vw);
@@ -883,7 +901,7 @@
     position:absolute; bottom:20px; left:50%; transform:translateX(-50%);
     width:200px; display:none; pointer-events:none;
   }
-  #mascot-space-overlay.mascot-3d-loading #mascot-3d-progress { display:block; }
+  #mascot-screen.mascot-3d-loading #mascot-3d-progress { display:block; }
   #mascot-3d-progress-bar {
     height:10px; border-radius:999px; background:rgba(255,255,255,.55);
     box-shadow:inset 0 2px 4px rgba(0,0,0,.12); overflow:hidden;
@@ -897,11 +915,11 @@
     margin-top:6px; text-align:center; font-size:13px; font-weight:700; color:#2b7fb8;
   }
   /* GLB 下载完成：隐藏进度条和 loading 文字 */
-  #mascot-space-overlay.mascot-glb-loaded #mascot-3d-progress,
-  #mascot-space-overlay.mascot-glb-loaded #mascot-3d-loading { display:none; }
+  #mascot-screen.mascot-glb-loaded #mascot-3d-progress,
+  #mascot-screen.mascot-glb-loaded #mascot-3d-loading { display:none; }
   /* 3D 就绪后隐藏 2D 立绘和 loading；失败时显示 img 作为兜底 */
-  #mascot-space-overlay.mascot-3d-ready #mascot-space-img,
-  #mascot-space-overlay.mascot-3d-ready #mascot-3d-loading { display:none; }
+  #mascot-screen.mascot-3d-ready #mascot-space-img,
+  #mascot-screen.mascot-3d-ready #mascot-3d-loading { display:none; }
   #mascot-space-img {
     display:block; width:min(340px, 74vw); height:auto; margin:0 auto;
     filter:drop-shadow(0 8px 18px rgba(60,110,60,.4));
@@ -1392,12 +1410,11 @@ var _hmt = _hmt || [];
   <button class="panel-close" data-close="wp-view-overlay">✕</button>
 </div>
 
-<!-- 奶蛙空间：首页右下角入口打开的轻量陪伴空间 -->
-<div class="overlay" id="mascot-space-overlay">
-  <div class="panel">
-    <div class="panel-title"><span data-i18n="mascot_space">奶蛙空间</span></div>
-    <button class="panel-close" data-close="mascot-space-overlay">✕</button>
-    <div id="mascot-3d-container">
+<!-- 奶蛙空间：整页模式（隐藏首页进入）-->
+<div id="mascot-screen" class="hide">
+  <button id="mascot-back" onclick="closeMascotSpace()" title="返回">‹</button>
+  <div class="mascot-screen-title" data-i18n="mascot_space">奶蛙空间</div>
+  <div id="mascot-3d-container">
       <canvas id="mascot-3d-canvas"></canvas>
       <div id="mascot-3d-loading" data-i18n="mascot_3d_loading">3D 加载中...</div>
       <div id="mascot-3d-progress">
@@ -1405,9 +1422,8 @@ var _hmt = _hmt || [];
         <div id="mascot-3d-progress-pct">0%</div>
       </div>
     </div>
-    <img id="mascot-space-img" src="naiwa/start/start_bj.webp" alt="" draggable="false">
-    <div id="mascot-space-hint" data-i18n="mascot_space_hint">这里是奶蛙的小空间，更多互动 coming soon~</div>
-  </div>
+  <img id="mascot-space-img" src="naiwa/start/start_bj.webp" alt="" draggable="false">
+  <div id="mascot-space-hint" data-i18n="mascot_space_hint">这里是奶蛙的小空间，更多互动 coming soon~</div>
 </div>
 
 <!-- 吃豆人小游戏：整页模式（隐藏首页进入），吃光豆子获胜，奖励道具 -->
@@ -1775,7 +1791,7 @@ const I18N = {
     combo_2:'连击 x{n}！', combo_3:'漂亮！', combo_4:'厉害！', combo_5:'无敌了！', combo_6:'封神 x{n}！！！',
     pacman:'吃豆人',
     pac_score:'分数', pac_left:'剩余', pac_ready:'吃光所有豆子，别被鬼抓住！', pac_start:'开始', pac_again:'再来一次',
-    pac_win:'通关！奖励道具各 +1', pac_lose:'被抓住了…', pac_tip:'电脑：方向键 / WASD · 手机：滑动或按钮',
+    pac_win:'通关！奖励道具各 +1', pac_lose:'被抓住了…', pac_resume:'继续', pac_tip:'电脑：方向键 / WASD · 手机：滑动或按钮',
     revive:'复活 +5 步',
     revived:'复活成功，加油！',
     home_best:'最高分 {n}',
@@ -1828,7 +1844,7 @@ const I18N = {
     combo_2:'Combo x{n}!', combo_3:'Nice!', combo_4:'Great!', combo_5:'UNSTOPPABLE!', combo_6:'GODLIKE x{n}!!!',
     pacman:'PAC-BLOB',
     pac_score:'Score', pac_left:'Left', pac_ready:'Eat all dots, dodge the ghosts!', pac_start:'Start', pac_again:'Play again',
-    pac_win:'Cleared! All boosters +1', pac_lose:'Caught…', pac_tip:'Desktop: arrows / WASD · Mobile: swipe or buttons',
+    pac_win:'Cleared! All boosters +1', pac_lose:'Caught…', pac_resume:'Resume', pac_tip:'Desktop: arrows / WASD · Mobile: swipe or buttons',
     revive:'Revive +5',
     revived:'Revived — keep going!',
     home_best:'Best {n}',
@@ -4064,8 +4080,6 @@ function closeOverlay(id){
   if(!o) return;
   /* 面板收起来时把插图一起撤掉，免得下次开局还挂着上一局的胜负图 */
   if(id === 'result-overlay') hideEndFx();
-  /* 奶蛙空间关闭时暂停 3D 渲染循环，省性能 */
-  if(id === 'mascot-space-overlay' && window.stopMascot3D) window.stopMascot3D();
   if(!o.classList.contains('show')){ o.classList.remove('closing'); return; }
   /* 设置里关了动画（或环境不支持 WAAPI）就直接收 */
   if(!settings.anim || !o.animate){ o.classList.remove('show'); o.classList.remove('closing'); return; }
@@ -4124,7 +4138,19 @@ function refreshHome(){
 }
 
 function openLevels(){ SFX.click(); renderLevelSelect(); openOverlay('levels-overlay'); }
-function openMascotSpace(){ SFX.click(); track('mascot','open','home'); openOverlay('mascot-space-overlay'); if(window.startMascot3D) window.startMascot3D(); }
+function openMascotSpace(){
+  SFX.click();
+  track('mascot','open','home');
+  document.getElementById('home').classList.add('hide');
+  document.getElementById('mascot-screen').classList.remove('hide');
+  if(window.startMascot3D) window.startMascot3D();
+}
+function closeMascotSpace(){
+  if(window.stopMascot3D) window.stopMascot3D();
+  document.getElementById('mascot-screen').classList.add('hide');
+  document.getElementById('home').classList.remove('hide');
+  refreshHome();
+}
 
 /* ---------- 吃豆人小游戏（奶蛙版）----------
    网格步进制：实体永远从一格走向相邻格，到格心时再选下一步方向。
@@ -4171,7 +4197,7 @@ var PacGame = (function(){
   var cv, ctx, pacImg, dotImg;
   var walls = [], pellets = {}, left = 0;
   var player, ghosts, score, lives, running, started, over;
-  var raf = 0, lastTs = 0, state = 'ready';   /* ready | play | win | lose */
+  var raf = 0, lastTs = 0, state = 'ready', paused = false;   /* ready | play | caught | win | lose */
 
   function isWall(cx, cy){
     if(cy < 0 || cy >= ROWS || cx < 0 || cx >= COLS) return true;
@@ -4224,6 +4250,10 @@ var PacGame = (function(){
     } else if(kind === 'lose'){
       msg.textContent = T('pac_lose');
       btn.textContent = T('pac_again');
+      mask.classList.remove('hide');
+    } else if(kind === 'caught'){
+      msg.textContent = T('pac_lose');
+      btn.textContent = T('pac_resume');
       mask.classList.remove('hide');
     } else {
       mask.classList.add('hide');
@@ -4315,12 +4345,18 @@ var PacGame = (function(){
   function hitPlayer(){
     lives--; buzz([30,50,30]); SFX.invalid && SFX.invalid();
     updateHud();
-    if(lives <= 0){ finish(false); return; }
     player = makeEnt(PLAYER_START.x, PLAYER_START.y);
     ghosts = ghosts.map(function(g, i){
       var st = GHOST_STARTS[i % GHOST_STARTS.length];
       var ng = makeEnt(st.x, st.y); ng.color = g.color; return ng;
     });
+    if(lives <= 0){ finish(false); return; }
+    /* 中弹：暂停出提示弹窗，点「继续」再走 —— 不再无声传送 */
+    paused = true;
+    setTimeout(function(){
+      if(state === 'play'){ showMask('caught'); }
+      else { paused = false; }   /* 期间正好通关/失败就别再弹了 */
+    }, 600);
   }
 
   var dt_step = 0;
@@ -4330,9 +4366,9 @@ var PacGame = (function(){
     var dt = Math.min(0.04, (ts - lastTs) / 1000);
     lastTs = ts;
     dt_step = dt;
-    if(!over){
-      stepEnt(player, 5.6, playerChoose);
-      ghosts.forEach(function(g){ stepEnt(g, 4.3, ghostChoose); });
+    if(!over && !paused){
+      stepEnt(player, 4.6, playerChoose);
+      ghosts.forEach(function(g){ stepEnt(g, 3.3, ghostChoose); });
       var pp = entPos(player);
       for(var i=0;i<ghosts.length;i++){
         var gp = entPos(ghosts[i]);
@@ -4396,13 +4432,25 @@ var PacGame = (function(){
 
   function setDir(name){
     if(state !== 'play' || !player) return;
-    player.want = DIRS[name];
+    var nd = DIRS[name];
+    player.want = nd;
+    /* 反向 180°：立即掉头（交换起止格、进度翻转），不用等走到下一个格心 */
+    if(player.dir && nd.x === -player.dir.x && nd.y === -player.dir.y &&
+       (player.tx !== player.cx || player.ty !== player.cy)){
+      var ocx = player.cx, ocy = player.cy;
+      player.cx = player.tx; player.cy = player.ty;
+      player.tx = ocx; player.ty = ocy;
+      player.prog = 1 - player.prog;
+      player.dir = nd;
+      return;
+    }
     if(!player.dir){ playerChoose(player); }
   }
 
   function start(){
     reset();
     started = true; running = true; lastTs = 0;
+    paused = false;
     showMask('none');
     state = 'play';
     SFX.booster && SFX.booster();
@@ -4430,7 +4478,15 @@ var PacGame = (function(){
 
   function bindInput(){
     document.getElementById('pac-back').addEventListener('click', function(){ closePacman(); });
-    document.getElementById('pac-start-btn').addEventListener('click', function(){ start(); });
+    document.getElementById('pac-start-btn').addEventListener('click', function(){
+      if(state === 'caught'){          /* 中弹弹窗的「继续」 */
+        showMask('none');
+        state = 'play';
+        paused = false;
+        return;
+      }
+      start();
+    });
     document.querySelectorAll('.pac-btn').forEach(function(b){
       b.addEventListener('pointerdown', function(ev){
         ev.preventDefault();
@@ -5164,7 +5220,7 @@ function initMascot3D() {
 
   // 隐藏 loading 和 2D 兜底图，显示 3D 进度条
   loading.style.display = 'none';
-  const overlay = document.getElementById('mascot-space-overlay');
+  const overlay = document.getElementById('mascot-screen');
   overlay.classList.add('mascot-3d-ready', 'mascot-3d-loading');
   isInitialized = true;
 
@@ -5229,7 +5285,7 @@ function loadMascotModel(glbUrl) {
       frogGroup = mascotGroup;   // 交互目标指向外层 Group
       mascotModel = model;
       /* GLB 加载成功：加标记 class，方便探针/调试确认 */
-      document.getElementById('mascot-space-overlay').classList.add('mascot-glb-loaded');
+      document.getElementById('mascot-screen').classList.add('mascot-glb-loaded');
 
       // 骨骼动画：如果有，用 AnimationMixer 播放
       if (gltf.animations && gltf.animations.length) {
@@ -5260,7 +5316,7 @@ function loadMascotModel(glbUrl) {
         loading.style.color = '#d32f2f';
       }
       /* 隐藏进度条 */
-      const overlay = document.getElementById('mascot-space-overlay');
+      const overlay = document.getElementById('mascot-screen');
       if (overlay) overlay.classList.remove('mascot-3d-loading');
     }
   );
