@@ -2939,7 +2939,6 @@ function renderTileFace(t){
   /* 彩色底座：只给声明了 bg 的类型画（第三关 5 个角色全是黄色，靠底色区分）。
      写在 renderTileFace 里，洗牌换 type 后底座自动跟着换；无 bg 的关卡置空。 */
   f.style.background = tp.bg || '';
-  if(tp.bg) f.style.boxShadow = 'inset 0 0 0 4px ' + tp.color + ', 0 0 10px ' + tp.color + '66';
   /* 太阳等发光体：静态微光（不做 filter 动画，避免逐帧重绘） */
   f.classList.toggle('glow', !!tp.glow);
 }
