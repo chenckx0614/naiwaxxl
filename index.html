@@ -1648,10 +1648,10 @@ const LEVELS = [
     themeColor: '#e0708a',
     doubleStripe: true,
     types: [
-      { key:'7a', img:'naiwa/7/a.webp', color:'#ffd54d', bg:'#fff3c4' },
-      { key:'7b', img:'naiwa/7/b.webp', color:'#b8c4d8', bg:'#e8f0ff' },
-      { key:'7c', img:'naiwa/7/c.webp', color:'#ff9db4', bg:'#ffe4ef' },
-      { key:'7d', img:'naiwa/7/d.webp', color:'#7ec3f5', bg:'#d8ecff' },
+      { key:'7a', img:'naiwa/7/a.webp', color:'#ffd54d', bg:'#ffe37a' },
+      { key:'7b', img:'naiwa/7/b.webp', color:'#7ec3f5', bg:'#9cd0ff' },
+      { key:'7c', img:'naiwa/7/c.webp', color:'#ff7aa8', bg:'#ffb8d4' },
+      { key:'7d', img:'naiwa/7/d.webp', color:'#6ab04c', bg:'#b8e898' },
     ],
     shape: function(r,c){ return Math.abs(r-4) <= 2.5 + 2*Math.sin(Math.PI*(c+0.5)/10); },
     cages: [ { r:1, c:2 }, { r:7, c:7 } ],
@@ -1675,10 +1675,10 @@ const LEVELS = [
     needs: [24, 20, 16],
     themeColor: '#c084fc',
     types: [
-      { key:'8a', img:'naiwa/8/a.webp', color:'#f5b8d8', bg:'#ffe4f4' },
-      { key:'8b', img:'naiwa/8/b.webp', color:'#8a93b8', bg:'#e2e8f8' },
-      { key:'8c', img:'naiwa/8/c.webp', color:'#ff8a5c', bg:'#ffe8dc' },
-      { key:'8d', img:'naiwa/8/d.webp', color:'#a4e05c', bg:'#e6f9d9' },
+      { key:'8a', img:'naiwa/8/a.webp', color:'#f06aa8', bg:'#ffb0d4' },
+      { key:'8b', img:'naiwa/8/b.webp', color:'#5a8ad0', bg:'#a0c0f0' },
+      { key:'8c', img:'naiwa/8/c.webp', color:'#f08230', bg:'#ffc890' },
+      { key:'8d', img:'naiwa/8/d.webp', color:'#58b038', bg:'#b8e888' },
     ],
     shape: function(r,c){ const rr=Math.min(r,ROWS-1-r), cc=Math.min(c,COLS-1-c); return rr+cc>=1; },
     rocks: [ {r:2,c:3},{r:2,c:7},{r:4,c:8},{r:6,c:3},{r:6,c:7},{r:3,c:9},{r:5,c:1},{r:4,c:5} ],
@@ -1706,7 +1706,7 @@ const LEVELS = [
       { key:'9a', img:'naiwa/9/a.webp', color:'#ffd54d', bg:'#fff3c4' },
       { key:'9b', img:'naiwa/9/b.webp', color:'#cfd4e0', bg:'#eef1fa' },
       { key:'9c', img:'naiwa/9/c.webp', color:'#ffb8c8', bg:'#ffe4ee' },
-      { key:'9d', img:'naiwa/9/d.webp', color:'#9b7fd0', bg:'#e9defc' },
+      { key:'9d', img:'naiwa/9/d.webp', color:'#8a66c8', bg:'#d0b8ff' },
     ],
     cages: [ { r:0, c:0 }, { r:0, c:9 }, { r:9, c:0 }, { r:9, c:9 } ],
     rocks: [ {r:3,c:2},{r:3,c:7},{r:6,c:2},{r:6,c:7},{r:4,c:2},{r:5,c:7} ],
@@ -2939,6 +2939,7 @@ function renderTileFace(t){
   /* 彩色底座：只给声明了 bg 的类型画（第三关 5 个角色全是黄色，靠底色区分）。
      写在 renderTileFace 里，洗牌换 type 后底座自动跟着换；无 bg 的关卡置空。 */
   f.style.background = tp.bg || '';
+  if(tp.bg) f.style.boxShadow = 'inset 0 0 0 4px ' + tp.color + ', 0 0 10px ' + tp.color + '66';
   /* 太阳等发光体：静态微光（不做 filter 动画，避免逐帧重绘） */
   f.classList.toggle('glow', !!tp.glow);
 }
