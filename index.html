@@ -1051,6 +1051,26 @@
     position:absolute; width:4px; height:4px; border-radius:50%; background:#fff;
     animation:starTwinkle 2.4s ease-in-out infinite;
   }
+  /* ---- 深渊主题（第十关）：暗红黑渐变 + 上升余烬 ---- */
+  body.abyss {
+    background: linear-gradient(#160309 0%, #38080f 42%, #6b0f16 74%, #8f2318 100%) fixed;
+  }
+  #sky-abyss {
+    position:fixed; top:0; right:0; bottom:0; left:0;
+    pointer-events:none; z-index:0; display:none; overflow:hidden;
+  }
+  body.abyss #sky-abyss { display:block; }
+  #sky-abyss i {
+    position:absolute; bottom:-24px; border-radius:50%;
+    background:radial-gradient(circle at 38% 32%, #ffe2b0, #ff8a3c 52%, rgba(255,90,40,0) 78%);
+    opacity:.9;
+    animation:emberRise linear infinite;
+  }
+  @keyframes emberRise {
+    from { transform:translateY(0) translateX(0); opacity:.9; }
+    40%  { transform:translateY(-46vh) translateX(14px); }
+    to   { transform:translateY(-108vh) translateX(-10px); opacity:0; }
+  }
 
 
   /* ---------- 消除瞬间全屏闪光（五连 / 石头 / 彩虹交换等大场面）----------
@@ -1717,6 +1737,40 @@ const LEVELS = [
     /* 第九关胜利图：穿越传送门（chidou/oo），居中大图展示 */
     winImg: 'naiwa/9/win.webp',
   },
+  /* ============ 第十关：深渊终章 ============
+     系列最难关。11×10 切角方形 106 格（史上最大），5 种图标 —— 连锁密度全场最低，
+     每一步都要精打细算。新机制「深渊侵蚀」（curse）：每走 4 步，深渊随机冰封一枚
+     普通棋子 —— 拖得越久棋盘越僵，逼玩家速战速决。
+     障碍密度全场最高：牢笼 5（四边中腰 + 正中心）+ 石头 10 + 开局冰封 6 + 果冻 10
+     （中央 2×2 双层芯）。步数只给 24。
+     深渊主题 bg:'abyss'：暗红黑渐变 + 上升余烬。
+     素材：系列全员集结（紫恶魔 1g / 粉裙鸡 4f4 / 黑礼服鸡 4e4 / 太阳 5a / 蓝史莱姆 1b）。 */
+  {
+    no: 10,
+    rows: 10,
+    cols: 11,
+    moves: 24,
+    needs: [19, 16, 13],
+    themeColor: '#e04848',
+    curse: 4,
+    types: [
+      { key:'10a', img:'naiwa/10/a.webp', color:'#8b5cf6', bg:'#e4d4ff' },
+      { key:'10b', img:'naiwa/10/b.webp', color:'#ff5fa2', bg:'#ffc4de' },
+      { key:'10c', img:'naiwa/10/c.webp', color:'#4a4a5a', bg:'#d4d8e8' },
+      { key:'10d', img:'naiwa/10/d.webp', color:'#ffcf3e', bg:'#ffe066', glow:1 },
+      { key:'10e', img:'naiwa/10/e.webp', color:'#7ec3f5', bg:'#cfe8ff' },
+    ],
+    shape: function(r,c){ const rr=Math.min(r,ROWS-1-r), cc=Math.min(c,COLS-1-c); return rr+cc>=1; },
+    cages: [ { r:0, c:1 }, { r:0, c:9 }, { r:9, c:1 }, { r:9, c:9 }, { r:4, c:5 } ],
+    rocks: [ {r:2,c:4},{r:2,c:6},{r:4,c:2},{r:4,c:8},{r:5,c:2},{r:5,c:8},{r:7,c:4},{r:7,c:6},{r:1,c:3},{r:8,c:7} ],
+    frozen: [ {r:1,c:5},{r:8,c:5},{r:3,c:7},{r:6,c:3},{r:3,c:3},{r:6,c:7} ],
+    jellies: [ {r:4,c:4},{r:4,c:6},{r:5,c:4},{r:5,c:6},
+               {r:3,c:4,layer:1},{r:3,c:6,layer:1},{r:6,c:4,layer:1},{r:6,c:6,layer:1},
+               {r:2,c:5,layer:1},{r:7,c:5,layer:1} ],
+    bg: 'abyss',
+    /* 第十关胜利图：深渊尽头的花田起舞（壁纸 6） */
+    winImg: 'naiwa/10/win.webp',
+  },
 ];
 
 /* 关卡选择面板至少铺这么多格，超出的格子显示为「敬请期待」 */
@@ -1752,6 +1806,8 @@ const I18N = {
     mascot_space:'奶蛙空间', mascot_space_hint:'这里是奶蛙的小空间，更多互动 coming soon~',
     mascot_3d_loading:'3D 加载中...',
     rock_hard:'石头太硬了，砸不动！在它旁边消除试试',
+    tile_locked:'它被锁住啦，消除它旁边的棋子解开它',
+    curse_hit:'深渊侵蚀！一枚棋子被冰封了',
     share_win:'成功通关 ·', share_try:'挑战 ·',
     start:'开始', pick_level:'选择关卡',
     home_sub:'滑 动 消 除 · 轻 松 一 夏',
@@ -1805,6 +1861,8 @@ const I18N = {
     mascot_space:'Naiwa Space', mascot_space_hint:'A little corner for the Milk Frog. More interactions coming soon~',
     mascot_3d_loading:'Loading 3D...',
     rock_hard:'The rock is too hard! Clear tiles next to it instead',
+    tile_locked:'It is locked! Clear tiles next to it to unlock it',
+    curse_hit:'The abyss spreads! A tile has been frozen',
     share_win:'Level Clear ·', share_try:'Challenge ·',
     start:'Start Game', pick_level:'Levels',
     home_sub:'Swipe · Match · Relax',
@@ -2139,52 +2197,9 @@ const $ = s => document.querySelector(s);
 
 /* 当前格是否在当前关卡棋盘内（激活格） */
 function isActive(r,c){ return r>=0 && r<ROWS && c>=0 && c<COLS && (!activeShape || activeShape(r,c)); }
-/* 初始化果冻层：默认 2 层；没声明 jellies 的关卡全 0 */
-function initJellyGrid(list){
-  const g = Array.from({length:ROWS}, ()=>Array(COLS).fill(0));
-  if(list) list.forEach(function(p){ if(isActive(p.r,p.c)) g[p.r][p.c] = p.layer || 2; });
-  return g;
-}
-function hasJelly(r,c){ return jellyGrid[r] && jellyGrid[r][c] > 0; }
-
-/* 渲染/重绘所有果冻覆盖层。layoutBoard 重建 cell-bg 时会一并调用；
-   果冻 div 要插在棋子之前，这样棋子 face 盖在果冻上面。 */
-function renderJellies(){
-  boardEl.querySelectorAll('.jelly').forEach(e=>e.remove());
-  for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++){
-    const layer = jellyGrid[r] && jellyGrid[r][c];
-    if(!layer) continue;
-    const el = document.createElement('div');
-    el.className = 'jelly jelly-layer' + layer;
-    el.dataset.rc = r + ',' + c;
-    const p = pos(r,c);
-    el.style.cssText = `left:${p.x}px;top:${p.y}px;width:${cell}px;height:${cell}px;`;
-    boardEl.appendChild(el);
-  }
-}
-
-/* 一次消除波及到果冻格：减一层；减到 0 时清掉并 toast。
-   果冻只清层，不清棋子 —— 棋子仍走正常消除/生成逻辑。 */
-function hitJelly(hit){
-  let broke = false;
-  hit.forEach(function(i){
-    const r=(i/COLS)|0, c=i%COLS;
-    if(!hasJelly(r,c)) return;
-    jellyGrid[r][c]--;
-    const el = boardEl.querySelector('.jelly[data-rc="'+r+','+c+'"]');
-    if(el){
-      if(jellyGrid[r][c] > 0){
-        el.className = 'jelly jelly-layer' + jellyGrid[r][c];
-        el.dataset.rc = r + ',' + c;
-      } else {
-        el.classList.add('jelly-pop');
-        setTimeout(function(){ if(el.parentNode) el.parentNode.removeChild(el); }, 260);
-      }
-    }
-    broke = true;
-  });
-  if(broke) toast(T('jelly_break'));
-}
+/* 果冻（initJellyGrid / hasJelly / renderJellies / hitJelly）实现只保留一份，
+   在 clearSet 附近（ES5 注释风格那段）。以前这里还有一份重复定义 ——
+   同名函数声明后者覆盖前者，两份实现改了其中一份就会悄悄分叉，属于埋雷，已删。 */
 
 /* 该坐标是不是本关的牢笼 / 冰封格。只在 newBoard() 建棋子时用来上锁；
    运行时判定一律读棋子自身的 t.caged / t.frozen —— 破笼 / 破冰后
@@ -3540,6 +3555,32 @@ async function dropAndFill(combo){
   settleBoard();
 }
 
+/* ---------- 深渊侵蚀（第十关 curse 机制）----------
+   每消耗 curse 步，深渊随机冰封一枚普通棋子（可被消除/道具破冰，同开局冰封）。
+   计数挂在 trySwap 的三处步数消耗上；真正冰封延迟到 resolveBoard 收尾执行 ——
+   连锁动画进行中途改棋子状态会和消除集合打架。 */
+let curseLeft = 0, cursePending = false;
+function tickCurse(){
+  const def = currentLevelDef();
+  if(!def || !def.curse) return;
+  curseLeft--;
+  if(curseLeft <= 0){ curseLeft = def.curse; cursePending = true; }
+}
+function applyCurse(){
+  const cands = [];
+  forEachActive(function(r,c){
+    const t = board[r][c];
+    if(t && !t.rock && !t.caged && !t.frozen) cands.push(t);
+  });
+  if(!cands.length) return;
+  const t = cands[(Math.random()*cands.length)|0];
+  t.frozen = true;
+  t.el.classList.add('frozen');
+  if(settings.anim) burst(t.r, t.c, '#9fd4f5');
+  SFX.invalid(); buzz([15,25,15]);
+  toast(T('curse_hit'));
+}
+
 async function resolveBoard(){
   let combo = 0;
   while(true){
@@ -3565,6 +3606,8 @@ async function resolveBoard(){
     await dropAndFill(combo);
   }
   busy = false;
+  /* 深渊侵蚀：本步攒满的诅咒在棋盘落定后生效（见 applyCurse） */
+  if(cursePending){ cursePending = false; applyCurse(); }
   if(!findMove()){ toast(T('auto_shuffle')); shuffleBoard(true); }
   scheduleHint();
   checkEnd();
@@ -3651,7 +3694,12 @@ function adjacent(a,b){ return Math.abs(a.r-b.r)+Math.abs(a.c-b.c)===1; }
 async function trySwap(a, b){
   if(busy || gameOver) return;
   const ta = board[a.r][a.c], tb = board[b.r][b.c];
-  if((ta && (ta.caged || ta.frozen || ta.rock)) || (tb && (tb.caged || tb.frozen || tb.rock))) return;
+  if((ta && (ta.caged || ta.frozen || ta.rock)) || (tb && (tb.caged || tb.frozen || tb.rock))){
+    /* 修 bug：锁住（牢笼/冰封/石头）的交换以前是静默 return —— 点了没有任何反馈，
+       像触屏失灵。现在给出与无效交换一致的音效/震动/提示。 */
+    SFX.invalid(); buzz(30); toast(T('tile_locked'));
+    return;
+  }
   /* 彩球交换：不凑匹配直接引爆全场同色（双彩球全清）。先换位再交给 rainbowSwap ——
      它会在换位后的棋盘上重新辨认彩球在哪一边。 */
   if((ta && ta.effect === 'rainbow') || (tb && tb.effect === 'rainbow')){
@@ -3659,7 +3707,7 @@ async function trySwap(a, b){
     SFX.swap();
     swapTiles(a, b);
     await sleep(230);
-    moves--; renderHud(); buzz(10);
+    moves--; renderHud(); buzz(10); tickCurse();
     busy = false;
     await rainbowSwap(a, b);
     return;
@@ -3672,13 +3720,13 @@ async function trySwap(a, b){
     swapTiles(a, b);              // 换回
     SFX.invalid(); buzz(30);
     toast(T('no_match'));
-    moves--; renderHud();         // 无效交换同样消耗一步
+    moves--; renderHud(); tickCurse();   // 无效交换同样消耗一步
     await sleep(230);
     busy = false;
     scheduleHint();
     checkEnd();                   // 这一步可能把步数用完
   } else {
-    moves--; renderHud(); buzz(10);
+    moves--; renderHud(); buzz(10); tickCurse();
     busy = false;
     await resolveBoard();
   }
@@ -3691,7 +3739,12 @@ async function onTapSelect(r, c){
   if(boosterMode){ await useBoosterOn(r, c); return; }
   const cur = {r,c};
   const t = board[r][c];
-  if(t && t.caged){ deselect(); return; } // 牢笼棋子不能被选中和交换
+  /* 牢笼/冰封/石头都不能选中：以前只挡牢笼，冰封和石头能被选中、
+     交换时又静默失败 —— 玩家只会觉得“点了没反应”。统一拒绝并给反馈。 */
+  if(t && (t.caged || t.frozen || t.rock)){
+    deselect(); bumpTile(t); toast(T('tile_locked'));
+    return;
+  }
   if(!selected){ select(cur); return; }
   if(selected.r===r && selected.c===c){ deselect(); return; }
   if(!adjacent(selected, cur)){ select(cur); return; }
@@ -3784,7 +3837,12 @@ window.addEventListener('pointercancel', () => {
 
 function swapTiles(a, b){
   const ta = board[a.r][a.c], tb = board[b.r][b.c];
-  if((ta && (ta.caged || ta.frozen || ta.rock)) || (tb && (tb.caged || tb.frozen || tb.rock))) return;
+  if((ta && (ta.caged || ta.frozen || ta.rock)) || (tb && (tb.caged || tb.frozen || tb.rock))){
+    /* 修 bug：锁住（牢笼/冰封/石头）的交换以前是静默 return —— 点了没有任何反馈，
+       像触屏失灵。现在给出与无效交换一致的音效/震动/提示。 */
+    SFX.invalid(); buzz(30); toast(T('tile_locked'));
+    return;
+  }
   board[a.r][a.c] = tb; board[b.r][b.c] = ta;
   placeTile(ta, b.r, b.c); placeTile(tb, a.r, a.c);
 }
@@ -3867,7 +3925,7 @@ function shuffleBoard(animate){
     for(let i=types.length-1;i>0;i--){ const j=rand(i+1); [types[i],types[j]]=[types[j],types[i]]; }
     for(let i=0;i<cells.length;i++){ board[cells[i].r][cells[i].c].type = types[i]; renderTileFace(board[cells[i].r][cells[i].c]); }
     tries++;
-  } while((findMatches().size>0 || !findMove()) && tries<50);
+  } while((findMatches().size>0 || !findMove()) && tries<200);   /* 50 次在障碍多的关卡可能不够，卡成无解死局 */
   if(animate) toast(T('reshuffled'));
   scheduleHint();
 }
@@ -4018,8 +4076,9 @@ function startLevel(no){
   cageList = def.cages || (def.cage ? [def.cage] : []);
   frozenList = def.frozen || [];
   rockList = def.rocks || [];
+  curseLeft = def.curse || 0; cursePending = false;   /* 深渊侵蚀计数（第十关） */
   /* 主题背景：按关卡 bg 字段切换（夜幕/黄昏/糖果/派对/星云），出关恢复 */
-  ['night','sunset','candy','party','galaxy'].forEach(function(k){
+  ['night','sunset','candy','party','galaxy','abyss'].forEach(function(k){
     document.body.classList.toggle(k, def.bg === k);
   });
   if(def.bg) ensureSkyDecor(def.bg);
@@ -4045,6 +4104,7 @@ function restart(){
      重新上锁（复活走 doRevive()，保留棋盘，所以已破的笼 / 冰保持原状）。
      果冻是格子级状态，restart 要重置；doRevive 保留棋盘，所以不清果冻。 */
   jellyGrid = initJellyGrid((currentLevelDef() || {}).jellies);
+  curseLeft = (currentLevelDef() || {}).curse || 0; cursePending = false;
   score = 0; reviveUsed = false;
   boosters = Object.assign({}, BOOSTER_MAX);   /* 道具每关复原 */
   deselect(); boosterMode = null;
@@ -4574,7 +4634,7 @@ var PacGame = (function(){
 /* ---------- 开始页 ---------- */
 function goHome(){
   document.querySelectorAll('.overlay.show').forEach(o=>closeOverlay(o.id));
-  ['night','sunset','candy','party','galaxy'].forEach(k=>document.body.classList.remove(k));
+  ['night','sunset','candy','party','galaxy','abyss'].forEach(k=>document.body.classList.remove(k));
   document.body.style.removeProperty('--theme-color');
   refreshHome();
   $('#home').classList.remove('hide');
@@ -5014,6 +5074,16 @@ function ensureSkyDecor(kind){
       s.style.animationDelay = (-Math.random()*2.4).toFixed(2) + 's';
       s.style.transform = 'scale(' + (0.6 + Math.random()).toFixed(2) + ')';
       box.appendChild(s);
+    }
+  } else if(kind === 'abyss'){
+    for(let i=0;i<12;i++){
+      const e = document.createElement('i');
+      e.style.left = (Math.random()*94 + 3) + '%';
+      const sz = 3 + Math.random()*5;
+      e.style.width = sz.toFixed(1) + 'px'; e.style.height = sz.toFixed(1) + 'px';
+      e.style.animationDuration = (5 + Math.random()*7).toFixed(1) + 's';
+      e.style.animationDelay = (-Math.random()*12).toFixed(1) + 's';
+      box.appendChild(e);
     }
   }
   document.body.appendChild(box);
