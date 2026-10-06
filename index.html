@@ -1071,6 +1071,60 @@
     40%  { transform:translateY(-46vh) translateX(14px); }
     to   { transform:translateY(-108vh) translateX(-10px); opacity:0; }
   }
+  /* ---- 熔岩主题（第十一关）：暗红橙渐变 + 飞溅火星 ---- */
+  body.lava {
+    background: linear-gradient(#1a0602 0%, #4a0e02 40%, #7a1e04 72%, #b3400a 100%) fixed;
+  }
+  #sky-lava {
+    position:fixed; top:0; right:0; bottom:0; left:0;
+    pointer-events:none; z-index:0; display:none; overflow:hidden;
+  }
+  body.lava #sky-lava { display:block; }
+  #sky-lava i {
+    position:absolute; bottom:-20px; border-radius:50%;
+    background:radial-gradient(circle at 40% 35%, #fff2c0, #ff9a2e 55%, rgba(255,120,30,0) 80%);
+    animation:sparkFly linear infinite;
+  }
+  @keyframes sparkFly {
+    from { transform:translate(0,0); opacity:1; }
+    to   { transform:translate(-26px,-112vh); opacity:0; }
+  }
+  /* ---- 镜界主题（第十二关）：青蓝对称渐变 + 镜像光尘 ---- */
+  body.mirror {
+    background: linear-gradient(90deg, #062033 0%, #0d4a66 28%, #12708f 50%, #0d4a66 72%, #062033 100%) fixed;
+  }
+  #sky-mirror {
+    position:fixed; top:0; right:0; bottom:0; left:0;
+    pointer-events:none; z-index:0; display:none; overflow:hidden;
+  }
+  body.mirror #sky-mirror { display:block; }
+  #sky-mirror i {
+    position:absolute; border-radius:50%;
+    background:radial-gradient(circle at 42% 38%, #eafcff, #6fd8f0 55%, rgba(90,190,230,0) 80%);
+    animation:mirrorDrift ease-in-out infinite alternate;
+  }
+  @keyframes mirrorDrift {
+    from { transform:translate(0,0); opacity:.25; }
+    to   { transform:translate(0,-36px); opacity:.85; }
+  }
+  /* ---- 终焉主题（第十三关）：暗紫黑渐变 + 下坠灰烬 ---- */
+  body.doom {
+    background: linear-gradient(#0b0316 0%, #1e0833 45%, #33104d 75%, #4a1658 100%) fixed;
+  }
+  #sky-doom {
+    position:fixed; top:0; right:0; bottom:0; left:0;
+    pointer-events:none; z-index:0; display:none; overflow:hidden;
+  }
+  body.doom #sky-doom { display:block; }
+  #sky-doom i {
+    position:absolute; top:-18px; border-radius:2px;
+    background:linear-gradient(#c9b8e8, rgba(150,110,210,0));
+    animation:ashFall linear infinite;
+  }
+  @keyframes ashFall {
+    from { transform:translate(0,0) rotate(0deg); opacity:.8; }
+    to   { transform:translate(-30px,112vh) rotate(160deg); opacity:0; }
+  }
 
 
   /* ---------- 消除瞬间全屏闪光（五连 / 石头 / 彩虹交换等大场面）----------
@@ -1771,10 +1825,104 @@ const LEVELS = [
     /* 第十关胜利图：深渊尽头的花田起舞（壁纸 6） */
     winImg: 'naiwa/10/win.webp',
   },
+
+  /* ============ 第十一关：熔岩回廊 ============
+     11×11 切角方形 97 格（rr+cc>=3）。素材复用：naiwa/8 全员 + 9/a 蛇。
+     新机制「熔岩硬化」（petrify）：每走 4 步，熔岩随机把一枚普通棋子烧成石头 ——
+     石头不可交换、不参与匹配，只能靠消除紧邻棋子震碎（同第五关石头）。
+     比冰封更绝望：冰封能被道具和邻消破开，石头只能炸。25 步收集 39。
+     熔岩主题 bg:'lava'：暗红橙渐变 + 飞溅火星。 */
+  {
+    no: 11,
+    rows: 11,
+    cols: 11,
+    moves: 25,
+    needs: [16, 13, 10],
+    themeColor: '#ff7a2f',
+    petrify: 4,
+    types: [
+      { key:'11a', img:'naiwa/8/a.webp', color:'#f06aa8', bg:'#ffb0d4' },
+      { key:'11b', img:'naiwa/8/b.webp', color:'#5a8ad0', bg:'#a0c0f0' },
+      { key:'11c', img:'naiwa/8/c.webp', color:'#f08230', bg:'#ffc890' },
+      { key:'11d', img:'naiwa/8/d.webp', color:'#58b038', bg:'#b8e888' },
+      { key:'11e', img:'naiwa/9/a.webp', color:'#ffd54d', bg:'#fff3c4' },
+    ],
+    shape: function(r,c){ const rr=Math.min(r,ROWS-1-r), cc=Math.min(c,COLS-1-c); return rr+cc>=3; },
+    cages: [ { r:2, c:2 }, { r:2, c:8 }, { r:8, c:2 }, { r:8, c:8 } ],
+    rocks: [ {r:5,c:2},{r:5,c:8},{r:3,c:5},{r:7,c:5},{r:4,c:4},{r:6,c:6} ],
+    frozen: [ {r:1,c:5},{r:9,c:5},{r:4,c:6},{r:6,c:4},{r:3,c:7},{r:7,c:3} ],
+    jellies: [ {r:5,c:5,layer:1},{r:4,c:5,layer:1},{r:6,c:5,layer:1},{r:5,c:4,layer:1},{r:5,c:6,layer:1},
+               {r:2,c:5},{r:8,c:5},{r:5,c:1},{r:5,c:9} ],
+    bg: 'lava',
+    /* 第十一关胜利图：逃离熔岩后的深海畅游（壁纸 4） */
+    winImg: 'naiwa/11/win.webp',
+  },
+  /* ============ 第十二关：镜界 ============
+     11×11 圆形棋盘 89 格（到圆心距离 <= 5.34，左右严格对称）。
+     新机制「镜界」（mirror）：每次有效交换，对称位置的两枚普通棋子同步换位 ——
+     你在左侧走的每一步，右侧都会镜像重演，布局必须两头一起想。
+     特殊棋子/锁子/石头不参与镜像（防失控）。障碍：石头 8 + 冰封 6 + 果冻 11。
+     镜界主题 bg:'mirror'：青蓝对称渐变 + 左右成对的镜像光尘。 */
+  {
+    no: 12,
+    rows: 11,
+    cols: 11,
+    moves: 30,
+    needs: [15, 12, 10],
+    themeColor: '#38bdf8',
+    mirror: true,
+    types: [
+      { key:'12a', img:'naiwa/9/b.webp', color:'#9a8ac0', bg:'#e0d8f5' },
+      { key:'12b', img:'naiwa/7/b.webp', color:'#7ec3f5', bg:'#9cd0ff' },
+      { key:'12c', img:'naiwa/7/c.webp', color:'#ff7aa8', bg:'#ffb8d4' },
+      { key:'12d', img:'naiwa/7/d.webp', color:'#6ab04c', bg:'#b8e898' },
+      { key:'12e', img:'naiwa/5/5a.webp', color:'#ffcf3e', bg:'#ffe066', glow:1 },
+    ],
+    shape: function(r,c){ const dr=r-5, dc=c-5; return dr*dr + dc*dc <= 28.5; },
+    rocks: [ {r:5,c:1},{r:5,c:9},{r:2,c:4},{r:2,c:6},{r:8,c:4},{r:8,c:6},{r:5,c:3},{r:5,c:7} ],
+    frozen: [ {r:1,c:5},{r:9,c:5},{r:4,c:4},{r:4,c:6},{r:6,c:4},{r:6,c:6} ],
+    jellies: [ {r:5,c:5,layer:1},{r:3,c:5,layer:1},{r:7,c:5,layer:1},
+               {r:4,c:4},{r:4,c:6},{r:6,c:4},{r:6,c:6},
+               {r:3,c:3},{r:3,c:7},{r:7,c:3},{r:7,c:7} ],
+    bg: 'mirror',
+    /* 第十二关胜利图：云端跳水台的对称构图（壁纸 3） */
+    winImg: 'naiwa/12/win.webp',
+  },
+  /* ============ 第十三关：终焉之门 ============
+     11×11 全满 121 格，系列真·最终关。素材复用：9 系 + 10/b 粉裙 + 4/e4 礼服 + 1/b 史莱姆。
+     双蚀毕业考：curse(每 5 步冰封一枚) + petrify(每 5 步石化一枚) 同时生效 ——
+     28 步里深渊会冻结/烧化约 10 枚棋子，越拖盘面越死。
+     障碍密度封顶：牢笼 6（四角+边中+正中心）+ 石头 10 + 冰封 6 + 果冻 13（中央十字双层）。
+     28 步收集 48。终焉主题 bg:'doom'：暗紫黑渐变 + 下坠灰烬。 */
+  {
+    no: 13,
+    rows: 11,
+    cols: 11,
+    moves: 28,
+    needs: [20, 16, 12],
+    themeColor: '#a855f7',
+    curse: 5,
+    petrify: 5,
+    types: [
+      { key:'13a', img:'naiwa/9/a.webp',  color:'#ffd54d', bg:'#fff3c4' },
+      { key:'13b', img:'naiwa/9/d.webp',  color:'#8a66c8', bg:'#d0b8ff' },
+      { key:'13c', img:'naiwa/10/b.webp', color:'#ff5fa2', bg:'#ffc4de' },
+      { key:'13d', img:'naiwa/4/e4.webp', color:'#4a4a5a', bg:'#d4d8e8' },
+      { key:'13e', img:'naiwa/1/b.webp',  color:'#7ec3f5', bg:'#cfe8ff' },
+    ],
+    cages: [ { r:0, c:0 }, { r:0, c:10 }, { r:10, c:0 }, { r:10, c:10 }, { r:0, c:5 }, { r:5, c:5 } ],
+    rocks: [ {r:2,c:3},{r:2,c:7},{r:8,c:3},{r:8,c:7},{r:4,c:1},{r:4,c:9},{r:6,c:1},{r:6,c:9},{r:3,c:5},{r:7,c:5} ],
+    frozen: [ {r:2,c:5},{r:8,c:5},{r:4,c:4},{r:4,c:6},{r:6,c:4},{r:6,c:6} ],
+    jellies: [ {r:5,c:5,layer:1},{r:5,c:4,layer:1},{r:5,c:6,layer:1},{r:4,c:5,layer:1},{r:6,c:5,layer:1},
+               {r:3,c:4},{r:3,c:6},{r:7,c:4},{r:7,c:6},{r:1,c:4},{r:1,c:6},{r:9,c:4},{r:9,c:6} ],
+    bg: 'doom',
+    /* 第十三关胜利图：越过终焉后的巨人瞰野（壁纸 5） */
+    winImg: 'naiwa/13/win.webp',
+  },
 ];
 
 /* 关卡选择面板至少铺这么多格，超出的格子显示为「敬请期待」 */
-const LEVEL_SLOTS = 9;
+const LEVEL_SLOTS = 13;
 
 /* 当前关的图标。startLevel() 时随关卡切换，其余逻辑一律读这个变量 */
 let TYPES = LEVELS[0].types;
@@ -1808,6 +1956,8 @@ const I18N = {
     rock_hard:'石头太硬了，砸不动！在它旁边消除试试',
     tile_locked:'它被锁住啦，消除它旁边的棋子解开它',
     curse_hit:'深渊侵蚀！一枚棋子被冰封了',
+    petrify_hit:'熔岩硬化！一枚棋子烧成了石头',
+    mirror_note:'镜界规则：你的每次交换，对侧都会同步换位',
     share_win:'成功通关 ·', share_try:'挑战 ·',
     start:'开始', pick_level:'选择关卡',
     home_sub:'滑 动 消 除 · 轻 松 一 夏',
@@ -1863,6 +2013,8 @@ const I18N = {
     rock_hard:'The rock is too hard! Clear tiles next to it instead',
     tile_locked:'It is locked! Clear tiles next to it to unlock it',
     curse_hit:'The abyss spreads! A tile has been frozen',
+    petrify_hit:'The lava hardens! A tile turned to stone',
+    mirror_note:'Mirror rule: every swap is mirrored on the other side',
     share_win:'Level Clear ·', share_try:'Challenge ·',
     start:'Start Game', pick_level:'Levels',
     home_sub:'Swipe · Match · Relax',
@@ -3559,12 +3711,12 @@ async function dropAndFill(combo){
    每消耗 curse 步，深渊随机冰封一枚普通棋子（可被消除/道具破冰，同开局冰封）。
    计数挂在 trySwap 的三处步数消耗上；真正冰封延迟到 resolveBoard 收尾执行 ——
    连锁动画进行中途改棋子状态会和消除集合打架。 */
-let curseLeft = 0, cursePending = false;
+let curseLeft = 0, cursePending = false, petrifyLeft = 0, petrifyPending = false;
 function tickCurse(){
   const def = currentLevelDef();
-  if(!def || !def.curse) return;
-  curseLeft--;
-  if(curseLeft <= 0){ curseLeft = def.curse; cursePending = true; }
+  if(!def) return;
+  if(def.curse){ if(--curseLeft <= 0){ curseLeft = def.curse; cursePending = true; } }
+  if(def.petrify){ if(--petrifyLeft <= 0){ petrifyLeft = def.petrify; petrifyPending = true; } }
 }
 function applyCurse(){
   const cands = [];
@@ -3579,6 +3731,39 @@ function applyCurse(){
   if(settings.anim) burst(t.r, t.c, '#9fd4f5');
   SFX.invalid(); buzz([15,25,15]);
   toast(T('curse_hit'));
+}
+/* ---------- 熔岩硬化（第十一关 petrify 机制）----------
+   每消耗 petrify 步，随机把一枚「普通」棋子烧成石头。石头不可交换、不参与匹配，
+   只能靠消除紧邻棋子震碎（震碎后由下落补位，同第五关石头）。
+   特殊棋子（条纹/炸弹/彩球）不石化 —— 石化它们太亏，会毁掉玩家攒的资源。 */
+function applyPetrify(){
+  const cands = [];
+  forEachActive(function(r,c){
+    const t = board[r][c];
+    if(t && !t.rock && !t.caged && !t.frozen && !t.effect) cands.push(t);
+  });
+  if(!cands.length) return;
+  const t = cands[(Math.random()*cands.length)|0];
+  t.rock = true;
+  renderTileFace(t);
+  if(settings.anim) burst(t.r, t.c, '#e8a05a');
+  SFX.crack(); buzz([15,25,15]);
+  toast(T('petrify_hit'));
+}
+/* ---------- 镜界（第十二关 mirror 机制）----------
+   每次有效交换后，对称位置（左右镜像 c -> COLS-1-c）的两枚普通棋子同步换位。
+   特殊棋子/锁子/石头/彩球不参与镜像（防失控），原对恰好互为镜像时跳过。 */
+function mirrorSwap(a, b){
+  const ma = { r:a.r, c:COLS-1-a.c }, mb = { r:b.r, c:COLS-1-b.c };
+  if(ma.r===a.r && ma.c===a.c) return;
+  if(mb.r===b.r && mb.c===b.c) return;
+  if(ma.r===mb.r && ma.c===mb.c) return;
+  const ta = board[ma.r] && board[ma.r][ma.c], tb = board[mb.r] && board[mb.r][mb.c];
+  if(!ta || !tb) return;
+  if(ta.rock || ta.caged || ta.frozen || tb.rock || tb.caged || tb.frozen) return;
+  if(ta.effect || tb.effect) return;
+  swapTiles(ma, mb);
+  if(settings.anim){ burst(ma.r, ma.c, '#7dd8ff'); burst(mb.r, mb.c, '#7dd8ff'); }
 }
 
 async function resolveBoard(){
@@ -3608,6 +3793,7 @@ async function resolveBoard(){
   busy = false;
   /* 深渊侵蚀：本步攒满的诅咒在棋盘落定后生效（见 applyCurse） */
   if(cursePending){ cursePending = false; applyCurse(); }
+  if(petrifyPending){ petrifyPending = false; applyPetrify(); }
   if(!findMove()){ toast(T('auto_shuffle')); shuffleBoard(true); }
   scheduleHint();
   checkEnd();
@@ -3726,6 +3912,8 @@ async function trySwap(a, b){
     scheduleHint();
     checkEnd();                   // 这一步可能把步数用完
   } else {
+    const defM = currentLevelDef();
+    if(defM && defM.mirror) mirrorSwap(a, b);
     moves--; renderHud(); buzz(10); tickCurse();
     busy = false;
     await resolveBoard();
@@ -4076,9 +4264,9 @@ function startLevel(no){
   cageList = def.cages || (def.cage ? [def.cage] : []);
   frozenList = def.frozen || [];
   rockList = def.rocks || [];
-  curseLeft = def.curse || 0; cursePending = false;   /* 深渊侵蚀计数（第十关） */
+  curseLeft = def.curse || 0; cursePending = false; petrifyLeft = def.petrify || 0; petrifyPending = false;   /* 侵蚀计数（第十/十一/十三关） */
   /* 主题背景：按关卡 bg 字段切换（夜幕/黄昏/糖果/派对/星云），出关恢复 */
-  ['night','sunset','candy','party','galaxy','abyss'].forEach(function(k){
+  ['night','sunset','candy','party','galaxy','abyss','lava','mirror','doom'].forEach(function(k){
     document.body.classList.toggle(k, def.bg === k);
   });
   if(def.bg) ensureSkyDecor(def.bg);
@@ -4088,6 +4276,7 @@ function startLevel(no){
   $('#home').classList.add('hide');
   refreshHome();
   restart();
+  if(def.mirror) setTimeout(function(){ toast(T('mirror_note')); }, 1500);
   /* 关卡开场横幅：棋盘就位后大字砸入 */
   if(settings.anim) levelIntroFX(def.no);
 }
@@ -4104,7 +4293,7 @@ function restart(){
      重新上锁（复活走 doRevive()，保留棋盘，所以已破的笼 / 冰保持原状）。
      果冻是格子级状态，restart 要重置；doRevive 保留棋盘，所以不清果冻。 */
   jellyGrid = initJellyGrid((currentLevelDef() || {}).jellies);
-  curseLeft = (currentLevelDef() || {}).curse || 0; cursePending = false;
+  { const _d = (currentLevelDef() || {}); curseLeft = _d.curse || 0; cursePending = false; petrifyLeft = _d.petrify || 0; petrifyPending = false; }
   score = 0; reviveUsed = false;
   boosters = Object.assign({}, BOOSTER_MAX);   /* 道具每关复原 */
   deselect(); boosterMode = null;
@@ -4634,7 +4823,7 @@ var PacGame = (function(){
 /* ---------- 开始页 ---------- */
 function goHome(){
   document.querySelectorAll('.overlay.show').forEach(o=>closeOverlay(o.id));
-  ['night','sunset','candy','party','galaxy','abyss'].forEach(k=>document.body.classList.remove(k));
+  ['night','sunset','candy','party','galaxy','abyss','lava','mirror','doom'].forEach(k=>document.body.classList.remove(k));
   document.body.style.removeProperty('--theme-color');
   refreshHome();
   $('#home').classList.remove('hide');
@@ -5083,6 +5272,42 @@ function ensureSkyDecor(kind){
       e.style.width = sz.toFixed(1) + 'px'; e.style.height = sz.toFixed(1) + 'px';
       e.style.animationDuration = (5 + Math.random()*7).toFixed(1) + 's';
       e.style.animationDelay = (-Math.random()*12).toFixed(1) + 's';
+      box.appendChild(e);
+    }
+  } else if(kind === 'lava'){
+    for(let i=0;i<14;i++){
+      const e = document.createElement('i');
+      e.style.left = (Math.random()*94 + 3) + '%';
+      const sz = 2.5 + Math.random()*4.5;
+      e.style.width = sz.toFixed(1) + 'px'; e.style.height = sz.toFixed(1) + 'px';
+      e.style.animationDuration = (3.5 + Math.random()*5).toFixed(1) + 's';
+      e.style.animationDelay = (-Math.random()*9).toFixed(1) + 's';
+      box.appendChild(e);
+    }
+  } else if(kind === 'mirror'){
+    /* 镜像光尘：成对生成，左右严格对称，呼应本关机制 */
+    for(let i=0;i<8;i++){
+      const lx = Math.random()*38 + 4;
+      for(let s=0;s<2;s++){
+        const m = document.createElement('i');
+        const sz = 3 + Math.random()*4;
+        m.style.left = (s ? (96-lx) : lx).toFixed(1) + '%';
+        m.style.top = (Math.random()*86 + 4) + '%';
+        m.style.width = sz.toFixed(1) + 'px'; m.style.height = sz.toFixed(1) + 'px';
+        m.style.animationDuration = (4 + Math.random()*4).toFixed(1) + 's';
+        m.style.animationDelay = (-Math.random()*8).toFixed(1) + 's';
+        box.appendChild(m);
+      }
+    }
+  } else if(kind === 'doom'){
+    for(let i=0;i<16;i++){
+      const e = document.createElement('i');
+      e.style.left = (Math.random()*94 + 3) + '%';
+      const sz = 3 + Math.random()*4;
+      e.style.width = sz.toFixed(1) + 'px';
+      e.style.height = (sz*2.2).toFixed(1) + 'px';
+      e.style.animationDuration = (6 + Math.random()*7).toFixed(1) + 's';
+      e.style.animationDelay = (-Math.random()*13).toFixed(1) + 's';
       box.appendChild(e);
     }
   }
