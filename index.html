@@ -1125,6 +1125,100 @@
     from { transform:translate(0,0) rotate(0deg); opacity:.8; }
     to   { transform:translate(-30px,112vh) rotate(160deg); opacity:0; }
   }
+  /* ---- 黄铜齿轮主题（第十四关）：暗铜渐变 + 飘落齿轮光点 ---- */
+  body.brass {
+    background: linear-gradient(#1c1206 0%, #3a2610 40%, #5c3d16 72%, #8a5a1e 100%) fixed;
+  }
+  #sky-brass {
+    position:fixed; top:0; right:0; bottom:0; left:0;
+    pointer-events:none; z-index:0; display:none; overflow:hidden;
+  }
+  body.brass #sky-brass { display:block; }
+  #sky-brass i {
+    position:absolute; top:-40px; border-radius:26%;
+    border:3px dashed rgba(233,196,106,.5);
+    box-shadow:0 0 14px rgba(233,196,106,.25), inset 0 0 10px rgba(233,196,106,.2);
+    animation:gearFloat linear infinite;
+  }
+  @keyframes gearFloat {
+    from { transform:translateY(0) rotate(0deg); opacity:.5; }
+    to   { transform:translateY(115vh) rotate(300deg); opacity:0; }
+  }
+  /* ---- 青雾主题（第十五关）：灰青渐变 + 漂移大雾团 ---- */
+  body.mist {
+    background: linear-gradient(#0d1a1e 0%, #1d3038 45%, #2e4a52 78%, #40606a 100%) fixed;
+  }
+  #sky-mist {
+    position:fixed; top:0; right:0; bottom:0; left:0;
+    pointer-events:none; z-index:0; display:none; overflow:hidden;
+  }
+  body.mist #sky-mist { display:block; }
+  #sky-mist i {
+    position:absolute; border-radius:50%;
+    background:radial-gradient(ellipse at center, rgba(190,220,230,.28), rgba(190,220,230,0) 70%);
+    animation:mistDrift ease-in-out infinite alternate;
+  }
+  @keyframes mistDrift {
+    from { transform:translate(-8vw, 0) scale(1); }
+    to   { transform:translate(8vw, -3vh) scale(1.25); }
+  }
+  /* ---- 虚空主题（第十六关）：深蓝紫黑洞渐变 + 向中心吸入的星尘 ---- */
+  body.void {
+    background: radial-gradient(120% 120% at 50% 46%, #241040 0%, #150a2e 42%, #0a0518 78%, #04020c 100%) fixed;
+  }
+  #sky-void {
+    position:fixed; top:0; right:0; bottom:0; left:0;
+    pointer-events:none; z-index:0; display:none; overflow:hidden;
+  }
+  body.void #sky-void { display:block; }
+  #sky-void i {
+    position:absolute; border-radius:50%;
+    background:#cfd8ff; box-shadow:0 0 6px rgba(160,140,255,.9);
+    animation:voidPull linear infinite;
+  }
+  @keyframes voidPull {
+    from { transform:translate(0,0) scale(1); opacity:.9; }
+    to   { transform:translate(30vw, 38vh) scale(.2); opacity:0; }
+  }
+  /* ---- 盲雾（第十五关）：被雾裹住的棋子看不清品种 ----
+     只作用于内层 .face 的 img（filter 是静态样式不逐帧重绘）；
+     雾团盖在 face::after 上 —— applyBlind 的候选排除牢笼，不会和 .caged 的 ::after 打架。 */
+  .tile .face.blind img {
+    filter: blur(5px) brightness(.5) saturate(.4);
+    opacity:.9;
+  }
+  .tile .face.blind::after {
+    content:''; position:absolute; inset:-2px; border-radius:inherit;
+    background:radial-gradient(circle at 35% 30%, rgba(220,235,245,.75), rgba(180,205,220,.35) 55%, rgba(150,180,200,.15));
+    animation:blindPulse 2.2s ease-in-out infinite;
+  }
+  @keyframes blindPulse {
+    0%,100% { opacity:.85; }
+    50%     { opacity:.55; }
+  }
+  /* ---- 新机制特效：冲击波环 / 齿轮光环 / 虚空黑洞 ----
+     全部挂在 boardEl 上的独立节点，pointer-events:none，不碰棋子定位。 */
+  .shock-ring {
+    position:absolute; pointer-events:none; z-index:6;
+    border-radius:50%; border:3px solid #fff;
+    box-shadow:0 0 12px rgba(255,255,255,.5);
+  }
+  .gear-ring {
+    position:absolute; pointer-events:none; z-index:6;
+    border-radius:50%; border:5px dashed #e9c46a;
+    box-shadow:0 0 18px rgba(233,196,106,.45), inset 0 0 16px rgba(233,196,106,.3);
+  }
+  .void-hole {
+    position:absolute; pointer-events:none; z-index:6; border-radius:50%;
+    background:radial-gradient(circle, #000 0%, #1a0b2e 38%, rgba(90,40,160,.55) 62%, rgba(122,92,255,0) 78%);
+  }
+  .void-hole::before {
+    content:''; position:absolute; inset:-12%; border-radius:50%;
+    background:conic-gradient(from 0deg, rgba(122,92,255,0) 0deg, rgba(122,92,255,.8) 60deg, rgba(255,255,255,.9) 90deg, rgba(122,92,255,0) 150deg, rgba(122,92,255,.7) 240deg, rgba(255,255,255,.85) 270deg, rgba(122,92,255,0) 330deg);
+    filter:blur(2px);
+    animation:voidSpin 1.1s linear infinite;
+  }
+  @keyframes voidSpin { to { transform:rotate(360deg); } }
 
 
   /* ---------- 消除瞬间全屏闪光（五连 / 石头 / 彩虹交换等大场面）----------
@@ -1919,10 +2013,104 @@ const LEVELS = [
     /* 第十三关胜利图：越过终焉后的巨人瞰野（壁纸 5） */
     winImg: 'naiwa/13/win.webp',
   },
+
+  /* ============ 第十四关：齿轮迷城 ============
+     11×11 菱形棋盘 81 格。新机制「齿轮乱转」（rotate）：每走 4 步，棋盘中央
+     5×5 区域整体顺时针旋转一格 —— 刚拼好的阵型说转没就转没了，但也可能
+     转出新消除（白送）。障碍避开旋转区（果冻是格子级状态不随棋子转，可以放）。
+     素材复用 3/4 关（天秤/蝎子/金币鸡/冰淇淋鸡/背包蛙），饱和底座分色。
+     黄铜主题 bg:'brass'：暗铜渐变 + 飘落的齿轮光点。 */
+  {
+    no: 14,
+    rows: 11,
+    cols: 11,
+    moves: 24,
+    needs: [18, 15, 12],
+    themeColor: '#d9a441',
+    rotate: 4,
+    types: [
+      { key:'14a', img:'naiwa/3/c3.webp', color:'#e05a5a', bg:'#ffb3b3' },
+      { key:'14b', img:'naiwa/3/d3.webp', color:'#4a7de0', bg:'#b3d4ff' },
+      { key:'14c', img:'naiwa/4/c4.webp', color:'#e08a2f', bg:'#ffd699' },
+      { key:'14d', img:'naiwa/3/e3.webp', color:'#5aa82f', bg:'#c4f0a8' },
+      { key:'14e', img:'naiwa/3/a3.webp', color:'#8a4ad0', bg:'#e0b8ff' },
+    ],
+    shape: function(r,c){ return Math.abs(r-5) + Math.abs(c-5) <= 6; },
+    cages: [ { r:0, c:5 }, { r:5, c:0 }, { r:5, c:10 }, { r:10, c:5 } ],
+    rocks: [ {r:1,c:3},{r:1,c:7},{r:9,c:3},{r:9,c:7},{r:3,c:1},{r:7,c:9} ],
+    frozen: [ {r:1,c:5},{r:9,c:5},{r:5,c:1},{r:5,c:9} ],
+    jellies: [ {r:5,c:5,layer:1},{r:4,c:4,layer:1},{r:4,c:6,layer:1},{r:6,c:4,layer:1},{r:6,c:6,layer:1},
+               {r:3,c:5},{r:7,c:5},{r:5,c:3},{r:5,c:7},{r:2,c:2},{r:2,c:8},{r:8,c:2},{r:8,c:8} ],
+    bg: 'brass',
+    /* 第十四关胜利图：齿轮城外的草丘云影（壁纸 2） */
+    winImg: 'naiwa/14/win.webp',
+  },
+  /* ============ 第十五关：迷雾幻境 ============
+     10×10 切角方形 88 格（每角切 3 格）。新机制「迷雾遮眼」（blind）：
+     开局 6 枚棋子被雾团裹住看不到品种，此后每走 3 步再裹 2 枚（盘上至多 10 团），
+     拿它交换即揭雾（探雾要花步数，信息也算收益）—— 信息不全只能靠记。
+     素材复用 1/4/5 关（牛仔鸡/天使鸡/牛奶盒/汉堡鸡/哭蛋）。
+     青雾主题 bg:'mist'：灰青渐变 + 缓慢漂移的大雾团。 */
+  {
+    no: 15,
+    rows: 10,
+    cols: 10,
+    moves: 26,
+    needs: [19, 15, 12],
+    themeColor: '#7ea8b8',
+    blind: 3,
+    blindInit: 6,
+    types: [
+      { key:'15a', img:'naiwa/1/e.webp',  color:'#4a7de0', bg:'#b3d4ff' },
+      { key:'15b', img:'naiwa/4/b4.webp', color:'#d04a92', bg:'#ffc4e0' },
+      { key:'15c', img:'naiwa/1/i.webp',  color:'#3f8ad0', bg:'#b8dcff' },
+      { key:'15d', img:'naiwa/5/5d.webp', color:'#c8961e', bg:'#ffe066' },
+      { key:'15e', img:'naiwa/1/d.webp',  color:'#8a4ad0', bg:'#e0b8ff' },
+    ],
+    shape: function(r,c){ const rr=Math.min(r,ROWS-1-r), cc=Math.min(c,COLS-1-c); return rr+cc>=2; },
+    rocks: [ {r:1,c:2},{r:1,c:7},{r:8,c:2},{r:8,c:7},{r:4,c:4},{r:5,c:5} ],
+    frozen: [ {r:0,c:4},{r:0,c:5},{r:9,c:4},{r:9,c:5} ],
+    jellies: [ {r:4,c:5,layer:1},{r:5,c:4,layer:1},
+               {r:2,c:2},{r:2,c:7},{r:7,c:2},{r:7,c:7},{r:0,c:1},{r:0,c:8},{r:9,c:1},{r:9,c:8},
+               {r:4,c:0},{r:5,c:9},{r:2,c:4,layer:1},{r:7,c:5,layer:1} ],
+    bg: 'mist',
+    /* 第十五关胜利图：雾散后的镜面之境（壁纸 1） */
+    winImg: 'naiwa/15/win.webp',
+  },
+  /* ============ 第十六关：虚空坍缩 ============
+     11×11 全满 121 格，系列新·最终关。新机制「虚空吞噬」（devour）：每走 3 步，
+     虚空随机吞掉一枚棋子 —— 连攒好的条纹/炸弹/彩球也照吞不误（石头咬不动），
+     随后上方补新棋子。盘面资源永久在流失，攒爆发要趁早、用掉别捂着。
+     障碍封顶：牢笼 6 + 石头 8 + 冰封 5 + 果冻 15（中央五连双层芯 + 四臂）。
+     虚空主题 bg:'void'：深蓝紫黑洞渐变 + 向中心吸入的星尘。 */
+  {
+    no: 16,
+    rows: 11,
+    cols: 11,
+    moves: 26,
+    needs: [26, 21, 16],
+    themeColor: '#7a5cff',
+    devour: 3,
+    types: [
+      { key:'16a', img:'naiwa/1/f.webp',  color:'#e07a2f', bg:'#ffd6b3' },
+      { key:'16b', img:'naiwa/1/h.webp',  color:'#2f8ad0', bg:'#a8e0ff' },
+      { key:'16c', img:'naiwa/1/a.webp',  color:'#4aa82f', bg:'#d0ffb3' },
+      { key:'16d', img:'naiwa/5/5b.webp', color:'#8a4ad0', bg:'#e0b8ff' },
+      { key:'16e', img:'naiwa/4/d4.webp', color:'#d04a72', bg:'#ff9eb8' },
+    ],
+    cages: [ { r:0, c:0 }, { r:0, c:10 }, { r:10, c:0 }, { r:10, c:10 }, { r:2, c:5 }, { r:8, c:5 } ],
+    rocks: [ {r:4,c:1},{r:6,c:9},{r:1,c:4},{r:9,c:6},{r:5,c:3},{r:5,c:7},{r:3,c:8},{r:7,c:2} ],
+    frozen: [ {r:5,c:5},{r:2,c:8},{r:8,c:2},{r:0,c:5},{r:10,c:5} ],
+    jellies: [ {r:5,c:5,layer:1},{r:4,c:4,layer:1},{r:4,c:6,layer:1},{r:6,c:4,layer:1},{r:6,c:6,layer:1},
+               {r:5,c:1},{r:5,c:9},{r:1,c:5,layer:1},{r:9,c:5,layer:1},{r:3,c:3},{r:3,c:7},{r:7,c:3},{r:7,c:7},{r:2,c:2,layer:1},{r:8,c:8,layer:1} ],
+    bg: 'void',
+    /* 第十六关胜利图：走出虚空的探头奶蛙（toukui） */
+    winImg: 'naiwa/16/win.webp',
+  },
 ];
 
 /* 关卡选择面板至少铺这么多格，超出的格子显示为「敬请期待」 */
-const LEVEL_SLOTS = 13;
+const LEVEL_SLOTS = 16;
 
 /* 当前关的图标。startLevel() 时随关卡切换，其余逻辑一律读这个变量 */
 let TYPES = LEVELS[0].types;
@@ -1958,6 +2146,12 @@ const I18N = {
     curse_hit:'深渊侵蚀！一枚棋子被冰封了',
     petrify_hit:'熔岩硬化！一枚棋子烧成了石头',
     mirror_note:'镜界规则：你的每次交换，对侧都会同步换位',
+    rotate_hit:'齿轮转动！中央阵型被旋转了',
+    blind_hit:'迷雾袭来！棋子被雾团裹住了',
+    devour_hit:'虚空吞噬！一枚棋子消失了',
+    rotate_note:'齿轮迷城：每走 4 步，中央 5×5 顺时针旋转一格',
+    blind_note:'迷雾幻境：雾团会遮住棋子，拿它交换即可揭雾',
+    devour_note:'虚空坍缩：每走 3 步，虚空会吞掉一枚棋子',
     share_win:'成功通关 ·', share_try:'挑战 ·',
     start:'开始', pick_level:'选择关卡',
     home_sub:'滑 动 消 除 · 轻 松 一 夏',
@@ -2015,6 +2209,12 @@ const I18N = {
     curse_hit:'The abyss spreads! A tile has been frozen',
     petrify_hit:'The lava hardens! A tile turned to stone',
     mirror_note:'Mirror rule: every swap is mirrored on the other side',
+    rotate_hit:'Gears turn! The center formation rotated',
+    blind_hit:'Mist rolls in! A tile is covered',
+    devour_hit:'The void devours! A tile is gone',
+    rotate_note:'Gear City: every 4 moves the central 5x5 rotates clockwise',
+    blind_note:'Mist Realm: fog hides tiles — swap a fogged tile to reveal it',
+    devour_note:'Void Collapse: every 3 moves the void eats a tile',
     share_win:'Level Clear ·', share_try:'Challenge ·',
     start:'Start Game', pick_level:'Levels',
     home_sub:'Swipe · Match · Relax',
@@ -3711,12 +3911,17 @@ async function dropAndFill(combo){
    每消耗 curse 步，深渊随机冰封一枚普通棋子（可被消除/道具破冰，同开局冰封）。
    计数挂在 trySwap 的三处步数消耗上；真正冰封延迟到 resolveBoard 收尾执行 ——
    连锁动画进行中途改棋子状态会和消除集合打架。 */
-let curseLeft = 0, cursePending = false, petrifyLeft = 0, petrifyPending = false;
+let curseLeft = 0, cursePending = false, petrifyLeft = 0, petrifyPending = false,
+    blindLeft = 0, blindPending = false, devourLeft = 0, devourPending = false,
+    rotLeft = 0, rotPending = false;
 function tickCurse(){
   const def = currentLevelDef();
   if(!def) return;
   if(def.curse){ if(--curseLeft <= 0){ curseLeft = def.curse; cursePending = true; } }
   if(def.petrify){ if(--petrifyLeft <= 0){ petrifyLeft = def.petrify; petrifyPending = true; } }
+  if(def.blind){ if(--blindLeft <= 0){ blindLeft = def.blind; blindPending = true; } }
+  if(def.devour){ if(--devourLeft <= 0){ devourLeft = def.devour; devourPending = true; } }
+  if(def.rotate){ if(--rotLeft <= 0){ rotLeft = def.rotate; rotPending = true; } }
 }
 function applyCurse(){
   const cands = [];
@@ -3766,11 +3971,174 @@ function mirrorSwap(a, b){
   if(settings.anim){ burst(ma.r, ma.c, '#7dd8ff'); burst(mb.r, mb.c, '#7dd8ff'); }
 }
 
+/* ---------- 齿轮乱转（第十四关 rotate 机制）----------
+   每消耗 rotate 步，棋盘中央 5×5 整体顺时针旋转一格。所有棋子连障碍一起转
+   （果冻是格子级状态不跟着转）。转出新匹配会在 resolveBoard 里自动续消。 */
+async function rotateGear(){
+  const N = 5, r0 = 2, c0 = 2;
+  const dur = settings.anim ? 520 : 0;
+  const snap = [];
+  for(let i=0;i<N;i++){
+    snap.push([]);
+    for(let j=0;j<N;j++) snap[i].push(board[r0+i][c0+j]);
+  }
+  for(let i=0;i<N;i++) for(let j=0;j<N;j++){
+    const t = snap[i][j];
+    if(!t) continue;
+    const ni = j, nj = N-1-i;   /* 顺时针：old(i,j) -> new(j, N-1-i) */
+    board[r0+ni][c0+nj] = t;
+    placeTile(t, r0+ni, c0+nj, dur);
+  }
+  gearFX(r0, c0, N);
+  shockWave(r0+2, c0+2, '#e9c46a');
+  SFX.crack(); buzz([12,40,12]);
+  toast(T('rotate_hit'));
+  if(settings.anim) await sleep(dur + 60);
+  settleBoard();
+}
+/* ---------- 迷雾遮眼（第十五关 blind 机制）----------
+   每 blind 步随机再裹 2 枚普通棋子（盘上至多 10 团雾）。被裹棋子看不清品种，
+   拿它交换即揭雾（trySwap 里 revealBlind）；消除掉的自然消失。 */
+function applyBlind(){
+  const cands = [];
+  let cur = 0;
+  forEachActive(function(r,c){
+    const t = board[r][c];
+    if(t && t.blind) cur++;
+    if(t && !t.rock && !t.caged && !t.frozen && !t.blind && !t.effect) cands.push(t);
+  });
+  let n = 2;
+  while(n-- > 0 && cur < 10 && cands.length){
+    const i = (Math.random()*cands.length)|0;
+    const t = cands.splice(i,1)[0];
+    t.blind = true;
+    t.el.firstChild.classList.add('blind');
+    if(settings.anim) burst(t.r, t.c, '#cfe0f0');
+    cur++;
+  }
+  SFX.swap(); buzz([10,20,10]);
+  toast(T('blind_hit'));
+}
+function seedBlind(n){
+  const cands = [];
+  forEachActive(function(r,c){
+    const t = board[r][c];
+    if(t && !t.rock && !t.caged && !t.frozen && !t.effect) cands.push(t);
+  });
+  while(n-- > 0 && cands.length){
+    const i = (Math.random()*cands.length)|0;
+    const t = cands.splice(i,1)[0];
+    t.blind = true;
+    t.el.firstChild.classList.add('blind');
+  }
+}
+function revealBlind(p){
+  const t = board[p.r] && board[p.r][p.c];
+  if(t && t.blind){
+    t.blind = false;
+    t.el.firstChild.classList.remove('blind');
+    if(settings.anim) burst(t.r, t.c, '#bfe8ff');
+  }
+}
+/* ---------- 虚空吞噬（第十六关 devour 机制）----------
+   每 devour 步随机吞掉一枚棋子（石头咬不动，特殊棋子照吞 —— 资源永久流失）。
+   吞完棋盘落定（上方补新棋子），补出来的新匹配会在 resolveBoard 里续消。 */
+async function applyDevour(){
+  const cands = [];
+  forEachActive(function(r,c){
+    const t = board[r][c];
+    if(t && !t.rock) cands.push(t);
+  });
+  if(!cands.length) return;
+  const t = cands[(Math.random()*cands.length)|0];
+  toast(T('devour_hit'));
+  SFX.crack(); buzz([18,30,18]);
+  devourFX(t);
+  board[t.r][t.c] = null;
+  if(settings.anim) await sleep(340);
+  await dropAndFill(0);
+}
+/* ---------- 新机制特效 ---------- */
+/* 冲击波环：从棋盘格中心扩散的白圈（齿轮/吞噬/大场面共用） */
+function shockWave(r, c, color){
+  if(!settings.anim) return;
+  const p = pos(r, c);
+  const v = document.createElement('div');
+  v.className = 'shock-ring';
+  const sz = cell * 1.2;
+  v.style.width = sz + 'px'; v.style.height = sz + 'px';
+  v.style.left = (p.x + cell/2 - sz/2) + 'px';
+  v.style.top  = (p.y + cell/2 - sz/2) + 'px';
+  v.style.borderColor = color || '#ffffff';
+  boardEl.appendChild(v);
+  v.animate([
+    { transform:'scale(.3)', opacity:.95 },
+    { transform:'scale(3.2)', opacity:0 }
+  ], { duration:560, easing:'cubic-bezier(.15,.7,.3,1)' });
+  setTimeout(function(){ if(v.parentNode) v.parentNode.removeChild(v); }, 640);
+}
+/* 齿轮光环：旋转区外圈一圈虚线齿轮环转一圈消散 */
+function gearFX(r0, c0, N){
+  if(!settings.anim) return;
+  const p1 = pos(r0, c0), p2 = pos(r0+N-1, c0+N-1);
+  const v = document.createElement('div');
+  v.className = 'gear-ring';
+  const w = p2.x + cell - p1.x;
+  v.style.width = w + 'px'; v.style.height = w + 'px';
+  v.style.left = p1.x + 'px'; v.style.top = p1.y + 'px';
+  boardEl.appendChild(v);
+  v.animate([
+    { transform:'rotate(0deg) scale(.92)', opacity:.9 },
+    { transform:'rotate(200deg) scale(1.06)', opacity:.4 },
+    { transform:'rotate(360deg) scale(.92)', opacity:0 }
+  ], { duration:620, easing:'ease-in-out' });
+  setTimeout(function(){ if(v.parentNode) v.parentNode.removeChild(v); }, 700);
+}
+/* 黑洞吞噬：吸积盘旋出 + 棋子缩小旋转坠入 + 收缩湮灭。
+   棋子位移动画起点写全现有 inline transform（铁律），fill:'forwards' 兜底。 */
+function devourFX(t){
+  const el = t.el;
+  if(settings.anim){
+    const base = el.style.transform || '';
+    el.animate([
+      { transform: base + ' scale(1) rotate(0deg)', opacity:1 },
+      { transform: base + ' scale(.05) rotate(540deg)', opacity:0 }
+    ], { duration:340, easing:'cubic-bezier(.6,-.3,.8,.4)', fill:'forwards' });
+    const p = pos(t.r, t.c);
+    const v = document.createElement('div');
+    v.className = 'void-hole';
+    const sz = cell * 1.6;
+    v.style.width = sz + 'px'; v.style.height = sz + 'px';
+    v.style.left = (p.x + cell/2 - sz/2) + 'px';
+    v.style.top  = (p.y + cell/2 - sz/2) + 'px';
+    boardEl.appendChild(v);
+    v.animate([
+      { transform:'scale(.2) rotate(0deg)', opacity:0 },
+      { transform:'scale(1) rotate(200deg)', opacity:1, offset:.45 },
+      { transform:'scale(.1) rotate(400deg)', opacity:0 }
+    ], { duration:620, easing:'ease-in' });
+    setTimeout(function(){ if(v.parentNode) v.parentNode.removeChild(v); }, 660);
+  }
+  const kill = function(){ if(el.parentNode) el.parentNode.removeChild(el); };
+  setTimeout(kill, 380);
+}
+
 async function resolveBoard(){
   let combo = 0;
   while(true){
     const info = findMatchInfo();
-    if(info.hit.size===0) break;
+    if(info.hit.size===0){
+      /* 机制结算：棋盘落定后统一执行（延迟到结算末尾，避免和消除集合打架）；
+         转出/补出来的新匹配就再进循环消掉（深渊自己消自己算玩家收益）。 */
+      let acted = false;
+      if(cursePending){ cursePending = false; applyCurse(); acted = true; }
+      if(petrifyPending){ petrifyPending = false; applyPetrify(); acted = true; }
+      if(blindPending){ blindPending = false; applyBlind(); acted = true; }
+      if(devourPending){ devourPending = false; await applyDevour(); acted = true; }
+      if(rotPending){ rotPending = false; await rotateGear(); acted = true; }
+      if(acted && findMatchInfo().hit.size) continue;
+      break;
+    }
     combo++;
     busy = true;
     /* 特殊棋子连锁扩展：被波及的条纹/彩球把整行/列/全场同色并入消除集合，
@@ -3791,9 +4159,6 @@ async function resolveBoard(){
     await dropAndFill(combo);
   }
   busy = false;
-  /* 深渊侵蚀：本步攒满的诅咒在棋盘落定后生效（见 applyCurse） */
-  if(cursePending){ cursePending = false; applyCurse(); }
-  if(petrifyPending){ petrifyPending = false; applyPetrify(); }
   if(!findMove()){ toast(T('auto_shuffle')); shuffleBoard(true); }
   scheduleHint();
   checkEnd();
@@ -3892,6 +4257,7 @@ async function trySwap(a, b){
     busy = true;
     SFX.swap();
     swapTiles(a, b);
+    revealBlind(a); revealBlind(b);   /* 迷雾：交换即揭雾（探雾花步数，信息也算收益） */
     await sleep(230);
     moves--; renderHud(); buzz(10); tickCurse();
     busy = false;
@@ -3901,6 +4267,7 @@ async function trySwap(a, b){
   busy = true;
   SFX.swap();
   swapTiles(a, b);
+  revealBlind(a); revealBlind(b);     /* 迷雾：交换即揭雾 */
   await sleep(230);
   if(findMatches().size===0){
     swapTiles(a, b);              // 换回
@@ -4264,9 +4631,9 @@ function startLevel(no){
   cageList = def.cages || (def.cage ? [def.cage] : []);
   frozenList = def.frozen || [];
   rockList = def.rocks || [];
-  curseLeft = def.curse || 0; cursePending = false; petrifyLeft = def.petrify || 0; petrifyPending = false;   /* 侵蚀计数（第十/十一/十三关） */
+  curseLeft = def.curse || 0; cursePending = false; petrifyLeft = def.petrify || 0; petrifyPending = false; blindLeft = def.blind || 0; blindPending = false; devourLeft = def.devour || 0; devourPending = false; rotLeft = def.rotate || 0; rotPending = false;   /* 侵蚀/迷雾/吞噬/齿轮计数（第十~十六关） */
   /* 主题背景：按关卡 bg 字段切换（夜幕/黄昏/糖果/派对/星云），出关恢复 */
-  ['night','sunset','candy','party','galaxy','abyss','lava','mirror','doom'].forEach(function(k){
+  ['night','sunset','candy','party','galaxy','abyss','lava','mirror','doom','brass','mist','void'].forEach(function(k){
     document.body.classList.toggle(k, def.bg === k);
   });
   if(def.bg) ensureSkyDecor(def.bg);
@@ -4277,6 +4644,9 @@ function startLevel(no){
   refreshHome();
   restart();
   if(def.mirror) setTimeout(function(){ toast(T('mirror_note')); }, 1500);
+  if(def.rotate) setTimeout(function(){ toast(T('rotate_note')); }, 1500);
+  if(def.blind) setTimeout(function(){ toast(T('blind_note')); }, 1500);
+  if(def.devour) setTimeout(function(){ toast(T('devour_note')); }, 1500);
   /* 关卡开场横幅：棋盘就位后大字砸入 */
   if(settings.anim) levelIntroFX(def.no);
 }
@@ -4293,7 +4663,7 @@ function restart(){
      重新上锁（复活走 doRevive()，保留棋盘，所以已破的笼 / 冰保持原状）。
      果冻是格子级状态，restart 要重置；doRevive 保留棋盘，所以不清果冻。 */
   jellyGrid = initJellyGrid((currentLevelDef() || {}).jellies);
-  { const _d = (currentLevelDef() || {}); curseLeft = _d.curse || 0; cursePending = false; petrifyLeft = _d.petrify || 0; petrifyPending = false; }
+  { const _d = (currentLevelDef() || {}); curseLeft = _d.curse || 0; cursePending = false; petrifyLeft = _d.petrify || 0; petrifyPending = false; blindLeft = _d.blind || 0; blindPending = false; devourLeft = _d.devour || 0; devourPending = false; rotLeft = _d.rotate || 0; rotPending = false; }
   score = 0; reviveUsed = false;
   boosters = Object.assign({}, BOOSTER_MAX);   /* 道具每关复原 */
   deselect(); boosterMode = null;
@@ -4301,6 +4671,7 @@ function restart(){
   initGoals();
   layoutBoard();
   newBoard();
+  { const _sd = (currentLevelDef() || {}); if(_sd.blindInit) seedBlind(_sd.blindInit); }   /* 迷雾关开局裹雾 */
   scheduleHint();
 }
 
@@ -4823,7 +5194,7 @@ var PacGame = (function(){
 /* ---------- 开始页 ---------- */
 function goHome(){
   document.querySelectorAll('.overlay.show').forEach(o=>closeOverlay(o.id));
-  ['night','sunset','candy','party','galaxy','abyss','lava','mirror','doom'].forEach(k=>document.body.classList.remove(k));
+  ['night','sunset','candy','party','galaxy','abyss','lava','mirror','doom','brass','mist','void'].forEach(k=>document.body.classList.remove(k));
   document.body.style.removeProperty('--theme-color');
   refreshHome();
   $('#home').classList.remove('hide');
@@ -5309,6 +5680,36 @@ function ensureSkyDecor(kind){
       e.style.animationDuration = (6 + Math.random()*7).toFixed(1) + 's';
       e.style.animationDelay = (-Math.random()*13).toFixed(1) + 's';
       box.appendChild(e);
+    }
+  } else if(kind === 'brass'){
+    for(let i=0;i<10;i++){
+      let g = document.createElement('i');
+      g.style.left = (Math.random()*92 + 4) + '%';
+      let sz = 14 + Math.random()*22;
+      g.style.width = sz.toFixed(0) + 'px'; g.style.height = sz.toFixed(0) + 'px';
+      g.style.animationDuration = (10 + Math.random()*14).toFixed(1) + 's';
+      g.style.animationDelay = (-Math.random()*20).toFixed(1) + 's';
+      box.appendChild(g);
+    }
+  } else if(kind === 'mist'){
+    for(let i=0;i<7;i++){
+      let m = document.createElement('i');
+      m.style.left = (Math.random()*80 - 10) + '%';
+      let sz = 120 + Math.random()*180;
+      m.style.width = sz.toFixed(0) + 'px'; m.style.height = (sz*0.42).toFixed(0) + 'px';
+      m.style.animationDuration = (16 + Math.random()*16).toFixed(1) + 's';
+      m.style.animationDelay = (-Math.random()*28).toFixed(1) + 's';
+      box.appendChild(m);
+    }
+  } else if(kind === 'void'){
+    for(let i=0;i<16;i++){
+      let s = document.createElement('i');
+      s.style.left = (Math.random()*94 + 3) + '%';
+      let sz = 2 + Math.random()*3.5;
+      s.style.width = sz.toFixed(1) + 'px'; s.style.height = sz.toFixed(1) + 'px';
+      s.style.animationDuration = (5 + Math.random()*7).toFixed(1) + 's';
+      s.style.animationDelay = (-Math.random()*11).toFixed(1) + 's';
+      box.appendChild(s);
     }
   }
   document.body.appendChild(box);
