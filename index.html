@@ -1556,6 +1556,7 @@ var _hmt = _hmt || [];
 
     <div class="link-row">
       <button class="btn btn-blue" onclick="showAuthor()"><span data-i18n="author">作者</span>&nbsp;›</button>
+      <button class="btn btn-blue" onclick="openZanshang()"><span data-i18n="zanshang">赞赏</span>&nbsp;›</button>
       <button class="btn btn-blue" onclick="openFanqun()"><span data-i18n="fanqun">粉丝群</span>&nbsp;›</button>
     </div>
 
@@ -1644,6 +1645,16 @@ var _hmt = _hmt || [];
     <button class="panel-close" data-close="fanqun-overlay">✕</button>
     <img class="fanqun-img" id="fanqun-img" alt="" draggable="false">
     <div class="share-hint" data-i18n="fanqun_hint">长按二维码识别加入</div>
+  </div>
+</div>
+
+<!-- 赞赏码：长按识别微信赞赏 -->
+<div class="overlay" id="zanshang-overlay">
+  <div class="panel">
+    <div class="panel-title"><span data-i18n="zanshang">赞赏</span></div>
+    <button class="panel-close" data-close="zanshang-overlay">✕</button>
+    <img class="fanqun-img" id="zanshang-img" alt="" draggable="false">
+    <div class="share-hint" data-i18n="zanshang_hint">你小小的鼓励是我大大的动力</div>
   </div>
 </div>
 
@@ -2340,6 +2351,7 @@ const I18N = {
     gravity_hit:'重力倒转！', rift_hit:'裂隙撕开了！',
     share_result:'分享战绩', share_title:'分享战绩', share_hint:'长按图片保存或转发', result_score_label:'本局得分',
     fanqun:'粉丝群', fanqun_hint:'长按二维码识别加入',
+    zanshang:'赞赏', zanshang_hint:'你小小的鼓励是我大大的动力',
     wallpapers:'壁纸', wp_hint_grid:'点击查看大图', wp_hint_view:'长按图片保存到相册，设为壁纸',
     mascot_space:'奶蛙空间', mascot_space_hint:'这里是奶蛙的小空间，更多互动 coming soon~',
     mascot_3d_loading:'3D 加载中...',
@@ -2409,6 +2421,7 @@ const I18N = {
     gravity_hit:'Gravity flipped!', rift_hit:'A rift tears open!',
     share_result:'Share Score', share_title:'Share Score', share_hint:'Long-press the image to save or share', result_score_label:'Score',
     fanqun:'Fan Club', fanqun_hint:'Long-press the QR code to join',
+    zanshang:'Donate', zanshang_hint:'Your little encouragement is my big motivation',
     wallpapers:'Wallpapers', wp_hint_grid:'Tap to view full size', wp_hint_view:'Long-press the image to save & set as wallpaper',
     mascot_space:'Naiwa Space', mascot_space_hint:'A little corner for the Milk Frog. More interactions coming soon~',
     mascot_3d_loading:'Loading 3D...',
@@ -6180,6 +6193,13 @@ function openFanqun(){
   const im = $('#fanqun-img');
   if(!im.getAttribute('src')) im.src = 'naiwa/about/fsq3.webp';
   openOverlay('fanqun-overlay');
+}
+
+function openZanshang(){
+  track('zanshang', 'click');
+  const im = $('#zanshang-img');
+  if(!im.getAttribute('src')) im.src = 'naiwa/about/zanshang.webp';
+  openOverlay('zanshang-overlay');
 }
 
 /* ---------- 胜利彩带（独立 canvas + rAF，与棋盘 DOM 动画互不干扰） ----------
