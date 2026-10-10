@@ -3245,8 +3245,10 @@ function fxVortexGroup(cells, color){
    连锁深处（combo>=3）减半 —— 连着爆的时候再每下都冻会拖节奏。 */
 const HITSTOP_MS = [45, 62, 78];
 
-/* 剩余步数折分：过关结算时每剩一步折 50 分 */
-const LEFT_MOVE_SCORE = 50;
+/* 剩余步数折分：过关结算时每剩一步折 20 分。
+   原来是 50 —— 一步比消五格（5×10=50）还值钱，导致剩步奖励在总分里占到 12%~39%，
+   分数忽高忽低、跟操作水平对不上。砍到 20 之后剩步只占个零头，分数由消除和连锁主导。 */
+const LEFT_MOVE_SCORE = 20;
 
 /* 震屏。#board 本身没有 inline transform（棋子/特效都定位在它内部的子元素上），
    在容器上跑 WAAPI 位移关键帧带着全场一起震，不会触发
@@ -3890,9 +3892,9 @@ function clearTiers(hit, info, exclude){
 
 /* 分档得分倍率。四连 / 五连本身要靠多花步数去凑，如果每格还是 10 分，
    「做特效」就完全没有游戏性回报 —— 玩家不会为了一个动画去刻意凑长连。
-   倍率作用在每格分上，所以一条 5 连 = 5 格 × 10 × 2.5 = 125 分（原来 50 分）。
+   倍率作用在每格分上，所以一条 5 连 = 5 格 × 20 × 3 = 300 分。
    索引就是档位：0 普通 / 1 四连 / 2 五连。 */
-const TIER_MUL = [1, 1.5, 2.5];
+const TIER_MUL = [1, 2, 3];
 
 /* 冰封豁免：进入消除流程先把 hit 里的冰封棋子一律改成「破冰保留」。
    冰封棋子不能主动交换，只会被匹配线 / 道具 / 特殊棋子波及 —— 波及一次冰壳即碎，
@@ -4068,7 +4070,7 @@ async function clearSet(hit, combo, info){
   const tiers = clearTiers(hit, info, spawnIdx);
   const topTier = Math.max.apply(null, Array.from(tiers.cls.values()).concat([0]));
   let base = 0;
-  tiers.cls.forEach(tc=>{ base += 10 * TIER_MUL[tc]; });
+  tiers.cls.forEach(tc=>{ base += 20 * TIER_MUL[tc]; });
   const gained = Math.round(base * Math.max(1, combo));
   addScore(gained);
   SFX.clear(combo, topTier);
