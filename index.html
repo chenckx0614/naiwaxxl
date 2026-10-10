@@ -1423,6 +1423,14 @@ var _hmt = _hmt || [];
         <button class="switch on" data-set="music"></button>
       </div>
       <div class="set-row">
+        <div class="s-icon ic-music"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h12"/><path d="M4 12h8"/><path d="M4 18h12"/><circle cx="19" cy="17" r="3"/><path d="M19 3v11"/></svg></div>
+        <div class="s-name" data-i18n="bgm_track">曲目</div>
+        <div class="seg" id="bgm-seg">
+          <button class="seg-btn on" type="button" data-bgm="default" data-i18n="bgm_default">默认</button>
+          <button class="seg-btn" type="button" data-bgm="friend" data-i18n="bgm_friend">普通朋友</button>
+        </div>
+      </div>
+      <div class="set-row">
         <div class="s-icon ic-sfx"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg></div><div class="s-name" data-i18n="sfx">音效</div>
         <input class="vol" type="range" min="0" max="100" step="5" value="100" data-vol="sfx" aria-label="sound volume">
         <button class="switch on" data-set="sfx"></button>
@@ -2132,10 +2140,11 @@ const I18N = {
     title:'奶蛙消消乐',
     settings:'设置',
     sec_audio:'音效设置', bgm:'背景音乐', sfx:'音效',
+    bgm_track:'曲目', bgm_default:'默认', bgm_friend:'普通朋友',
     sec_game:'游戏设置', hint:'提示', anim:'关卡动画', vibe:'震动',
     sec_other:'其他设置', language:'语言', author:'作者',
     home:'返回大厅', restart:'重新开始', resume:'继续游戏',
-    notice_ok:'知道了', notice:'公告',
+    notice_ok:'知道了', notice:'公告', bgm_now:'已切换背景音乐',
     share_result:'分享战绩', share_title:'分享战绩', share_hint:'长按图片保存或转发', result_score_label:'本局得分',
     fanqun:'粉丝群', fanqun_hint:'长按二维码识别加入',
     wallpapers:'壁纸', wp_hint_grid:'点击查看大图', wp_hint_view:'长按图片保存到相册，设为壁纸',
@@ -2195,10 +2204,11 @@ const I18N = {
     title:'Milk Frog Match',
     settings:'Settings',
     sec_audio:'Audio', bgm:'Music', sfx:'Sound',
+    bgm_track:'Track', bgm_default:'Default', bgm_friend:'Regular Friend',
     sec_game:'Gameplay', hint:'Hints', anim:'Animations', vibe:'Vibration',
     sec_other:'More', language:'Language', author:'Author',
     home:'Home', restart:'Restart', resume:'Resume',
-    notice_ok:'OK', notice:'Notice',
+    notice_ok:'OK', notice:'Notice', bgm_now:'Music switched',
     share_result:'Share Score', share_title:'Share Score', share_hint:'Long-press the image to save or share', result_score_label:'Score',
     fanqun:'Fan Club', fanqun_hint:'Long-press the QR code to join',
     wallpapers:'Wallpapers', wp_hint_grid:'Tap to view full size', wp_hint_view:'Long-press the image to save & set as wallpaper',
@@ -2318,7 +2328,7 @@ let actx = null, sfxGain = null;
 /* ---------- 数据埋点（百度统计自定义事件，root 专属） ----------
    后台 tongji.baidu.com → 自定义事件，看每关通过率/分享与粉丝群使用率。
    minitool 合规版无统计（CSP 挡外链），埋点只在这份代码里。 */
-const GAME_VER = '1.1.0';
+const GAME_VER = '1.1.1';
 function track(cat, act, label){
   try { if(window._hmt) _hmt.push(['_trackEvent', cat, act, label || '']); } catch(e){}
 }
@@ -2344,8 +2354,49 @@ window.addEventListener('unhandledrejection', e => {
 /* 外部音频文件。显式 preload=auto + load()：省流量模式/部分 webview 下
    new Audio(src) 可能只拉元数据，等首次 play 才真下载 → 音效明显延迟。
    数据是否就位由后面的预加载段计入进度条（canplaythrough 计数）。 */
-const bgmAudio    = new Audio('bgm/bgm.mp3');
-bgmAudio.loop = true; bgmAudio.volume = 0.5; bgmAudio.preload = 'auto'; bgmAudio.load();
+/* 背景音乐曲目表：第一首是默认曲，其余可在设置里切换。
+   备用曲体积大（10MB），按需加载 —— 只有在设置里被选中时才建 Audio 并 load()，
+   不占首屏流量；默认曲照旧首屏预载。 */
+const BGM_TRACKS = [
+  { id:'default', file:'bgm/bgm.mp3' },
+  { id:'friend',  file:'bgm/putongpengyou.mp3' }
+];
+const BGM_KEY = 'naiwa-xxl-bgm-v1';
+let bgmTrack = 'default';
+function makeBgm(t, lazy){
+  const a = new Audio(t.file);
+  a.loop = true; a.volume = 0.5;
+  a.preload = lazy ? 'none' : 'auto';
+  if(!lazy) a.load();
+  return a;
+}
+const bgmAudio = makeBgm(BGM_TRACKS[0], false);
+const bgmAlts  = {};                       /* 备用曲实例：选中时才创建 */
+function bgmOf(id){
+  if(id === BGM_TRACKS[0].id) return bgmAudio;
+  if(!bgmAlts[id]){
+    const t = BGM_TRACKS.find(x => x.id === id);
+    if(!t) return bgmAudio;
+    const a = makeBgm(t, true);
+    a.volume = VOL_BASE.music * volumes.music;
+    a.load();
+    bgmAlts[id] = a;
+  }
+  return bgmAlts[id];
+}
+function curBgm(){ return bgmOf(bgmTrack); }
+function eachBgm(fn){                      /* 对所有已建实例执行（切曲要全停） */
+  fn(bgmAudio);
+  for(const k in bgmAlts) fn(bgmAlts[k]);
+}
+function loadBgmPref(){
+  try{
+    const v = localStorage.getItem(BGM_KEY);
+    if(v && BGM_TRACKS.some(t => t.id === v)) bgmTrack = v;
+  }catch(e){}
+}
+function saveBgmPref(){ try{ localStorage.setItem(BGM_KEY, bgmTrack); }catch(e){} }
+loadBgmPref();
 const comboAudios = [1,2,3,4,5].map(i => {
   const a = new Audio(`bgm/combo${i}.mp3`);
   a.volume = 0.7; a.preload = 'auto'; a.load();
@@ -2373,7 +2424,7 @@ function loadVolumes(){
 }
 function saveVolumes(){ try{ localStorage.setItem(VOL_KEY, JSON.stringify(volumes)); }catch(e){} }
 function applyVolumes(){
-  bgmAudio.volume = VOL_BASE.music * volumes.music;
+  eachBgm(a => { a.volume = VOL_BASE.music * volumes.music; });
   if(sfxGain) sfxGain.gain.value = VOL_BASE.sfx * volumes.sfx;
   comboAudios.forEach(a=>{ a.volume = VOL_SFX_FILE.combo * volumes.sfx; });
   endAudio.volume = VOL_SFX_FILE.end * volumes.sfx;
@@ -2402,7 +2453,7 @@ let audioWarmed = false;
 function warmupAudio(){
   if(audioWarmed) return;
   audioWarmed = true;
-  [bgmAudio].concat(comboAudios, [endAudio]).forEach(a => {
+  [curBgm()].concat(comboAudios, [endAudio]).forEach(a => {
     a.muted = true;
     a.play().then(() => { a.pause(); a.currentTime = 0; a.muted = false; })
             .catch(() => { a.muted = false; });
@@ -2419,9 +2470,23 @@ function warmupAudio(){
 });
 window.addEventListener('DOMContentLoaded', ()=>{ if(settings.music) tryPlayBgm(); });
 
-function tryPlayBgm(){ if(!settings.music) return; bgmAudio.play().catch(()=>{}); }
+function tryPlayBgm(){ if(!settings.music) return; curBgm().play().catch(()=>{}); }
 function startBgm(){ tryPlayBgm(); }
-function stopBgm(){ bgmAudio.pause(); }
+function stopBgm(){ eachBgm(a => a.pause()); }
+/* 切换背景音乐：全停 → 换曲目 → 记档 → 立刻按新曲续播（音量沿用当前音乐档） */
+function setBgmTrack(id){
+  if(!BGM_TRACKS.some(t => t.id === id) || id === bgmTrack) return;
+  stopBgm();
+  bgmTrack = id;
+  saveBgmPref();
+  syncBgmSeg();
+  if(settings.music){ tryPlayBgm(); toast(T('bgm_now')); }
+}
+function syncBgmSeg(){
+  document.querySelectorAll('#bgm-seg .seg-btn').forEach(b=>{
+    b.className = 'seg-btn' + (b.getAttribute('data-bgm') === bgmTrack ? ' on' : '');
+  });
+}
 
 const midi = m => 440 * Math.pow(2, (m - 69) / 12);
 
@@ -5255,6 +5320,12 @@ if(!VIBE_OK){
 document.querySelectorAll('#lang-seg .seg-btn').forEach(b=>{
   b.addEventListener('click', ()=>setLang(b.dataset.lang));
 });
+
+/* 背景音乐曲目：选择存 localStorage，下次进来还是上次那首 */
+document.querySelectorAll('#bgm-seg .seg-btn').forEach(b=>{
+  b.addEventListener('click', ()=>{ SFX.click(); setBgmTrack(b.getAttribute('data-bgm')); });
+});
+syncBgmSeg();
 
 /* ---------- 运行时错误兜底 ----------
    线上没法看 console，出错必须给用户一个可点的出口；只提示一次，避免连锁错误刷屏。 */
