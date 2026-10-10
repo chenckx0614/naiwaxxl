@@ -470,6 +470,7 @@
   .btn-green  { background:linear-gradient(180deg,#a4e05c,#5cb82e); box-shadow:0 3px 0 #469c1e, 0 10px 20px rgba(92,184,46,.3), inset 0 1.5px 0 rgba(255,255,255,.6); }
   .btn-blue   { background:linear-gradient(180deg,#7cc4f7,#3d9be9); box-shadow:0 3px 0 #2b7cc4, 0 10px 20px rgba(61,155,233,.32), inset 0 1.5px 0 rgba(255,255,255,.6); }
   .btn-purple { background:linear-gradient(180deg,#c98ff5,#9b4edd); box-shadow:0 3px 0 #7f3cbd, 0 10px 20px rgba(155,78,221,.3), inset 0 1.5px 0 rgba(255,255,255,.6); }
+  .btn-pink   { background:linear-gradient(180deg,#ffa8cb,#f2558b); box-shadow:0 3px 0 #d63a72, 0 10px 20px rgba(242,85,139,.3), inset 0 1.5px 0 rgba(255,255,255,.6); }
 
   /* ---------- 弹窗 ---------- */
   .overlay {
@@ -1621,6 +1622,7 @@ var _hmt = _hmt || [];
     <div id="result-score"></div>
     <div class="panel-btns">
       <button class="btn btn-green" id="share-btn" data-i18n="share_result" onclick="showShare()">分享战绩</button>
+      <button class="btn btn-pink" id="result-zanshang-btn" data-i18n="zanshang" onclick="openZanshang()">赞赏</button>
       <button class="btn btn-blue" onclick="closeOverlay('result-overlay'); restart();" data-i18n="restart">重新开始</button>
       <button class="btn btn-orange" id="next-level-btn" data-i18n="next_level" onclick="nextLevel()">下一关</button>
       <button class="btn btn-purple" data-i18n="go_home" onclick="closeOverlay('result-overlay'); goHome()">返回首页</button>
