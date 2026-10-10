@@ -612,6 +612,19 @@
     transition:background .15s, color .15s, box-shadow .15s;
   }
   .seg-btn.on { color:#fff; background:linear-gradient(180deg,#7cc4f7,#3d9be9); box-shadow:0 3px 8px rgba(61,155,233,.4), inset 0 1px 0 rgba(255,255,255,.5); text-shadow:0 1px 1px rgba(0,0,0,.22); }
+  /* 背景音乐曲目下拉：原生 select 去掉默认外观，箭头用伪元素画（避免 data: URI） */
+  .bgm-sel-wrap { position:relative; flex-shrink:0; }
+  .bgm-sel-wrap::after { content:'\25BE'; position:absolute; right:11px; top:50%; transform:translateY(-52%);
+    font-size:13px; font-weight:900; color:#7c9ccf; pointer-events:none; }
+  .bgm-select {
+    -webkit-appearance:none; -moz-appearance:none; appearance:none;
+    font:inherit; font-size:14px; font-weight:800; color:#3f5c8f;
+    background:#e8eff9; border:0; border-radius:999px;
+    padding:8px 28px 8px 14px; max-width:150px; outline:none;
+    box-shadow:inset 0 1.5px 4px rgba(80,120,190,.18);
+    text-overflow:ellipsis;
+  }
+  .bgm-select:focus { box-shadow:inset 0 1.5px 4px rgba(80,120,190,.18), 0 0 0 2px rgba(61,155,233,.35); }
 
   /* 英文文案普遍比中文宽，逐处收一档字号/字距，避免按钮和标题溢出 */
   html[lang="en"] #home-sub { letter-spacing:3px; font-size:16px; }
@@ -1513,9 +1526,12 @@ var _hmt = _hmt || [];
       <div class="set-row">
         <div class="s-icon ic-music"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h12"/><path d="M4 12h8"/><path d="M4 18h12"/><circle cx="19" cy="17" r="3"/><path d="M19 3v11"/></svg></div>
         <div class="s-name" data-i18n="bgm_track">曲目</div>
-        <div class="seg" id="bgm-seg">
-          <button class="seg-btn on" type="button" data-bgm="default" data-i18n="bgm_default">默认</button>
-          <button class="seg-btn" type="button" data-bgm="friend" data-i18n="bgm_friend">普通朋友</button>
+        <div class="bgm-sel-wrap">
+          <select class="bgm-select" id="bgm-select" aria-label="bgm track">
+            <option value="default" data-i18n="bgm_default">默认</option>
+            <option value="friend" data-i18n="bgm_friend">普通朋友</option>
+            <option value="redbean" data-i18n="bgm_redbean">红豆</option>
+          </select>
         </div>
       </div>
       <div class="set-row">
@@ -2341,7 +2357,7 @@ const I18N = {
     title:'奶蛙消消乐',
     settings:'设置',
     sec_audio:'音效设置', bgm:'背景音乐', sfx:'音效',
-    bgm_track:'曲目', bgm_default:'默认', bgm_friend:'普通朋友',
+    bgm_track:'曲目', bgm_default:'默认', bgm_friend:'普通朋友', bgm_redbean:'红豆',
     sec_game:'游戏设置', hint:'提示', anim:'关卡动画', vibe:'震动',
     sec_other:'其他设置', language:'语言', author:'作者',
     home:'返回大厅', restart:'重新开始', resume:'继续游戏',
@@ -2411,7 +2427,7 @@ const I18N = {
     title:'Milk Frog Match',
     settings:'Settings',
     sec_audio:'Audio', bgm:'Music', sfx:'Sound',
-    bgm_track:'Track', bgm_default:'Default', bgm_friend:'Regular Friend',
+    bgm_track:'Track', bgm_default:'Default', bgm_friend:'Regular Friend', bgm_redbean:'Red Bean',
     sec_game:'Gameplay', hint:'Hints', anim:'Animations', vibe:'Vibration',
     sec_other:'More', language:'Language', author:'Author',
     home:'Home', restart:'Restart', resume:'Resume',
@@ -2572,7 +2588,8 @@ window.addEventListener('unhandledrejection', e => {
    不占首屏流量；默认曲照旧首屏预载。 */
 const BGM_TRACKS = [
   { id:'default', file:'bgm/bgm.mp3' },
-  { id:'friend',  file:'bgm/putongpengyou.mp3' }
+  { id:'friend',  file:'bgm/putongpengyou.mp3' },
+  { id:'redbean', file:'bgm/hongdou.mp3' }
 ];
 const BGM_KEY = 'naiwa-xxl-bgm-v1';
 let bgmTrack = 'default';
@@ -2692,13 +2709,12 @@ function setBgmTrack(id){
   stopBgm();
   bgmTrack = id;
   saveBgmPref();
-  syncBgmSeg();
+  syncBgmSelect();
   if(settings.music){ tryPlayBgm(); toast(T('bgm_now')); }
 }
-function syncBgmSeg(){
-  document.querySelectorAll('#bgm-seg .seg-btn').forEach(b=>{
-    b.className = 'seg-btn' + (b.getAttribute('data-bgm') === bgmTrack ? ' on' : '');
-  });
+function syncBgmSelect(){
+  const sel = document.getElementById('bgm-select');
+  if(sel) sel.value = bgmTrack;
 }
 
 const midi = m => 440 * Math.pow(2, (m - 69) / 12);
@@ -5673,10 +5689,11 @@ document.querySelectorAll('#lang-seg .seg-btn').forEach(b=>{
 });
 
 /* 背景音乐曲目：选择存 localStorage，下次进来还是上次那首 */
-document.querySelectorAll('#bgm-seg .seg-btn').forEach(b=>{
-  b.addEventListener('click', ()=>{ SFX.click(); setBgmTrack(b.getAttribute('data-bgm')); });
-});
-syncBgmSeg();
+const bgmSel = document.getElementById('bgm-select');
+if(bgmSel){
+  bgmSel.addEventListener('change', ()=>{ SFX.click(); setBgmTrack(bgmSel.value); });
+}
+syncBgmSelect();
 
 /* ---------- 运行时错误兜底 ----------
    线上没法看 console，出错必须给用户一个可点的出口；只提示一次，避免连锁错误刷屏。 */
