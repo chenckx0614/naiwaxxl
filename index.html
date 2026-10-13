@@ -1274,6 +1274,18 @@
     from { transform:translate(0,0) scale(1); opacity:.9; }
     to   { transform:translate(14vw, -48vh) scale(.2); opacity:0; }
   }
+  /* 崩塌主题（第二十关 rubble）：暗褐废墟渐变 */
+  body.rubble {
+    background: radial-gradient(120% 120% at 50% 30%, #6b4a2f 0%, #432c1c 48%, #241409 82%, #120a04 100%) fixed;
+  }
+  /* 棱镜主题（第二十一关 prism）：青紫棱镜渐变 */
+  body.prism {
+    background: radial-gradient(120% 120% at 50% 40%, #2a2f6e 0%, #3a2c66 46%, #211a44 80%, #0e0a22 100%) fixed;
+  }
+  /* 湮灭主题（第二十二关 ruin）：暗紫黑裂光渐变 */
+  body.ruin {
+    background: radial-gradient(120% 120% at 50% 44%, #3a1d52 0%, #241034 46%, #140820 80%, #06030c 100%) fixed;
+  }
   /* 裂隙光柱（第十九关 rift）：被撕开的整列亮起竖直红光 */
   .rift-beam {
     position:absolute; pointer-events:none; z-index:6;
@@ -2332,10 +2344,106 @@ const LEVELS = [
     /* 第十九关胜利图：惊呆奶蛙（jingdai，仅本关） */
     winImg: 'naiwa/over/jingdai.webp',
   },
+
+  /* ============ 第二十关：崩塌回廊 ============
+     11×11 斜坡棋盘（列高随横向位置递增，像一道山峰），系列首次引入「崩塌」（collapse）：
+     每走 5 步，棋盘最外一圈棋子碎裂坠落、整片可用空间向内收一圈（最多收 2 圈）。
+     你要在不断缩小的棋盘上把目标消完 —— 拖得越久落脚地越小。
+     新素材：naiwa/5 全员 + naiwa/3/a3（暖黄+草绿，和前几关冷色系区分）。
+     障碍：牢笼 4 + 石头 6 + 冰封 4 + 果冻 8（集中在内圈，崩塌碰不到）。
+     崩塌主题 bg:'rubble'：暗褐废墟渐变。 */
+  {
+    no: 20,
+    rows: 11,
+    cols: 11,
+    moves: 28,
+    needs: [22, 17, 13],
+    themeColor: '#c8743a',
+    collapse: 5,
+    types: [
+      { key:'20a', img:'naiwa/5/5a.webp', color:'#ffcf3e', bg:'#ffe066', glow:1 },
+      { key:'20b', img:'naiwa/5/5b.webp', color:'#c98a4b', bg:'#ffe0c0' },
+      { key:'20c', img:'naiwa/5/5c.webp', color:'#f5e6a8', bg:'#fff3cf' },
+      { key:'20d', img:'naiwa/5/5d.webp', color:'#f0d060', bg:'#fff0b0' },
+      { key:'20e', img:'naiwa/3/a3.webp', color:'#7ed957', bg:'#d0f0a8' },
+    ],
+    shape: function(r,c){ return r >= Math.round(Math.abs(c-5) * 0.7); },
+    cages: [ { r:4, c:2 }, { r:4, c:8 }, { r:6, c:2 }, { r:6, c:8 } ],
+    rocks: [ {r:4,c:3},{r:4,c:7},{r:6,c:3},{r:6,c:7},{r:3,c:5},{r:7,c:5} ],
+    frozen: [ {r:4,c:4},{r:4,c:6},{r:6,c:4},{r:6,c:6} ],
+    jellies: [ {r:4,c:4},{r:4,c:6},{r:6,c:4},{r:6,c:6},{r:5,c:3},{r:5,c:7},{r:3,c:5,layer:1},{r:7,c:5,layer:1} ],
+    bg: 'rubble',
+    winImg: 'naiwa/start/start_bj.webp',
+  },
+
+  /* ============ 第二十一关：棱镜错乱 ============
+     11×11 八边形棋盘（切掉四角，每列连续）。新机制「错乱」（scramble）：每走 4 步，
+     棋盘随机一片 3×3 区域的棋子花色被打乱重排 —— 刚摆好的阵型瞬间洗牌，逼你随机应变。
+     新素材：naiwa/4 全员（冰淇淋/金币/礼服系，奶白金暖调）。
+     障碍：牢笼 4 + 石头 6 + 冰封 4 + 果冻 10。
+     棱镜主题 bg:'prism'：青紫棱镜渐变。 */
+  {
+    no: 21,
+    rows: 11,
+    cols: 11,
+    moves: 26,
+    needs: [22, 18, 14],
+    themeColor: '#7c6cf0',
+    scramble: 4,
+    types: [
+      { key:'21a', img:'naiwa/4/a4.webp', color:'#f0e6d8', bg:'#fff4e8' },
+      { key:'21b', img:'naiwa/4/b4.webp', color:'#e6b800', bg:'#fff0bf' },
+      { key:'21c', img:'naiwa/4/c4.webp', color:'#f5c700', bg:'#fff6c0' },
+      { key:'21d', img:'naiwa/4/d4.webp', color:'#a86f48', bg:'#f0e0d0' },
+      { key:'21e', img:'naiwa/4/f4.webp', color:'#ff8eb0', bg:'#ffe0ec' },
+    ],
+    shape: function(r,c){ const ar=Math.abs(r-5), ac=Math.abs(c-5); return ar<=5 && ac<=5 && ar+ac<=9; },
+    cages: [ { r:0, c:5 }, { r:10, c:5 }, { r:5, c:1 }, { r:5, c:9 } ],
+    rocks: [ {r:2,c:2},{r:2,c:8},{r:8,c:2},{r:8,c:8},{r:5,c:3},{r:5,c:7} ],
+    frozen: [ {r:3,c:5},{r:7,c:5},{r:5,c:2},{r:5,c:8} ],
+    jellies: [ {r:4,c:4},{r:4,c:6},{r:6,c:4},{r:6,c:6},{r:5,c:5,layer:1},
+               {r:3,c:3},{r:3,c:7},{r:7,c:3},{r:7,c:7},{r:5,c:5} ],
+    bg: 'prism',
+    winImg: 'naiwa/start/start_bj.webp',
+  },
+
+  /* ============ 第二十二关：终焉·湮灭 ============
+     11×11 双子星棋盘（两枚交叠圆，列连续）。系列真·终章，双机制叠加：
+     ①「崩塌」（collapse）每 5 步收一圈；②「错乱」（scramble）每 4 步洗一片。
+     棋盘一边向内塌缩、一边局部洗牌，是前面所有机制的集大成。
+     新素材：naiwa/7 全员 + naiwa/10/a（粉紫家族 + 紫恶魔）。
+     障碍封顶：牢笼 4 + 石头 6 + 冰封 5 + 果冻 12（内圈）。
+     湮灭主题 bg:'ruin'：暗紫黑裂光。 */
+  {
+    no: 22,
+    rows: 11,
+    cols: 11,
+    moves: 30,
+    needs: [20, 16, 12],
+    themeColor: '#9a4ad0',
+    collapse: 5,
+    collapseCap: 1,
+    scramble: 4,
+    types: [
+      { key:'22a', img:'naiwa/7/a.webp', color:'#ffd54d', bg:'#fff3c4' },
+      { key:'22b', img:'naiwa/7/b.webp', color:'#7ec3f5', bg:'#cfe8ff' },
+      { key:'22c', img:'naiwa/7/c.webp', color:'#ff7aa8', bg:'#ffd0e2' },
+      { key:'22d', img:'naiwa/7/d.webp', color:'#6ab04c', bg:'#d8f0b8' },
+      { key:'22e', img:'naiwa/10/a.webp', color:'#8b5cf6', bg:'#e4d4ff' },
+    ],
+    shape: function(r,c){ const d1=(r-5)*(r-5)+(c-3)*(c-3), d2=(r-5)*(r-5)+(c-7)*(c-7); return d1<=11.5 || d2<=11.5; },
+    cages: [ { r:3, c:3 }, { r:3, c:7 }, { r:7, c:3 }, { r:7, c:7 } ],
+    rocks: [ {r:5,c:1},{r:5,c:9},{r:3,c:5},{r:7,c:5},{r:2,c:3},{r:8,c:7} ],
+    frozen: [ {r:4,c:4},{r:4,c:6},{r:6,c:4},{r:6,c:6},{r:5,c:5} ],
+    jellies: [ {r:5,c:5,layer:1},{r:4,c:4},{r:4,c:6},{r:6,c:4},{r:6,c:6},
+               {r:3,c:3},{r:3,c:7},{r:7,c:3},{r:7,c:7},{r:5,c:4},{r:5,c:6},{r:4,c:5} ],
+    bg: 'ruin',
+    winImg: 'naiwa/start/start_bj.webp',
+  },
 ];
 
 /* 关卡选择面板至少铺这么多格，超出的格子显示为「敬请期待」 */
-const LEVEL_SLOTS = 19;
+const LEVEL_SLOTS = 22;
 
 /* 当前关的图标。startLevel() 时随关卡切换，其余逻辑一律读这个变量 */
 let TYPES = LEVELS[0].types;
@@ -2384,6 +2492,8 @@ const I18N = {
     rotate_note:'齿轮迷城：每走 4 步，中央 5×5 顺时针旋转一格',
     blind_note:'迷雾幻境：雾团会遮住棋子，拿它交换即可揭雾',
     devour_note:'虚空坍缩：每走 3 步，虚空会吞掉一枚棋子',
+    collapse_hit:'崩塌！外圈棋子碎裂坠落', collapse_note:'本关：每 5 步棋盘外圈崩塌一圈，可用空间越来越小',
+    scramble_hit:'错乱！一片棋子的花色被打乱了', scramble_note:'本关：每 4 步随机一片区域花色错乱重排',
     share_win:'成功通关 ·', share_try:'挑战 ·',
     start:'开始', pick_level:'选择关卡',
     home_sub:'滑 动 消 除 · 轻 松 一 夏',
@@ -2454,6 +2564,8 @@ const I18N = {
     rotate_note:'Gear City: every 4 moves the central 5x5 rotates clockwise',
     blind_note:'Mist Realm: fog hides tiles — swap a fogged tile to reveal it',
     devour_note:'Void Collapse: every 3 moves the void eats a tile',
+    collapse_hit:'Collapse! The outer ring crumbles', collapse_note:'Collapse: every 5 moves the board edge crumbles inward',
+    scramble_hit:'Scramble! A patch of tiles is reshuffled', scramble_note:'Scramble: every 4 moves a random patch is reshuffled',
     share_win:'Level Clear ·', share_try:'Challenge ·',
     start:'Start Game', pick_level:'Levels',
     home_sub:'Swipe · Match · Relax',
@@ -2842,7 +2954,7 @@ const sleep = ms => new Promise(r=>setTimeout(r,ms));
 const $ = s => document.querySelector(s);
 
 /* 当前格是否在当前关卡棋盘内（激活格） */
-function isActive(r,c){ return r>=0 && r<ROWS && c>=0 && c<COLS && (!activeShape || activeShape(r,c)); }
+function isActive(r,c){ return r>=0 && r<ROWS && c>=0 && c<COLS && (!activeShape || activeShape(r,c)) && !collapsedCells.has(r+','+c); }
 /* 果冻（initJellyGrid / hasJelly / renderJellies / hitJelly）实现只保留一份，
    在 clearSet 附近（ES5 注释风格那段）。以前这里还有一份重复定义 ——
    同名函数声明后者覆盖前者，两份实现改了其中一份就会悄悄分叉，属于埋雷，已删。 */
@@ -4225,7 +4337,9 @@ let curseLeft = 0, cursePending = false, petrifyLeft = 0, petrifyPending = false
     rotLeft = 0, rotPending = false,
     venomLeft = 0, venomPending = false,
     gravLeft = 0, gravPending = false, gravUp = true,
-    riftLeft = 0, riftPending = false;
+    riftLeft = 0, riftPending = false,
+    collapseLeft = 0, collapsePending = false, collapseLevel = 0, collapsedCells = new Set(),
+    scrambleLeft = 0, scramblePending = false;
 function tickCurse(){
   const def = currentLevelDef();
   if(!def) return;
@@ -4237,6 +4351,8 @@ function tickCurse(){
   if(def.venom){ if(--venomLeft <= 0){ venomLeft = def.venom; venomPending = true; } }
   if(def.gravity){ if(--gravLeft <= 0){ gravLeft = def.gravity; gravPending = true; } }
   if(def.rift){ if(--riftLeft <= 0){ riftLeft = def.rift; riftPending = true; } }
+  if(def.collapse){ if(--collapseLeft <= 0){ collapseLeft = def.collapse; collapsePending = true; } }
+  if(def.scramble){ if(--scrambleLeft <= 0){ scrambleLeft = def.scramble; scramblePending = true; } }
 }
 function applyCurse(){
   const cands = [];
@@ -4551,6 +4667,69 @@ function riftFX(r0, c, len){
   setTimeout(function(){ if(v.parentNode) v.parentNode.removeChild(v); }, 680);
 }
 
+/* ---------- 崩塌（第二十/二十二关 collapse 机制）----------
+   每消耗 collapse 步，棋盘当前最外一圈（任意正交邻居非激活的激活格）碎裂坠落、
+   整片可用空间向内收一圈；collapsedCells 标记后 isActive 会把它判为非激活，
+   下落补位也不会再填这些格子。最多收 COLLAPSE_CAP 圈，避免把棋盘收没。
+   与重力平移不同 —— 崩塌是「原地消失」，不搬动其它棋子。 */
+async function applyCollapse(){
+  const _cdef = currentLevelDef();
+  const CAP = (_cdef && _cdef.collapseCap) || 2;
+  if(collapseLevel >= CAP) return;
+  collapseLevel++;
+  const ring = [];
+  forEachActive(function(r,c){
+    if(!isActive(r-1,c) || !isActive(r+1,c) || !isActive(r,c-1) || !isActive(r,c+1)) ring.push([r,c]);
+  });
+  for(let i=0;i<ring.length;i++){
+    const r=ring[i][0], c=ring[i][1];
+    if(collapsedCells.has(r+','+c)) continue;
+    collapsedCells.add(r+','+c);
+    const t = board[r][c];
+    if(t){
+      if(settings.anim) burst(r, c, '#caa472');
+      if(t.el && t.el.parentNode) t.el.parentNode.removeChild(t.el);
+      board[r][c] = null;
+    }
+  }
+  collapseFX();
+  SFX.crack(); buzz([16,36,16]);
+  toast(T('collapse_hit'));
+  if(settings.anim) await sleep(220);
+  settleBoard();
+}
+function collapseFX(){
+  if(!settings.anim) return;
+  shockWave(Math.floor(ROWS/2), Math.floor(COLS/2), '#caa472');
+}
+
+/* ---------- 错乱（第二十一/二十二关 scramble 机制）----------
+   每消耗 scramble 步，随机选一片完整的 3×3 激活区域，把其中普通棋子花色全部
+   随机重排（不增不减、不动位置）。刚摆好的阵型瞬间洗牌，逼你随机应变；
+   重排若凑出新的消除，会在 resolveBoard 里自动续消（玩家白赚）。 */
+async function applyScramble(){
+  const cells = [];
+  forEachActive(function(r,c){
+    let ok = isActive(r-1,c)&&isActive(r+1,c)&&isActive(r,c-1)&&isActive(r,c+1)
+          && isActive(r-1,c-1)&&isActive(r-1,c+1)&&isActive(r+1,c-1)&&isActive(r+1,c+1);
+    if(ok) cells.push([r,c]);
+  });
+  if(!cells.length) return;
+  const cc = cells[(Math.random()*cells.length)|0];
+  const cr = cc[0], cf = cc[1];
+  for(let dr=-1;dr<=1;dr++) for(let dc=-1;dc<=1;dc++){
+    const t = board[cr+dr][cf+dc];
+    if(t && !t.rock && !t.caged && !t.frozen && !t.effect){
+      t.type = rand(TYPES.length);
+      renderTileFace(t);
+      if(settings.anim) burst(cr+dr, cf+dc, '#9be7ff');
+    }
+  }
+  SFX.swap(); buzz([10,20,10]);
+  toast(T('scramble_hit'));
+  if(settings.anim) await sleep(160);
+}
+
 async function resolveBoard(){
   let combo = 0;
   while(true){
@@ -4567,6 +4746,8 @@ async function resolveBoard(){
       if(venomPending){ venomPending = false; applyVenom(); acted = true; }
       if(gravPending){ gravPending = false; await applyGravity(); acted = true; }
       if(riftPending){ riftPending = false; await applyRift(); acted = true; }
+      if(collapsePending){ collapsePending = false; await applyCollapse(); acted = true; }
+      if(scramblePending){ scramblePending = false; await applyScramble(); acted = true; }
       if(acted && findMatchInfo().hit.size) continue;
       break;
     }
@@ -5062,9 +5243,9 @@ function startLevel(no){
   cageList = def.cages || (def.cage ? [def.cage] : []);
   frozenList = def.frozen || [];
   rockList = def.rocks || [];
-  curseLeft = def.curse || 0; cursePending = false; petrifyLeft = def.petrify || 0; petrifyPending = false; blindLeft = def.blind || 0; blindPending = false; devourLeft = def.devour || 0; devourPending = false; rotLeft = def.rotate || 0; rotPending = false; venomLeft = def.venom || 0; venomPending = false; gravLeft = def.gravity || 0; gravPending = false; gravUp = true; riftLeft = def.rift || 0; riftPending = false;   /* 侵蚀/迷雾/吞噬/齿轮计数（第十~十六关） */
+  curseLeft = def.curse || 0; cursePending = false; petrifyLeft = def.petrify || 0; petrifyPending = false; blindLeft = def.blind || 0; blindPending = false; devourLeft = def.devour || 0; devourPending = false; rotLeft = def.rotate || 0; rotPending = false; venomLeft = def.venom || 0; venomPending = false; gravLeft = def.gravity || 0; gravPending = false; gravUp = true; riftLeft = def.rift || 0; riftPending = false; collapseLeft = def.collapse || 0; collapsePending = false; collapseLevel = 0; collapsedCells = new Set(); scrambleLeft = def.scramble || 0; scramblePending = false;   /* 侵蚀/迷雾/吞噬/齿轮/崩塌/错乱计数（第十~十六关） */
   /* 主题背景：按关卡 bg 字段切换（夜幕/黄昏/糖果/派对/星云），出关恢复 */
-  ['night','sunset','candy','party','galaxy','abyss','lava','mirror','doom','brass','mist','void','swamp','gravity','chaos'].forEach(function(k){
+  ['night','sunset','candy','party','galaxy','abyss','lava','mirror','doom','brass','mist','void','swamp','gravity','chaos','rubble','prism','ruin'].forEach(function(k){
     document.body.classList.toggle(k, def.bg === k);
   });
   if(def.bg) ensureSkyDecor(def.bg);
@@ -5081,6 +5262,8 @@ function startLevel(no){
   if(def.venom) setTimeout(function(){ toast(T('venom_note')); }, 1500);
   if(def.gravity) setTimeout(function(){ toast(T('gravity_note')); }, 1500);
   if(def.rift) setTimeout(function(){ toast(T('rift_note')); }, 1500);
+  if(def.collapse) setTimeout(function(){ toast(T('collapse_note')); }, 1500);
+  if(def.scramble) setTimeout(function(){ toast(T('scramble_note')); }, 1500);
   /* 关卡开场横幅：棋盘就位后大字砸入 */
   if(settings.anim) levelIntroFX(def.no);
 }
@@ -5097,7 +5280,7 @@ function restart(){
      重新上锁（复活走 doRevive()，保留棋盘，所以已破的笼 / 冰保持原状）。
      果冻是格子级状态，restart 要重置；doRevive 保留棋盘，所以不清果冻。 */
   jellyGrid = initJellyGrid((currentLevelDef() || {}).jellies);
-  { const _d = (currentLevelDef() || {}); curseLeft = _d.curse || 0; cursePending = false; petrifyLeft = _d.petrify || 0; petrifyPending = false; blindLeft = _d.blind || 0; blindPending = false; devourLeft = _d.devour || 0; devourPending = false; rotLeft = _d.rotate || 0; rotPending = false; venomLeft = _d.venom || 0; venomPending = false; gravLeft = _d.gravity || 0; gravPending = false; gravUp = true; riftLeft = _d.rift || 0; riftPending = false; }
+  { const _d = (currentLevelDef() || {}); curseLeft = _d.curse || 0; cursePending = false; petrifyLeft = _d.petrify || 0; petrifyPending = false; blindLeft = _d.blind || 0; blindPending = false; devourLeft = _d.devour || 0; devourPending = false; rotLeft = _d.rotate || 0; rotPending = false; venomLeft = _d.venom || 0; venomPending = false; gravLeft = _d.gravity || 0; gravPending = false; gravUp = true; riftLeft = _d.rift || 0; riftPending = false; collapseLeft = _d.collapse || 0; collapsePending = false; collapseLevel = 0; collapsedCells = new Set(); scrambleLeft = _d.scramble || 0; scramblePending = false; }
   score = 0; reviveUsed = false;
   boosters = Object.assign({}, BOOSTER_MAX);   /* 道具每关复原 */
   deselect(); boosterMode = null;
