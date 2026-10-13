@@ -32,6 +32,7 @@
     color:#fff; text-align:center; padding:5px 10px;
     box-shadow: 0 6px 14px rgba(63,111,192,.3), inset 0 1.5px 0 rgba(255,255,255,.5);
     min-width:64px;
+    min-height:54px; display:flex; flex-direction:column; justify-content:center; align-items:center;
   }
   .stat-panel .label { font-size:13px; font-weight:700; text-shadow:0 1px 1px rgba(0,0,0,.25); }
   .stat-panel .value { font-size:26px; font-weight:900; line-height:1.05; text-shadow:0 2px 2px rgba(0,0,0,.2); }
@@ -81,7 +82,7 @@
   .goal-item { padding:2px 6px 2px 4px; gap:4px; }
   .goal-item .g-icon { width:20px; height:20px; }
   .goal-item .g-num { font-size:14px; min-width:12px; }
-  #gear-btn { width:40px; height:40px; font-size:19px; }
+  #gear-btn { width:44px; height:44px; font-size:20px; }
 
   /* 极窄屏（<=420）：先隐藏装饰性的「目标」标签，把空间让给三个目标图标 */
   @media (max-width:420px) {
@@ -641,6 +642,10 @@
 
   .panel-btns { display:flex; gap:10px; justify-content:center; margin-top:18px; flex-wrap:wrap; }
   .panel-btns .btn { font-size:16px; padding:9px 18px; }
+  /* 结算弹窗按钮：两列等宽对齐（flex 换行自动补位，「返回首页」独占整行；
+     输局隐藏「下一关」时也能自动排齐，不会留空洞） */
+  #result-overlay .panel-btns .btn { flex:1 1 calc(50% - 5px); padding:10px 6px; }
+  #result-overlay .panel-btns .btn:last-child { flex-basis:100%; }
 
   /* 作者面板社交链接：原生 <a> 跳转，不依赖 JS（合规版 CSP 也放行 href）。
      不用 flex gap —— 基线 Chrome 61 的 flex 容器不支持，间距用 margin。 */
