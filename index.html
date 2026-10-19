@@ -169,6 +169,28 @@
   }
   @keyframes fusePulse { from { transform:scale(1); } to { transform:scale(1.16); } }
   @keyframes fuseGlow  { from { opacity:.5; } to { opacity:1; } }
+  /* 缠藤（第二十七关 vine）：被缠的棋子暂时变石头，脸上盖一层藤绿 +
+     步数角标（data-vine，绿色系区分引信的橙色）。到期/被震开由 JS 摘类。 */
+  .tile .face.vine { position:relative; }
+  .tile .face.vine::after {
+    content:attr(data-vine);
+    position:absolute; top:-4px; right:-4px; z-index:3;
+    min-width:20px; height:20px; padding:0 4px; box-sizing:border-box;
+    border-radius:999px; background:linear-gradient(180deg,#8ed86a,#3a8a2a);
+    border:2px solid rgba(255,255,255,.9);
+    color:#fff; font-size:13px; font-weight:900; line-height:16px; text-align:center;
+    box-shadow:0 2px 6px rgba(40,120,30,.6);
+    animation:vinePulse .9s ease-in-out infinite alternate;
+    pointer-events:none;
+  }
+  .tile .face.vine::before {
+    content:""; position:absolute; inset:-3px; border-radius:50%;
+    border:2px solid rgba(110,200,90,.9);
+    box-shadow:0 0 10px rgba(90,180,70,.8), inset 0 0 8px rgba(120,200,100,.5);
+    animation:vinePulse .9s ease-in-out infinite alternate;
+    pointer-events:none;
+  }
+  @keyframes vinePulse { from { transform:scale(1); opacity:.75; } to { transform:scale(1.12); opacity:1; } }
   /* 石头：不可交换/不匹配/道具砸不动，消除紧邻棋子时震碎。纯 CSS 灰岩。 */
   .face.rock-face {
     background:
@@ -1321,6 +1343,22 @@
   /* 磁暴主题（第二十四关 magnetic）：墨蓝电弧 + 青紫磁场 */
   body.magnetic {
     background: radial-gradient(130% 120% at 50% 42%, #1d4a7a 0%, #16306a 34%, #0d1740 68%, #05081c 100%) fixed;
+  }
+  /* 幻彩主题（第二十五关 aurora）：粉紫极光渐变 */
+  body.aurora {
+    background: radial-gradient(125% 115% at 50% 40%, #5a2a7a 0%, #3a1656 38%, #200a38 70%, #0a0214 100%) fixed;
+  }
+  /* 风袭主题（第二十六关 gale）：青蓝风纹渐变 */
+  body.gale {
+    background: radial-gradient(130% 120% at 50% 45%, #1d6a7a 0%, #144a6a 36%, #0c2a4a 70%, #04101c 100%) fixed;
+  }
+  /* 密林主题（第二十七关 jungle）：深绿林间渐变 */
+  body.jungle {
+    background: radial-gradient(125% 120% at 50% 42%, #1d5a2a 0%, #143a20 38%, #0a2414 70%, #040e08 100%) fixed;
+  }
+  /* 花园主题（第二十八关 bloom）：暖粉花海渐变 */
+  body.bloom {
+    background: radial-gradient(125% 118% at 50% 42%, #7a2a5a 0%, #55184a 38%, #33103a 70%, #14041a 100%) fixed;
   }
   /* 磁场光环（第二十四关 magnet）：从重心荡开的青蓝光环 */
   .magnet-ring {
@@ -2550,10 +2588,136 @@ const LEVELS = [
     bg: 'magnetic',
     winImg: 'naiwa/start/start_bj.webp',
   },
+
+  /* ============ 第二十五关：幻彩秘境 ============
+     铃铛形棋盘（81 格，每列激活格连续）。新机制「幻彩」（hue）：
+     每走 4 步，随机两种花色**互换颜色** —— 全盘该两色的棋子瞬间换皮。
+     不挪位置、只换色，刚规划好的配色路线说变就变。
+     素材：naiwa/1 精选（b/c/e/g/i，天使小鸡 c 首次参战）。
+     障碍：牢笼 4 + 石头 5 + 冰封 5 + 果冻 8。
+     幻彩主题 bg:'aurora'：粉紫极光渐变。 */
+  {
+    no: 25,
+    rows: 11,
+    cols: 11,
+    moves: 29,
+    needs: [25, 20, 15],
+    themeColor: '#c86ae0',
+    hue: 4,
+    types: [
+      { key:'25a', img:'naiwa/1/b.webp', color:'#7ec3f5', bg:'#cfe8ff' },
+      { key:'25b', img:'naiwa/1/c.webp', color:'#ffcf3e', bg:'#fff3c4' },
+      { key:'25c', img:'naiwa/1/e.webp', color:'#e8704a', bg:'#ffd4c4' },
+      { key:'25d', img:'naiwa/1/g.webp', color:'#c98ff5', bg:'#ecd8ff' },
+      { key:'25e', img:'naiwa/1/i.webp', color:'#7ed957', bg:'#d8f8c0' },
+    ],
+    shape: function(r,c){ return Math.abs(c-5) <= Math.min(2 + r, 12 - r); },
+    cages: [ { r:5, c:3 }, { r:5, c:7 }, { r:3, c:5 }, { r:7, c:5 } ],
+    rocks: [ {r:4,c:4},{r:4,c:6},{r:6,c:4},{r:6,c:6},{r:5,c:5} ],
+    frozen: [ {r:2,c:4},{r:2,c:6},{r:8,c:4},{r:8,c:6},{r:5,c:2} ],
+    jellies: [ {r:4,c:5,layer:1},{r:6,c:5,layer:1},{r:5,c:4},{r:5,c:6},{r:3,c:5},{r:7,c:5},{r:4,c:3},{r:6,c:7} ],
+    bg: 'aurora',
+    winImg: 'naiwa/start/start_bj.webp',
+  },
+
+  /* ============ 第二十六关：风袭幽谷 ============
+     V 形深谷棋盘（71 格，谷底贯通、两翼收窄）。新机制「风袭」（storm）：
+     每走 5 步，随机一行**或**一列的棋子沿激活格循环挪一格（方向随机）。
+     磁暴吸的是「一种颜色」，风袭推的是「一整条线」—— 谷越窄风越猛。
+     素材：naiwa/5 全员（暖色陶土系）+ 10/a（紫恶魔压阵）。
+     障碍：石头 5 + 冰封 4 + 果冻 8（V 形窄，不放牢笼）。
+     风袭主题 bg:'gale'：青蓝风纹渐变。 */
+  {
+    no: 26,
+    rows: 11,
+    cols: 11,
+    moves: 24,
+    needs: [22, 18, 14],
+    themeColor: '#3ac8c0',
+    storm: 5,
+    types: [
+      { key:'26a', img:'naiwa/5/5a.webp', color:'#ffcf3e', bg:'#ffe066', glow:1 },
+      { key:'26b', img:'naiwa/5/5b.webp', color:'#c98a4b', bg:'#f0d8b8' },
+      { key:'26c', img:'naiwa/5/5c.webp', color:'#f5e6a8', bg:'#faf2d4' },
+      { key:'26d', img:'naiwa/5/5d.webp', color:'#f0d060', bg:'#ffe9a0' },
+      { key:'26e', img:'naiwa/10/a.webp', color:'#8b5cf6', bg:'#e4d4ff' },
+    ],
+    shape: function(r,c){ return r >= Math.abs(c-5) * 2 - 1; },
+    rocks: [ {r:5,c:5},{r:7,c:4},{r:7,c:6},{r:9,c:2},{r:9,c:8} ],
+    frozen: [ {r:6,c:5},{r:8,c:5},{r:8,c:3},{r:8,c:7} ],
+    jellies: [ {r:10,c:5,layer:1},{r:10,c:4},{r:10,c:6},{r:9,c:5},{r:9,c:3},{r:9,c:7},{r:10,c:2},{r:10,c:8} ],
+    bg: 'gale',
+    winImg: 'naiwa/start/start_bj.webp',
+  },
+
+  /* ============ 第二十七关：缠藤密林 ============
+     阶梯金字塔棋盘（85 格，四段展宽）。新机制「缠藤」（vine）：
+     每走 4 步，一根藤蔓缠住一枚普通棋子 —— 被缠的棋子**暂时变成石头**
+     （不可换、不可消），3 步后自动松开；消除紧邻可以提前解救。
+     和引信的区别：引信到期烧成**永久**石头，缠藤到期会**解开还原**。
+     素材：naiwa/7 全员（清新草地系）+ 8/a（粉蛙点睛）。
+     障碍：牢笼 4 + 石头 6 + 冰封 4 + 果冻 10。
+     密林主题 bg:'jungle'：深绿林间渐变。 */
+  {
+    no: 27,
+    rows: 11,
+    cols: 11,
+    moves: 29,
+    needs: [25, 20, 15],
+    themeColor: '#5ab04a',
+    vine: 4,
+    types: [
+      { key:'27a', img:'naiwa/7/a.webp', color:'#ffd54d', bg:'#ffe37a' },
+      { key:'27b', img:'naiwa/7/b.webp', color:'#7ec3f5', bg:'#9cd0ff' },
+      { key:'27c', img:'naiwa/7/c.webp', color:'#ff7aa8', bg:'#ffb8d4' },
+      { key:'27d', img:'naiwa/7/d.webp', color:'#6ab04c', bg:'#b8e898' },
+      { key:'27e', img:'naiwa/8/a.webp', color:'#f06aa8', bg:'#ffb0d4' },
+    ],
+    shape: function(r,c){ return c >= (r < 3 ? 3 : r < 6 ? 2 : r < 9 ? 1 : 0)
+                              && c <= (r < 3 ? 7 : r < 6 ? 8 : r < 9 ? 9 : 10); },
+    cages: [ { r:5, c:5 }, { r:4, c:4 }, { r:4, c:6 }, { r:6, c:5 } ],
+    rocks: [ {r:2,c:5},{r:8,c:2},{r:8,c:8},{r:10,c:1},{r:10,c:9},{r:6,c:5} ],
+    frozen: [ {r:1,c:5},{r:7,c:4},{r:7,c:6},{r:9,c:5} ],
+    jellies: [ {r:0,c:5},{r:1,c:4},{r:1,c:6},{r:5,c:2},{r:5,c:8},{r:9,c:4},{r:9,c:6},{r:10,c:5,layer:1},{r:3,c:3},{r:3,c:7} ],
+    bg: 'jungle',
+    winImg: 'naiwa/start/start_bj.webp',
+  },
+
+  /* ============ 第二十八关：馈赠花园 ============
+     王冠棋盘（109 格，五根尖刺）。新机制「馈赠」（gift）—— 全系列第一个
+     **帮助向**机制：每走 5 步，上天随机把一对相邻的普通棋子变成同色。
+     是机会也是干扰：接得住就是白赚的消除，接不住会打乱你的阵型。
+     素材：naiwa/10 全员（紫恶魔家族）。
+     障碍：牢笼 4 + 石头 6 + 冰封 5 + 果冻 12（大棋盘配大目标）。
+     花园主题 bg:'bloom'：暖粉花海渐变。 */
+  {
+    no: 28,
+    rows: 11,
+    cols: 11,
+    moves: 31,
+    needs: [26, 20, 15],
+    themeColor: '#f06aa8',
+    gift: 5,
+    types: [
+      { key:'28a', img:'naiwa/10/a.webp', color:'#8b5cf6', bg:'#e4d4ff' },
+      { key:'28b', img:'naiwa/10/b.webp', color:'#ff5fa2', bg:'#ffc4de' },
+      { key:'28c', img:'naiwa/10/c.webp', color:'#4a4a5a', bg:'#d4d8e8' },
+      { key:'28d', img:'naiwa/10/d.webp', color:'#ffcf3e', bg:'#ffe066', glow:1 },
+      { key:'28e', img:'naiwa/10/e.webp', color:'#7ec3f5', bg:'#cfe8ff' },
+    ],
+    shape: function(r,c){ return (c % 2 === 1) ? true : r >= 2; },
+    cages: [ { r:5, c:2 }, { r:5, c:8 }, { r:3, c:4 }, { r:3, c:6 } ],
+    rocks: [ {r:5,c:5},{r:4,c:5},{r:6,c:5},{r:2,c:2},{r:2,c:8},{r:8,c:5} ],
+    frozen: [ {r:7,c:4},{r:7,c:6},{r:9,c:4},{r:9,c:6},{r:0,c:5} ],
+    jellies: [ {r:10,c:1,layer:1},{r:10,c:3,layer:1},{r:10,c:5,layer:1},{r:10,c:7,layer:1},{r:10,c:9,layer:1},
+               {r:9,c:1},{r:9,c:3},{r:9,c:5},{r:9,c:7},{r:9,c:9},{r:8,c:1},{r:8,c:9} ],
+    bg: 'bloom',
+    winImg: 'naiwa/start/start_bj.webp',
+  },
 ];
 
 /* 关卡选择面板至少铺这么多格，超出的格子显示为「敬请期待」 */
-const LEVEL_SLOTS = 24;
+const LEVEL_SLOTS = 28;
 
 /* 当前关的图标。startLevel() 时随关卡切换，其余逻辑一律读这个变量 */
 let TYPES = LEVELS[0].types;
@@ -2607,6 +2771,10 @@ const I18N = {
     fuse_hit:'引信点着了！3 步内消掉它', fuse_burn:'轰！一枚棋子烧成了石头',
     fuse_note:'本关：每 4 步点着一枚棋子，3 步内没消掉就烧成石头',
     magnet_hit:'磁暴！一种花色被吸向棋盘中心', magnet_note:'本关：每 5 步随机一种花色被磁场吸向中心一格',
+    hue_hit:'幻彩！两种花色互换了颜色', hue_note:'本关：每 4 步随机两种花色互换颜色',
+    storm_hit:'风袭！一条线上的棋子被吹动了一格', storm_note:'本关：每 5 步随机一行或一列被吹得循环挪一格',
+    vine_hit:'缠藤！一枚棋子被藤蔓缠住了', vine_free:'藤蔓被震开了！', vine_note:'本关：每 4 步一根藤蔓缠住一枚棋子，3 步后自动松开（消除紧邻可提前解救）',
+    gift_hit:'馈赠！一对相邻棋子变成了同色', gift_note:'本关：每 5 步上天送你一对同色相邻棋子，抓住机会！',
     share_win:'成功通关 ·', share_try:'挑战 ·',
     start:'开始', pick_level:'选择关卡',
     home_sub:'滑 动 消 除 · 轻 松 一 夏',
@@ -2682,6 +2850,10 @@ const I18N = {
     fuse_hit:'Fuse lit! Clear it within 3 moves', fuse_burn:'Boom! A tile burned into stone',
     fuse_note:'Fuse: a tile is lit every 4 moves; clear it in 3 moves or it turns to stone',
     magnet_hit:'Magnet storm! A color is pulled to the center', magnet_note:'Magnet: every 5 moves a random color is pulled one step toward the center',
+    hue_hit:'Kaleidoscope! Two colors swapped their coats', hue_note:'Kaleido: every 4 moves two random colors swap across the board',
+    storm_hit:'Gust! A whole line of tiles slid one cell', storm_note:'Gust: every 5 moves a random row or column cycles by one cell',
+    vine_hit:'Entangled! A tile is wrapped in vines', vine_free:'The vine was shaken loose!', vine_note:'Vines: every 4 moves a tile is wrapped for 3 moves (clear adjacent tiles to free it early)',
+    gift_hit:'A gift! Two adjacent tiles turned same-colored', gift_note:'Gift: every 5 moves a free same-color pair appears — seize it!',
     share_win:'Level Clear ·', share_try:'Challenge ·',
     start:'Start Game', pick_level:'Levels',
     home_sub:'Swipe · Match · Relax',
@@ -4261,6 +4433,7 @@ async function clearSet(hit, combo, info){
     rockBreak.forEach(j=>{
       const rr=(j/COLS)|0, cc=j%COLS, t=board[rr][cc];
       if(!t) return;
+      if(t.vine){ vineClear(t); toast(T('vine_free')); return; }   /* 缠藤被震开：提前解救，不销毁 */
       board[rr][cc] = null;
       breakRockFx(rr, cc, t.el);
     });
@@ -4457,7 +4630,11 @@ let curseLeft = 0, cursePending = false, petrifyLeft = 0, petrifyPending = false
     collapseLeft = 0, collapsePending = false, collapseLevel = 0, collapsedCells = new Set(),
     scrambleLeft = 0, scramblePending = false,
     fuseLeft = 0, fusePending = false,
-    magnetLeft = 0, magnetPending = false;
+    magnetLeft = 0, magnetPending = false,
+    hueLeft = 0, huePending = false,
+    stormLeft = 0, stormPending = false,
+    vineLeft = 0, vinePending = false,
+    giftLeft = 0, giftPending = false;
 function tickCurse(){
   const def = currentLevelDef();
   if(!def) return;
@@ -4473,8 +4650,14 @@ function tickCurse(){
   if(def.scramble){ if(--scrambleLeft <= 0){ scrambleLeft = def.scramble; scramblePending = true; } }
   if(def.fuse){ if(--fuseLeft <= 0){ fuseLeft = def.fuse; fusePending = true; } }
   if(def.magnet){ if(--magnetLeft <= 0){ magnetLeft = def.magnet; magnetPending = true; } }
+  if(def.hue){ if(--hueLeft <= 0){ hueLeft = def.hue; huePending = true; } }
+  if(def.storm){ if(--stormLeft <= 0){ stormLeft = def.storm; stormPending = true; } }
+  if(def.vine){ if(--vineLeft <= 0){ vineLeft = def.vine; vinePending = true; } }
+  if(def.gift){ if(--giftLeft <= 0){ giftLeft = def.gift; giftPending = true; } }
   /* 引信倒计时每步都走（不管这步有没有新点着的），到期就烧成石头 */
   tickFuses();
+  /* 缠藤倒计时同理：每步递减，到期自动解开 */
+  tickVines();
 }
 function applyCurse(){
   const cands = [];
@@ -4974,6 +5157,162 @@ function magnetFX(r, c){
   setTimeout(function(){ if(v.parentNode) v.parentNode.removeChild(v); }, 700);
 }
 
+/* ---------- 幻彩（第二十五关 hue 机制）----------
+   每消耗 hue 步，随机挑两种在场花色**互换颜色**：全盘该两色的普通棋子
+   瞬间换皮（不动位置、不动特效）。和错乱的区别：错乱是局部重掷，
+   幻彩是全局换色 —— 你刚拼好的配色路线可能整条作废，也可能整条白送。 */
+async function applyHue(){
+  const counts = {};
+  forEachActive(function(r,c){
+    const t = board[r][c];
+    if(t && !t.rock && !t.caged && !t.frozen && !t.effect) counts[t.type] = (counts[t.type]||0)+1;
+  });
+  const keys = Object.keys(counts);
+  if(keys.length < 2) return;
+  keys.sort(function(a,b){ return counts[b] - counts[a]; });
+  const a = keys[(Math.random()*Math.min(3, keys.length))|0];
+  let b = keys[(Math.random()*keys.length)|0];
+  if(b === a) b = keys[(keys.indexOf(a)+1) % keys.length];
+  if(b === a) return;
+  forEachActive(function(r,c){
+    const t = board[r][c];
+    if(!t || t.rock || t.caged || t.frozen || t.effect) return;
+    if(t.type == a){ t.type = +b; renderTileFace(t); if(settings.anim) burst(r,c,'#c89bff'); }
+    else if(t.type == b){ t.type = +a; renderTileFace(t); if(settings.anim) burst(r,c,'#ff9bd0'); }
+  });
+  SFX.swap(); buzz([12,24,12]);
+  toast(T('hue_hit'));
+  if(settings.anim) await sleep(180);
+}
+
+/* ---------- 风袭（第二十六关 storm 机制）----------
+   每消耗 storm 步，随机一行**或**一列，把这条线上的棋子沿激活格
+   **循环挪一格**（方向随机，末位卷回首位）。磁暴吸的是「一种颜色」，
+   风袭推的是「一整条线」；窄谷里随便一吹，阵型就换了天地。 */
+async function applyStorm(){
+  const lines = [];
+  for(let r=0;r<ROWS;r++){
+    let n=0, ok=true;
+    for(let c=0;c<COLS;c++){
+      if(!isActive(r,c)) continue;
+      n++;
+      const t = board[r][c];
+      if(t && t.caged) ok = false;   /* 牢笼属性在棋子身上，带牢笼的线不吹 */
+    }
+    if(n >= 3 && ok) lines.push({dir:'row', i:r});
+  }
+  for(let c=0;c<COLS;c++){
+    let n=0, ok=true;
+    for(let r=0;r<ROWS;r++){
+      if(!isActive(r,c)) continue;
+      n++;
+      const t = board[r][c];
+      if(t && t.caged) ok = false;
+    }
+    if(n >= 3 && ok) lines.push({dir:'col', i:c});
+  }
+  if(!lines.length) return;
+  const L = lines[(Math.random()*lines.length)|0];
+  const cells = [];
+  if(L.dir === 'row'){ for(let c=0;c<COLS;c++) if(isActive(L.i,c)) cells.push([L.i,c]); }
+  else { for(let r=0;r<ROWS;r++) if(isActive(r,L.i)) cells.push([r,L.i]); }
+  if(Math.random() < 0.5) cells.reverse();   /* 随机风向 */
+  const dur = settings.anim ? 320 : 0;
+  const last = cells[cells.length-1];
+  const carry = board[last[0]][last[1]];
+  for(let i=cells.length-1;i>0;i--){
+    board[cells[i][0]][cells[i][1]] = board[cells[i-1][0]][cells[i-1][1]];
+  }
+  board[cells[0][0]][cells[0][1]] = carry;
+  for(let j=0;j<cells.length;j++){
+    const t = board[cells[j][0]][cells[j][1]];
+    if(t && (t.r !== cells[j][0] || t.c !== cells[j][1])) placeTile(t, cells[j][0], cells[j][1], dur);
+  }
+  const mid = cells[(cells.length/2)|0];
+  if(settings.anim) shockWave(mid[0], mid[1], '#7fe0d8');
+  SFX.swap(); buzz([10,26,10]);
+  toast(T('storm_hit'));
+  if(settings.anim) await sleep(dur + 80);
+}
+
+/* ---------- 缠藤（第二十七关 vine 机制）----------
+   每消耗 vine 步，一根藤蔓缠住一枚普通棋子：被缠的棋子**暂时变成石头**
+   （不可换、不可消），3 步后自动松开还原。消除紧邻可以提前解救 ——
+   石头震碎逻辑里对带 vine 标记的棋子网开一面（只解藤、不销毁）。
+   和引信相反：引信到期烧成永久石头，缠藤到期自动解开。 */
+const VINE_TURNS = 3;
+function vineMark(t){
+  t.vine = VINE_TURNS;
+  t.rock = true;                 /* 藤蔓期等同石头：不可换、不可消 */
+  const f = t.el && t.el.firstChild;
+  if(f){ f.classList.add('vine'); f.dataset.vine = String(VINE_TURNS); }
+}
+function vineClear(t){
+  t.vine = 0;
+  t.rock = false;
+  const f = t.el && t.el.firstChild;
+  if(f){ f.classList.remove('vine'); delete f.dataset.vine; }
+  renderTileFace(t);
+  if(settings.anim) burst(t.r, t.c, '#7ac86a');
+}
+function applyVine(){
+  const cands = [];
+  let live = 0;
+  forEachActive(function(r,c){
+    const t = board[r][c];
+    if(t && !t.rock && !t.caged && !t.frozen && !t.effect && !t.venom) cands.push(t);
+    if(t && t.vine) live++;
+  });
+  if(!cands.length || live >= 4) return;   /* 盘上最多同时 4 根藤 */
+  const t = cands[(Math.random()*cands.length)|0];
+  vineMark(t);
+  if(settings.anim) burst(t.r, t.c, '#7ac86a');
+  SFX.invalid(); buzz([15,25,15]);
+  toast(T('vine_hit'));
+}
+function tickVines(){
+  forEachActive(function(r,c){
+    const t = board[r][c];
+    if(t && t.vine > 0 && t.rock){
+      t.vine--;
+      if(t.vine > 0){
+        const f = t.el && t.el.firstChild;
+        if(f) f.dataset.vine = String(t.vine);
+      } else {
+        vineClear(t);
+      }
+    }
+  });
+}
+
+/* ---------- 馈赠（第二十八关 gift 机制）----------
+   全系列第一个**帮助向**机制：每消耗 gift 步，随机挑一对相邻的普通棋子，
+   把其中一枚的花色改成另一枚 —— 白送你一个「至少能凑成对」的机会。
+   接得住就是免费消除（凑出三连会在 resolveBoard 里自动结算），
+   接不住也会打乱你刚摆好的阵型：机会与风险各半。 */
+async function applyGift(){
+  const pairs = [];
+  forEachActive(function(r,c){
+    const t = board[r][c];
+    if(!t || t.rock || t.caged || t.frozen || t.effect) return;
+    const nb = [[r-1,c],[r+1,c],[r,c-1],[r,c+1]];
+    for(let i=0;i<nb.length;i++){
+      const nr = nb[i][0], nc = nb[i][1];
+      if(!isActive(nr,nc)) continue;
+      const o = board[nr][nc];
+      if(o && !o.rock && !o.caged && !o.frozen && !o.effect && !o.venom && o.type !== t.type) pairs.push([t,o]);
+    }
+  });
+  if(!pairs.length) return;
+  const p = pairs[(Math.random()*pairs.length)|0];
+  p[1].type = p[0].type;
+  renderTileFace(p[1]);
+  if(settings.anim){ burst(p[0].r, p[0].c, '#ffd76a'); burst(p[1].r, p[1].c, '#ffd76a'); }
+  SFX.swap(); buzz([12,20,12]);
+  toast(T('gift_hit'));
+  if(settings.anim) await sleep(160);
+}
+
 async function resolveBoard(){
   let combo = 0;
   while(true){
@@ -4994,6 +5333,10 @@ async function resolveBoard(){
       if(scramblePending){ scramblePending = false; await applyScramble(); acted = true; }
       if(fusePending){ fusePending = false; applyFuse(); acted = true; }
       if(magnetPending){ magnetPending = false; await applyMagnet(); acted = true; }
+      if(huePending){ huePending = false; await applyHue(); acted = true; }
+      if(stormPending){ stormPending = false; await applyStorm(); acted = true; }
+      if(vinePending){ vinePending = false; applyVine(); acted = true; }
+      if(giftPending){ giftPending = false; await applyGift(); acted = true; }
       if(acted && findMatchInfo().hit.size) continue;
       break;
     }
@@ -5489,9 +5832,9 @@ function startLevel(no){
   cageList = def.cages || (def.cage ? [def.cage] : []);
   frozenList = def.frozen || [];
   rockList = def.rocks || [];
-  curseLeft = def.curse || 0; cursePending = false; petrifyLeft = def.petrify || 0; petrifyPending = false; blindLeft = def.blind || 0; blindPending = false; devourLeft = def.devour || 0; devourPending = false; rotLeft = def.rotate || 0; rotPending = false; venomLeft = def.venom || 0; venomPending = false; gravLeft = def.gravity || 0; gravPending = false; gravUp = true; riftLeft = def.rift || 0; riftPending = false; collapseLeft = def.collapse || 0; collapsePending = false; collapseLevel = 0; collapsedCells = new Set(); scrambleLeft = def.scramble || 0; scramblePending = false; fuseLeft = def.fuse || 0; fusePending = false; magnetLeft = def.magnet || 0; magnetPending = false;   /* 侵蚀/迷雾/吞噬/齿轮/崩塌/错乱/引信/磁暴计数 */
+  curseLeft = def.curse || 0; cursePending = false; petrifyLeft = def.petrify || 0; petrifyPending = false; blindLeft = def.blind || 0; blindPending = false; devourLeft = def.devour || 0; devourPending = false; rotLeft = def.rotate || 0; rotPending = false; venomLeft = def.venom || 0; venomPending = false; gravLeft = def.gravity || 0; gravPending = false; gravUp = true; riftLeft = def.rift || 0; riftPending = false; collapseLeft = def.collapse || 0; collapsePending = false; collapseLevel = 0; collapsedCells = new Set(); scrambleLeft = def.scramble || 0; scramblePending = false; fuseLeft = def.fuse || 0; fusePending = false; magnetLeft = def.magnet || 0; magnetPending = false; hueLeft = def.hue || 0; huePending = false; stormLeft = def.storm || 0; stormPending = false; vineLeft = def.vine || 0; vinePending = false; giftLeft = def.gift || 0; giftPending = false;   /* 侵蚀/迷雾/吞噬/齿轮/崩塌/错乱/引信/磁暴/幻彩/风袭/缠藤/馈赠计数 */
   /* 主题背景：按关卡 bg 字段切换（夜幕/黄昏/糖果/派对/星云），出关恢复 */
-  ['night','sunset','candy','party','galaxy','abyss','lava','mirror','doom','brass','mist','void','swamp','gravity','chaos','rubble','prism','ruin','forge','magnetic'].forEach(function(k){
+  ['night','sunset','candy','party','galaxy','abyss','lava','mirror','doom','brass','mist','void','swamp','gravity','chaos','rubble','prism','ruin','forge','magnetic','aurora','gale','jungle','bloom'].forEach(function(k){
     document.body.classList.toggle(k, def.bg === k);
   });
   if(def.bg) ensureSkyDecor(def.bg);
@@ -5512,6 +5855,10 @@ function startLevel(no){
   if(def.scramble) setTimeout(function(){ toast(T('scramble_note')); }, 1500);
   if(def.fuse) setTimeout(function(){ toast(T('fuse_note')); }, 1500);
   if(def.magnet) setTimeout(function(){ toast(T('magnet_note')); }, 1500);
+  if(def.hue) setTimeout(function(){ toast(T('hue_note')); }, 1500);
+  if(def.storm) setTimeout(function(){ toast(T('storm_note')); }, 1500);
+  if(def.vine) setTimeout(function(){ toast(T('vine_note')); }, 1500);
+  if(def.gift) setTimeout(function(){ toast(T('gift_note')); }, 1500);
   /* 关卡开场横幅：棋盘就位后大字砸入 */
   if(settings.anim) levelIntroFX(def.no);
 }
@@ -5528,7 +5875,7 @@ function restart(){
      重新上锁（复活走 doRevive()，保留棋盘，所以已破的笼 / 冰保持原状）。
      果冻是格子级状态，restart 要重置；doRevive 保留棋盘，所以不清果冻。 */
   jellyGrid = initJellyGrid((currentLevelDef() || {}).jellies);
-  { const _d = (currentLevelDef() || {}); curseLeft = _d.curse || 0; cursePending = false; petrifyLeft = _d.petrify || 0; petrifyPending = false; blindLeft = _d.blind || 0; blindPending = false; devourLeft = _d.devour || 0; devourPending = false; rotLeft = _d.rotate || 0; rotPending = false; venomLeft = _d.venom || 0; venomPending = false; gravLeft = _d.gravity || 0; gravPending = false; gravUp = true; riftLeft = _d.rift || 0; riftPending = false; collapseLeft = _d.collapse || 0; collapsePending = false; collapseLevel = 0; collapsedCells = new Set(); scrambleLeft = _d.scramble || 0; scramblePending = false; fuseLeft = _d.fuse || 0; fusePending = false; magnetLeft = _d.magnet || 0; magnetPending = false; }
+  { const _d = (currentLevelDef() || {}); curseLeft = _d.curse || 0; cursePending = false; petrifyLeft = _d.petrify || 0; petrifyPending = false; blindLeft = _d.blind || 0; blindPending = false; devourLeft = _d.devour || 0; devourPending = false; rotLeft = _d.rotate || 0; rotPending = false; venomLeft = _d.venom || 0; venomPending = false; gravLeft = _d.gravity || 0; gravPending = false; gravUp = true; riftLeft = _d.rift || 0; riftPending = false; collapseLeft = _d.collapse || 0; collapsePending = false; collapseLevel = 0; collapsedCells = new Set(); scrambleLeft = _d.scramble || 0; scramblePending = false; fuseLeft = _d.fuse || 0; fusePending = false; magnetLeft = _d.magnet || 0; magnetPending = false; hueLeft = _d.hue || 0; huePending = false; stormLeft = _d.storm || 0; stormPending = false; vineLeft = _d.vine || 0; vinePending = false; giftLeft = _d.gift || 0; giftPending = false; }
   score = 0; reviveUsed = false;
   boosters = Object.assign({}, BOOSTER_MAX);   /* 道具每关复原 */
   deselect(); boosterMode = null;
