@@ -1366,7 +1366,7 @@
     text-shadow:0 2px 3px rgba(40,90,160,.5); margin-bottom:44px;
   }
   #home-level-tag {
-    z-index:2; margin-top:18px; background:rgba(255,255,255,.85); color:#2f6fd0; font-weight:900;
+    z-index:2; margin-top:12px; margin-bottom:16px; background:rgba(255,255,255,.85); color:#2f6fd0; font-weight:900;
     padding:6px 22px; border-radius:999px; font-size:16px; box-shadow:0 3px 6px rgba(60,100,170,.25);
   }
   /* 奶蛙空间入口：首页右下角浮动待机立绘，点击进空间 */
@@ -1540,7 +1540,7 @@
   @keyframes startPulse { 0%,100%{ transform:scale(1);} 50%{ transform:scale(1.05);} }
   /* 「选择关卡」次级按钮：比开始游戏小一号，颜色也让位（蓝色系） */
   #btn-levels {
-    z-index:2; margin-top:16px; border:none; cursor:pointer; font-family:inherit;
+    z-index:2; margin-top:12px; border:none; cursor:pointer; font-family:inherit;
     font-size:19px; font-weight:900; color:#fff; letter-spacing:3px;
     padding:11px 40px; border-radius:999px;
     background:linear-gradient(#7db4f2,#5793e0);
@@ -1551,15 +1551,70 @@
   #btn-levels:active { transform:scale(.95); box-shadow:0 2px 0 #35609f; }
   /* 壁纸入口：比选择关卡小一号的紫粉胶囊，紧贴其下 */
   #btn-wallpaper {
-    margin-top:10px; border:none; cursor:pointer; font-family:inherit;
-    font-size:15px; font-weight:900; color:#fff; letter-spacing:2px;
-    padding:8px 26px; border-radius:999px;
+    margin-top:0; border:none; cursor:pointer; font-family:inherit;
+    font-size:14px; font-weight:900; color:#fff; letter-spacing:1px;
+    padding:7px 18px; border-radius:999px;
     background:linear-gradient(#c98ff5,#9b4edd);
     box-shadow:0 4px 0 #7433ad, inset 0 2px 3px rgba(255,255,255,.55), 0 6px 12px rgba(110,50,170,.3);
     text-shadow:0 2px 3px rgba(90,40,150,.45);
     transition:transform .1s;
   }
   #btn-wallpaper:active { transform:scale(.95); box-shadow:0 2px 0 #7433ad; }
+  /* 每日挑战 / 无尽模式 / 战绩：与壁纸同档的小号胶囊按钮，两行成对排布省纵向空间 */
+  #home-mode-row, #home-util-row {
+    display:flex; gap:10px; justify-content:center; align-items:center;
+    margin-top:8px; position:relative; z-index:2;
+  }
+  #btn-daily, #btn-endless, #btn-stats {
+    margin-top:0; border:none; cursor:pointer; font-family:inherit;
+    font-size:14px; font-weight:900; color:#fff; letter-spacing:1px;
+    padding:7px 18px; border-radius:999px;
+    text-shadow:0 2px 3px rgba(60,60,40,.4);
+    transition:transform .1s;
+  }
+  #btn-daily {
+    background:linear-gradient(#7ed957,#4caf3f);
+    box-shadow:0 4px 0 #2f8c2a, inset 0 2px 3px rgba(255,255,255,.55), 0 6px 12px rgba(60,150,50,.3);
+  }
+  #btn-daily:active { transform:scale(.95); box-shadow:0 2px 0 #2f8c2a; }
+  #btn-daily.done { filter:saturate(.55) brightness(.94); }
+  #btn-endless {
+    background:linear-gradient(#ffb45e,#f2811d);
+    box-shadow:0 4px 0 #c25f0a, inset 0 2px 3px rgba(255,255,255,.55), 0 6px 12px rgba(200,110,30,.3);
+  }
+  #btn-endless:active { transform:scale(.95); box-shadow:0 2px 0 #c25f0a; }
+  #btn-stats {
+    background:linear-gradient(#8fb6f5,#5a86dd);
+    box-shadow:0 4px 0 #3a5cb0, inset 0 2px 3px rgba(255,255,255,.55), 0 6px 12px rgba(70,100,180,.3);
+  }
+  #btn-stats:active { transform:scale(.95); box-shadow:0 2px 0 #3a5cb0; }
+  /* 战绩面板：汇总卡片 + 可滚动的逐关列表 */
+  #stats-summary { display:flex; flex-wrap:wrap; gap:8px; margin-top:8px; }
+  .stat-card {
+    flex:1 1 calc(50% - 8px); padding:8px 10px; border-radius:14px;
+    background:linear-gradient(180deg,#ffffff,#e9f3ff);
+    border:2px solid rgba(110,167,236,.45);
+    box-shadow:0 4px 10px rgba(80,120,190,.15), inset 0 1.5px 0 #fff;
+    display:flex; flex-direction:column; align-items:center;
+  }
+  .stat-card .sc-num { font-size:21px; font-weight:900; color:#2f6fd0; line-height:1.2; }
+  .stat-card .sc-label { font-size:12px; color:#5a7ba6; margin-top:1px; }
+  .stat-card.wide { flex:1 1 100%; flex-direction:row; justify-content:space-around; }
+  #stats-list {
+    max-height:44vh; overflow-y:auto; margin-top:4px; padding-right:2px;
+    display:flex; flex-direction:column; gap:5px;
+  }
+  .stat-row {
+    display:flex; align-items:center; gap:8px; padding:6px 10px;
+    border-radius:12px; background:linear-gradient(180deg,#ffffff,#eef5ff);
+    border:1.5px solid rgba(110,167,236,.35);
+  }
+  .stat-row .sr-no { font-size:14px; font-weight:900; color:#2f6fd0; flex:none; white-space:nowrap; }
+  .stat-row .sr-stars { font-size:13px; width:64px; flex:none; letter-spacing:-2px; }
+  .stat-row .sr-stars i { font-style:normal; }
+  .stat-row .sr-stars i.on { color:#ffb400; text-shadow:0 1px 1px rgba(150,90,0,.35); }
+  .stat-row .sr-stars i.dim { opacity:.25; filter:grayscale(1); }
+  .stat-row .sr-best { font-size:12.5px; color:#5a7ba6; margin-left:auto; }
   /* ---- 夜幕主题（第五关）：body.night 切换星空渐变；星星层由 JS 创建，
      纯 opacity 闪烁动画（不碰位置，符合动画铁律） ---- */
   body.night {
@@ -2140,7 +2195,14 @@ var _hmt = _hmt || [];
   <div id="home-sub" data-i18n="home_sub">滑 动 消 除 · 轻 松 一 夏</div>
   <button id="btn-start"><img class="btn-face" src="naiwa/start/start_btn.webp" alt="" draggable="false"><span data-i18n="start">开始</span></button>
   <button id="btn-levels" onclick="openLevels()" data-i18n="pick_level">选择关卡</button>
-  <button id="btn-wallpaper" onclick="openWallpaper()" data-i18n="wallpapers">🎨 壁纸</button>
+  <div id="home-mode-row">
+    <button id="btn-daily" onclick="startDaily()"><span id="daily-label" data-i18n="daily">📅 每日挑战</span></button>
+    <button id="btn-endless" onclick="startEndless()" data-i18n="endless">♾️ 无尽模式</button>
+  </div>
+  <div id="home-util-row">
+    <button id="btn-stats" onclick="openStats()" data-i18n="stats">📊 战绩</button>
+    <button id="btn-wallpaper" onclick="openWallpaper()" data-i18n="wallpapers">🎨 壁纸</button>
+  </div>
   <button id="mascot-space-trigger" onclick="openMascotSpace()" title="奶蛙空间" data-i18n-title="mascot_space"><img src="naiwa/start/start_bj.webp" alt="" draggable="false"><span class="trigger-label" data-i18n="mascot_space">奶蛙空间</span></button>
   <button id="pacman-trigger" onclick="openPacman()" title="吃豆人" data-i18n-title="pacman"><img src="naiwa/chidou/a.webp" alt="" draggable="false"><span class="trigger-label" data-i18n="pacman">吃豆人</span></button>
   <div id="home-level-tag"><span id="home-level-pre">当前进度：第 </span><span id="home-level">1</span><span id="home-level-post"> 关</span></div>
@@ -2264,6 +2326,17 @@ var _hmt = _hmt || [];
     <button class="panel-close" data-close="levels-overlay">✕</button>
     <div id="level-grid"></div>
     <div id="level-tip" data-i18n="levels_tip">素材还在做，更多关卡敬请期待 🐸</div>
+  </div>
+</div>
+
+<!-- 战绩统计弹窗：汇总卡片 + 逐关成绩列表 -->
+<div class="overlay" id="stats-overlay">
+  <div class="panel">
+    <div class="panel-title"><span data-i18n="stats_title">战绩统计</span></div>
+    <button class="panel-close" data-close="stats-overlay">✕</button>
+    <div id="stats-summary"></div>
+    <div class="sec-title" data-i18n="st_level_list">关卡成绩</div>
+    <div id="stats-list"></div>
   </div>
 </div>
 
@@ -3773,6 +3846,13 @@ const I18N = {
     surge_hit:'星爆！特殊棋子降临', surge_note:'本关：每 6 步随机一枚棋子升级成特殊棋子',
     share_win:'成功通关 ·', share_try:'挑战 ·',
     start:'开始', pick_level:'选择关卡',
+    daily:'📅 每日挑战', daily_done:'今日已完成 ✓', daily_result:'每日挑战',
+    endless:'♾️ 无尽模式', endless_name:'无尽模式 · 第 {n} 轮', round_next:'下一轮',
+    stats:'📊 战绩', stats_title:'战绩统计',
+    st_stars:'累计星星', st_cleared:'已通关',
+    st_daily:'每日挑战', st_days:'{n} 天', st_streak:'连 {n}',
+    st_endless:'无尽最佳', st_rounds:'{n} 轮', st_best:'最高分', st_none:'未挑战',
+    st_level_list:'关卡成绩',
     home_sub:'滑 动 消 除 · 轻 松 一 夏',
     progress_pre:'当前进度：第 ', progress_post:' 关',
     moves:'步数', level:'关卡', goals:'目标', score:'分数',
@@ -3865,6 +3945,13 @@ const I18N = {
     surge_hit:'Starburst! A special tile is born', surge_note:'Starburst: every 6 moves a random tile upgrades into a special tile',
     share_win:'Level Clear ·', share_try:'Challenge ·',
     start:'Start Game', pick_level:'Levels',
+    daily:'📅 Daily', daily_done:'Done today ✓', daily_result:'Daily Challenge',
+    endless:'♾️ Endless', endless_name:'Endless · Round {n}', round_next:'Next Round',
+    stats:'📊 Stats', stats_title:'Statistics',
+    st_stars:'Total Stars', st_cleared:'Cleared',
+    st_daily:'Daily Streak', st_days:'{n} days', st_streak:'streak {n}',
+    st_endless:'Endless Best', st_rounds:'Round {n}', st_best:'Best', st_none:'Not played',
+    st_level_list:'Level Scores',
     home_sub:'Swipe · Match · Relax',
     progress_pre:'Level ', progress_post:' · Current Progress',
     moves:'Moves', level:'Level', goals:'Goals', score:'Score',
@@ -4182,6 +4269,12 @@ const SFX = {
 };
 
 let level = 1, moves = 25, score = 0;
+/* 特殊模式：normal 正常关卡；daily 每日挑战；endless 无尽模式。
+   daily/endless 的关卡定义不进 LEVELS 表，挂在 levelOverride 上，
+   currentLevelDef() 统一取 —— restart / initGoals / 各机制 tick 全部自动跟随。 */
+let gameMode = 'normal';
+let levelOverride = null;
+let endlessRound = 0, endlessScore = 0;   /* 无尽模式：当前轮次 / 本轮已累计总分 */
 let reviveUsed = false;    /* 本局是否已用过复活，restart 时重置 */
 let goals = [];            // [{type, need, got}]
 let board = [];            // board[r][c] = {type, el} | null
@@ -4213,7 +4306,7 @@ const boardEl = document.getElementById('board');
    localStorage 不可用时（隐私模式等）读写全部降级为内存进度，不影响游玩。
    unlocked 的含义是「已解锁到第几关」，也就是开始页显示的「当前进度」。 */
 const SAVE_KEY = 'naiwa-xxl-progress-v1';
-const save = { unlocked:1, stars:{}, best:{} };
+const save = { unlocked:1, stars:{}, best:{}, endless:{ round:0, score:0 } };
 
 function loadSave(){
   try{
@@ -4234,6 +4327,11 @@ function loadSave(){
         const n = parseInt(o.best[k], 10);
         if(n > 0) save.best[k] = n;
       }
+    }
+    /* 无尽模式最佳纪录（轮数 / 总分），老存档没有就保持默认 0 */
+    if(o.endless && typeof o.endless === 'object'){
+      const r = parseInt(o.endless.round, 10); if(r > 0) save.endless.round = r;
+      const s = parseInt(o.endless.score, 10); if(s > 0) save.endless.score = s;
     }
   }catch(e){}
 }
@@ -5185,7 +5283,7 @@ function newBoard(){
 }
 
 /* ---------- 目标 / 顶部栏 ---------- */
-function currentLevelDef(){ return LEVELS[level-1] || LEVELS[0]; }
+function currentLevelDef(){ return levelOverride || LEVELS[level-1] || LEVELS[0]; }
 
 function initGoals(){
   const def = currentLevelDef();
@@ -7328,7 +7426,11 @@ function paintResult(){
   if(!resultState) return;
   const st = resultState;
   $('#result-title').textContent = st.win ? T('victory') : T('failure');
-  $('#result-level').textContent = T('level_no', { n: st.level });
+  /* 关卡行：正常关显示关号；每日/无尽显示专属名 */
+  $('#result-level').textContent =
+    st.mode === 'daily' ? T('daily_result') :
+    st.mode === 'endless' ? T('endless_name', { n: endlessRound }) :
+    T('level_no', { n: st.level });
   $('#result-stars').innerHTML = st.win
     ? [1,2,3].map(i=>`<span class="${i<=st.stars?'':'dim'}">⭐</span>`).join('')
     : '<span class="dim">⭐⭐⭐</span>';
@@ -7338,7 +7440,11 @@ function paintResult(){
   /* 第二个按钮：赢了 → 下一关 / 返回首页；输了 → 复活（本局没用过才有），
      复活用掉之后失败结算就只剩「重新开始」 */
   const nx = $('#next-level-btn');
-  if(st.win){
+  if(st.win && st.mode === 'endless'){
+    nx.style.display = '';
+    nx.textContent = T('round_next');
+    nx.setAttribute('onclick', 'nextEndlessRound()');
+  } else if(st.win){
     nx.style.display = '';
     nx.textContent = T(st.next);
     nx.setAttribute('onclick', st.next === 'next_level' ? 'nextLevel()' : 'goHome()');
@@ -7385,27 +7491,52 @@ function showEndFx(win){
 }
 
 function showResult(win, stars){
-  /* 最高分：不分胜负都记，开局就有分数也能留档 */
-  const prevBest = bestOf(level);
-  if(score > prevBest) save.best[level] = score;
-  /* 记录本次结算状态；第二个按钮由 paintResult() 按胜负决定 */
+  /* 最高分：正常关不分胜负都记；每日/无尽不写正常关进度档案 */
+  const mode = gameMode;
+  let prevBest = 0;
+  if(mode === 'normal'){
+    prevBest = bestOf(level);
+    if(score > prevBest) save.best[level] = score;
+  }
+  const next = win
+    ? (mode === 'endless' ? 'next_level' : mode === 'daily' ? 'go_home' : (level < LEVELS.length ? 'next_level' : 'go_home'))
+    : 'none';
+  /* 记录本次结算状态；第二个按钮由 paintResult() 按胜负与模式决定 */
   resultState = {
     win: win,
     stars: win ? stars : 0,
     movesLeft: moves,
     level: level,
+    mode: mode,
     score: score,
-    best: Math.max(prevBest, score),
-    next: win ? (level < LEVELS.length ? 'next_level' : 'go_home') : 'none',
+    best: mode === 'endless' ? endlessScore + score : Math.max(prevBest, score),
+    next: next,
   };
-  track('level', win ? 'win' : 'lose', 'L' + level + (win ? ' s' + stars : ''));
-  paintResult();
-  if(win){
-    /* 记进度：星星保留历史最好成绩，并解锁下一关（不会超出关卡表） */
-    save.stars[level] = Math.max(starsOf(level), stars);
-    save.unlocked = Math.max(save.unlocked, Math.min(LEVELS.length, level + 1));
+  if(mode === 'normal'){
+    track('level', win ? 'win' : 'lose', 'L' + level + (win ? ' s' + stars : ''));
+    if(win){
+      /* 记进度：星星保留历史最好成绩，并解锁下一关（不会超出关卡表） */
+      save.stars[level] = Math.max(starsOf(level), stars);
+      save.unlocked = Math.max(save.unlocked, Math.min(LEVELS.length, level + 1));
+    }
+    persist();
+  } else if(mode === 'daily'){
+    track('daily', win ? 'win' : 'lose', 's' + stars);
+    if(win && dailyStarsOf(todayStr()) < stars) dailySave.days[todayStr()] = stars;
+    if(win) persistDaily();
+  } else {
+    track('endless', win ? 'win' : 'lose', 'R' + endlessRound);
+    if(win){
+      endlessScore += score;   /* 进下一轮，本轮分数入总账 */
+    } else {
+      /* 挑战结束：记最佳轮数与最高总分 */
+      let changed = false;
+      if(endlessRound > save.endless.round){ save.endless.round = endlessRound; changed = true; }
+      if(endlessScore + score > save.endless.score){ save.endless.score = endlessScore + score; changed = true; }
+      if(changed) persist();
+    }
   }
-  persist();
+  paintResult();
   showEndFx(win);            /* 先把插图摆好，面板一显示动画就跟着开始 */
   setTimeout(()=>{
     openOverlay('result-overlay');
@@ -7434,7 +7565,14 @@ function doRevive(){
 function startLevel(no){
   const def = LEVELS[no-1];
   if(!def){ toast(T('level_wip', { n:no })); return; }
-  track('level', 'start', 'L' + no);
+  gameMode = 'normal'; levelOverride = null;
+  startLevelCore(def);
+}
+
+/* 通用进关核心：正常关卡 / 每日挑战 / 无尽模式共用。
+   调用方先把 gameMode / levelOverride 摆好（正常关两个都是默认值）。 */
+function startLevelCore(def){
+  track('level', 'start', (gameMode==='normal' ? 'L' : gameMode==='daily' ? 'D' : 'E') + def.no);
   level = def.no;
   TYPES = def.types;
   activeShape = def.shape || null;
@@ -7484,8 +7622,146 @@ function startLevel(no){
   if(def.seed) setTimeout(function(){ toast(T('seed_note')); }, 1500);
   if(def.swaps) setTimeout(function(){ toast(T('swap_note')); }, 1500);
   if(def.surge) setTimeout(function(){ toast(T('surge_note')); }, 1500);
-  /* 关卡开场横幅：棋盘就位后大字砸入 */
-  if(settings.anim) levelIntroFX(def.no);
+  /* 关卡开场横幅：棋盘就位后大字砸入（每日/无尽显示专属文案） */
+  if(settings.anim){
+    levelIntroFX(def.no,
+      gameMode==='daily' ? T('daily_result') :
+      gameMode==='endless' ? T('endless_name', { n:endlessRound }) : null);
+  }
+}
+
+/* ---------- 每日挑战 ----------
+   每天用日期字符串做种子，从已解锁关卡池里抽一关做底，
+   目标/步数小幅浮动，再附加 1~2 个随机机制 —— 同一天全球玩家拿到同一关。
+   完成状态存独立 key（不污染正常关卡进度），首页按钮显示今日完成态。 */
+const DAILY_KEY = 'naiwa-xxl-daily-v1';
+const dailySave = { days:{} };   /* days: { '2026-10-28': 星星数 } */
+
+function todayStr(){
+  const d = new Date();
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+}
+function hashStr(s){
+  let h = 2166136261;
+  for(let i=0;i<s.length;i++){ h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); }
+  return h >>> 0;
+}
+/* mulberry32：轻量可复现伪随机（种子一致 → 序列一致） */
+function mulberry32(seed){
+  let a = seed >>> 0;
+  return function(){
+    a |= 0; a = (a + 0x6D2B79F5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+function loadDaily(){
+  try{
+    const raw = localStorage.getItem(DAILY_KEY);
+    if(!raw) return;
+    const o = JSON.parse(raw);
+    if(o && o.days && typeof o.days === 'object') dailySave.days = o.days;
+  }catch(e){}
+}
+function persistDaily(){
+  try{ localStorage.setItem(DAILY_KEY, JSON.stringify(dailySave)); }catch(e){}
+}
+function dailyStarsOf(dateStr){
+  const n = parseInt(dailySave.days[dateStr], 10);
+  return Math.min(3, Math.max(0, isNaN(n) ? 0 : n));
+}
+function dailyDoneToday(){ return dailyStarsOf(todayStr()) > 0; }
+/* 连续完成天数：从今天（或昨天，今天还没打不断连续）往回数 */
+function dailyStreak(){
+  let n = 0;
+  const d = new Date();
+  if(dailyStarsOf(todayStr()) === 0) d.setDate(d.getDate() - 1);
+  for(;;){
+    const key = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+    if(dailyStarsOf(key) === 0) break;
+    n++; d.setDate(d.getDate() - 1);
+  }
+  return n;
+}
+
+/* 附加机制池：只放「靠计数器自己跑、不需要额外布局数据」的机制，
+   rocks / jellies 这类要摆坐标的不进池（底关自带什么就保留什么）。 */
+const DAILY_MECHS = ['curse','petrify','blind','devour','rotate','venom','gravity','rift',
+  'collapse','scramble','fuse','magnet','hue','storm','vine','gift','ink','star',
+  'tide','wild','sink','bond','chest','frost','prism','seed','surge'];
+
+function buildDailyDef(){
+  const rng = mulberry32(hashStr('naiwa-daily-' + todayStr()));
+  /* 底关：从 1..已解锁进度 里抽（进度越深，池子越有意思） */
+  const poolMax = Math.min(LEVELS.length, Math.max(2, unlockedMax()));
+  const base = LEVELS[Math.floor(rng() * poolMax)];
+  /* 浅拷贝：types / shape / bg / winImg 只读共享，随底关走 */
+  const def = Object.assign({}, base);
+  /* 目标与步数：原关 ±20% 浮动，步数保底 +1（附加机制不吃人） */
+  def.needs = (base.needs || [15,12,10]).map(function(n){
+    return Math.max(8, Math.round(n * (0.9 + rng() * 0.25)));
+  });
+  def.moves = Math.max(15, Math.round((base.moves || 25) * (0.9 + rng() * 0.2)) + 1);
+  /* 附加机制：底关已有机制就只加 1 个，纯休闲底关最多加 2 个；计数 3~5 步触发 */
+  const owned = DAILY_MECHS.filter(function(m){ return base[m]; });
+  const extraN = owned.length ? 1 : (rng() < 0.6 ? 2 : 1);
+  const pool = DAILY_MECHS.slice();
+  for(let i=0;i<extraN && pool.length;i++){
+    const m = pool.splice(Math.floor(rng() * pool.length), 1)[0];
+    def[m] = 3 + Math.floor(rng() * 3);
+  }
+  return def;
+}
+
+function startDaily(){
+  initAudio(); SFX.click();
+  gameMode = 'daily';
+  levelOverride = buildDailyDef();
+  startLevelCore(levelOverride);
+}
+
+/* ---------- 无尽模式 ----------
+   轮次制：每轮随机形状 + 随机花色 + 随机机制，目标随轮数递增。
+   通关进下一轮（分数累计），失败结算记最佳轮数与最高总分。 */
+const ENDLESS_SHAPES = [
+  null,                                                    /* 满盘 7×7 */
+  function(r,c){ return Math.abs(r-3)+Math.abs(c-3) <= 3; },   /* 菱形 25 格 */
+  function(r,c){ const dx=(c-3)/3.15, dy=(r-3)/3.15; return dx*dx+dy*dy <= 1; },  /* 圆形 */
+  function(r,c){ return !((r<2||r>4) && (c<2||c>4)); },    /* 切角方 33 格（每列连续，可下落） */
+];
+
+function buildEndlessDef(n){
+  /* 底关素材：全关卡表里抽（花色/主题/胜利图随机），机制池同每日 */
+  const base = LEVELS[Math.floor(Math.random() * LEVELS.length)];
+  const def = Object.assign({}, base);
+  const shape = ENDLESS_SHAPES[Math.floor(Math.random() * ENDLESS_SHAPES.length)];
+  def.shape = shape || null;
+  def.rows = 7; def.cols = 7;   /* 形状池按 7×7 设计，底关是 8×8/9×9 也要压回来 */
+  /* 难度曲线：目标随轮数涨（封顶 2.2 倍），步数小步放水但不够舒坦 */
+  const grow = Math.min(2.2, 0.85 + n * 0.13);
+  def.needs = [12,10,8].map(function(x){ return Math.max(8, Math.round(x * grow)); });
+  def.moves = 20 + Math.min(8, Math.floor((n-1)/2));
+  /* 机制数：1 + 每三轮加一，封顶 3 */
+  const extraN = Math.min(3, 1 + Math.floor((n-1)/3));
+  const pool = DAILY_MECHS.slice();
+  for(let i=0;i<extraN && pool.length;i++){
+    const m = pool.splice(Math.floor(Math.random() * pool.length), 1)[0];
+    def[m] = 3 + Math.floor(Math.random() * 3);
+  }
+  return def;
+}
+
+function startEndless(){
+  initAudio(); SFX.click();
+  gameMode = 'endless';
+  endlessRound = 0; endlessScore = 0;
+  nextEndlessRound();
+}
+function nextEndlessRound(){
+  endlessRound++;
+  levelOverride = buildEndlessDef(endlessRound);
+  startLevelCore(levelOverride);
 }
 
 function nextLevel(){
@@ -7583,10 +7859,57 @@ function refreshHome(){
   LEVELS.forEach(function(l){ top = Math.max(top, bestOf(l.no)); });
   const hb = $('#home-best');
   if(hb) hb.textContent = top > 0 ? T('home_best', { n: top }) : '';
+  /* 每日挑战按钮：今日已完成就点亮 ✓ 并压暗，引导感更强 */
+  const dl = $('#daily-label');
+  if(dl){
+    const done = dailyDoneToday();
+    dl.textContent = done ? T('daily_done') : T('daily');
+    $('#btn-daily').classList.toggle('done', done);
+  }
   renderLevelSelect();
 }
 
 function openLevels(){ SFX.click(); renderLevelSelect(); openOverlay('levels-overlay'); }
+
+/* ---------- 战绩统计页 ---------- */
+function openStats(){
+  SFX.click();
+  renderStats();
+  openOverlay('stats-overlay');
+}
+function renderStats(){
+  const sum = $('#stats-summary');
+  if(!sum) return;
+  /* 汇总：星星 / 通关数 / 每日挑战（累计·连续·今日） / 无尽最佳 */
+  let totalStars = 0, cleared = 0;
+  LEVELS.forEach(function(l){
+    const s = starsOf(l.no);
+    totalStars += s;
+    if(s > 0) cleared++;
+  });
+  const dailyDays = Object.keys(dailySave.days).filter(function(k){ return dailyStarsOf(k) > 0; }).length;
+  const cards = [
+    { num: totalStars + '/' + (LEVELS.length * 3), label: T('st_stars') },
+    { num: cleared + '/' + LEVELS.length, label: T('st_cleared') },
+    { num: T('st_days', { n: dailyDays }) + ' · ' + T('st_streak', { n: dailyStreak() }), label: T('st_daily') },
+    { num: T('st_rounds', { n: save.endless.round || 0 }) + ' · ' + (save.endless.score || 0), label: T('st_endless') },
+  ];
+  sum.innerHTML = cards.map(function(c){
+    return '<div class="stat-card"><div class="sc-num">' + c.num + '</div><div class="sc-label">' + c.label + '</div></div>';
+  }).join('');
+  /* 逐关成绩列表（倒序：新关在上面） */
+  const list = $('#stats-list');
+  list.innerHTML = LEVELS.slice().reverse().map(function(l){
+    const s = starsOf(l.no);
+    const best = bestOf(l.no);
+    const starTxt = [1,2,3].map(function(i){ return '<i class="' + (i <= s ? 'on' : 'dim') + '">⭐</i>'; }).join('');
+    return '<div class="stat-row">'
+      + '<span class="sr-no">' + T('level_no', { n: l.no }) + '</span>'
+      + '<span class="sr-stars">' + starTxt + '</span>'
+      + '<span class="sr-best">' + (best > 0 ? T('st_best') + ' ' + best : T('st_none')) + '</span>'
+      + '</div>';
+  }).join('');
+}
 function openMascotSpace(){
   SFX.click();
   track('mascot','open','home');
@@ -8032,8 +8355,12 @@ var PacGame = (function(){
 /* ---------- 开始页 ---------- */
 function goHome(){
   document.querySelectorAll('.overlay.show').forEach(o=>closeOverlay(o.id));
-  ['night','sunset','candy','party','galaxy','abyss','lava','mirror','doom','brass','mist','void','swamp','gravity','chaos'].forEach(k=>document.body.classList.remove(k));
+  /* 主题类名清单与 startLevel 的切换清单保持一致（此前漏了 L29 之后的新主题，
+     从深潭/星爆这些关回首页会留着主题背景） */
+  ['night','sunset','candy','party','galaxy','abyss','lava','mirror','doom','brass','mist','void','swamp','gravity','chaos','rubble','prism','ruin','forge','magnetic','aurora','gale','jungle','bloom','inkpond','astral','sands','tide','mirage','cavern','meadow','vault','glacier','volt','orchid','chasm','nova'].forEach(k=>document.body.classList.remove(k));
   document.body.style.removeProperty('--theme-color');
+  /* 退出特殊模式：回到正常关卡流程 */
+  gameMode = 'normal'; levelOverride = null; endlessRound = 0; endlessScore = 0;
   refreshHome();
   $('#home').classList.remove('hide');
 }
@@ -8208,6 +8535,7 @@ window.addEventListener('resize', ()=>{ layoutBoard(); for(let r=0;r<ROWS;r++) f
 loadLang();       /* 语言存档要在任何 T() 之前读出来 */
 loadVolumes();
 loadSave();
+loadDaily();      /* 每日挑战完成记录（独立 key，不混进正常进度存档） */
 initGoals();
 layoutBoard();
 applyAnimSetting();
@@ -8597,11 +8925,11 @@ function ensureSkyDecor(kind){
   document.body.appendChild(box);
 }
 /* ---------- 关卡开场横幅：大字砸入 → 停留 → 放大淡出 ---------- */
-function levelIntroFX(no){
+function levelIntroFX(no, label){
   if(!settings.anim || !boardEl || !boardEl.animate) return;
   const d = document.createElement('div');
   d.className = 'level-intro';
-  d.textContent = T('level_no', { n: no });
+  d.textContent = label || T('level_no', { n: no });
   boardEl.appendChild(d);
   const a = d.animate([
     { transform:'translate(-50%,-50%) scale(.25) rotate(-8deg)', opacity:0 },

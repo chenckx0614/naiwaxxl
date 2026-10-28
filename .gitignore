@@ -34,3 +34,7 @@ naiwa/**/*.png
 # 线上只发压缩版 naiwa_lite.glb（1.39MB）。
 naiwa/naiwa3d/naiwa.glb
 naiwa/naiwa3d/*.jpg
+
+# TapTap H5 构建产物（taptap/ 暂存 + 成品 zip）
+/taptap/
+/naiwaxxl-taptap.zip
