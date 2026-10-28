@@ -259,6 +259,34 @@
     box-shadow:0 0 9px rgba(255,150,40,.75), inset 0 0 8px rgba(255,160,50,.5);
     animation:vinePulse 1.1s ease-in-out infinite alternate;
   }
+  /* 霜冻徽标（第三十七关 frost）：右上角 ❄ + 淡蓝霜晕，到期被 JS 冻结（摘类换 frozen）。 */
+  .tile .face.frost::after {
+    content:"\2744";
+    position:absolute; top:-6px; right:-3px; z-index:3;
+    color:#bfe6ff; font-size:15px; line-height:1; font-weight:900;
+    text-shadow:0 0 7px rgba(140,200,255,.95);
+    animation:starTwinkle 1.4s ease-in-out infinite;
+    pointer-events:none;
+  }
+  /* 棱镜徽标（第三十八关 prism）：中央旋转彩虹菱形。 */
+  .tile .face.prism::after {
+    content:""; position:absolute; left:50%; top:50%; z-index:3;
+    width:34%; height:34%; pointer-events:none;
+    transform:translate(-50%,-50%) rotate(45deg);
+    background:linear-gradient(135deg, #ff5a5a 0 25%, #ffd24d 0 50%, #5ad8ff 0 75%, #b28bff 0);
+    border:2px solid #fff; border-radius:22%;
+    box-shadow:0 0 9px rgba(255,255,255,.85);
+    animation:vinePulse 1.1s ease-in-out infinite alternate;
+  }
+  /* 花苞徽标（第三十九关 seed）：左上角花苞标 + 粉晕，绽放/枯萎由 JS 摘类。 */
+  .tile .face.seed::after {
+    content:"\2740";
+    position:absolute; top:-6px; left:-3px; z-index:3;
+    color:#ffc4e0; font-size:15px; line-height:1; font-weight:900;
+    text-shadow:0 0 7px rgba(255,150,200,.95);
+    animation:vinePulse .9s ease-in-out infinite alternate;
+    pointer-events:none;
+  }
   /* 石头：不可交换/不匹配/道具砸不动，消除紧邻棋子时震碎。纯 CSS 灰岩。 */
   .face.rock-face {
     background:
@@ -793,6 +821,26 @@
   /* 宝库主题（第三十六关 vault）：紫金宝库渐变 */
   body.vault {
     background: radial-gradient(125% 118% at 50% 42%, #6a5a1a 0%, #4e4014 38%, #30260c 70%, #120e04 100%) fixed;
+  }
+  /* 冰川主题（第三十七关 glacier）：冰蓝深渊渐变 */
+  body.glacier {
+    background: radial-gradient(125% 118% at 50% 42%, #1d4a7a 0%, #14375c 38%, #0c2340 70%, #040f1e 100%) fixed;
+  }
+  /* 电光主题（第三十八关 volt）：电紫蓝渐变 */
+  body.volt {
+    background: radial-gradient(125% 118% at 50% 42%, #2a3a8a 0%, #1e2a68 38%, #121a44 70%, #060a1e 100%) fixed;
+  }
+  /* 兰园主题（第三十九关 orchid）：兰粉紫渐变 */
+  body.orchid {
+    background: radial-gradient(125% 118% at 50% 42%, #6a2a6a 0%, #4e1e50 38%, #301230 70%, #120618 100%) fixed;
+  }
+  /* 裂谷主题（第四十关 chasm）：暗灰蓝渐变 */
+  body.chasm {
+    background: radial-gradient(125% 118% at 50% 42%, #3a4654 0%, #2a333e 38%, #1a2028 70%, #0a0d12 100%) fixed;
+  }
+  /* 星爆主题（第四十一关 nova）：金紫渐变 */
+  body.nova {
+    background: radial-gradient(125% 118% at 50% 42%, #5a2a7a 0%, #401e5c 38%, #28123a 70%, #0e0618 100%) fixed;
   }
   /* 磁场光环（第二十四关 magnet）：从重心荡开的青蓝光环 */
   .magnet-ring {
@@ -1869,6 +1917,26 @@
   body.vault {
     background: radial-gradient(125% 118% at 50% 42%, #6a5a1a 0%, #4e4014 38%, #30260c 70%, #120e04 100%) fixed;
   }
+  /* 冰川主题（第三十七关 glacier）：冰蓝深渊渐变 */
+  body.glacier {
+    background: radial-gradient(125% 118% at 50% 42%, #1d4a7a 0%, #14375c 38%, #0c2340 70%, #040f1e 100%) fixed;
+  }
+  /* 电光主题（第三十八关 volt）：电紫蓝渐变 */
+  body.volt {
+    background: radial-gradient(125% 118% at 50% 42%, #2a3a8a 0%, #1e2a68 38%, #121a44 70%, #060a1e 100%) fixed;
+  }
+  /* 兰园主题（第三十九关 orchid）：兰粉紫渐变 */
+  body.orchid {
+    background: radial-gradient(125% 118% at 50% 42%, #6a2a6a 0%, #4e1e50 38%, #301230 70%, #120618 100%) fixed;
+  }
+  /* 裂谷主题（第四十关 chasm）：暗灰蓝渐变 */
+  body.chasm {
+    background: radial-gradient(125% 118% at 50% 42%, #3a4654 0%, #2a333e 38%, #1a2028 70%, #0a0d12 100%) fixed;
+  }
+  /* 星爆主题（第四十一关 nova）：金紫渐变 */
+  body.nova {
+    background: radial-gradient(125% 118% at 50% 42%, #5a2a7a 0%, #401e5c 38%, #28123a 70%, #0e0618 100%) fixed;
+  }
   /* 磁场光环（第二十四关 magnet）：从重心荡开的青蓝光环 */
   .magnet-ring {
     position:absolute; pointer-events:none; z-index:6; border-radius:50%;
@@ -2109,6 +2177,7 @@ var _hmt = _hmt || [];
     <button class="booster" data-b="bomb" title="炸弹：消除3×3" data-i18n-title="bomb_t"><img src="./icons/bomb.webp" alt="炸弹" data-i18n-alt="bomb_t" draggable="false"><span class="count">3</span></button>
     <button class="booster" data-b="shuffle" title="刷新：重排棋盘" data-i18n-title="shuffle_t"><img src="./icons/shuffle.webp" alt="刷新" data-i18n-alt="shuffle_t" draggable="false"><span class="count">3</span></button>
     <button class="booster" data-b="moves" title="星星：+5步" data-i18n-title="moves_t"><img src="./icons/moves.webp" alt="星星" data-i18n-alt="moves_t" draggable="false"><span class="count">3</span></button>
+    <button class="booster" data-b="swap" title="妙手：强制交换相邻两子" data-i18n-title="swap_t"><img src="./icons/swap.webp" alt="妙手" data-i18n-alt="swap_t" draggable="false"><span class="count">0</span></button>
   </div>
 </div>
 
@@ -3468,10 +3537,170 @@ const LEVELS = [
     bg: 'vault',
     winImg: 'naiwa/start/start_bj.webp',
   },
+
+  /* ============ 第三十七关：冰晶心语 ============
+     心形盘 74 格（宽肩凹口、下瓣收尖）。霜冻 frost：每 5 步 2 枚棋子结霜
+     （❄徽标），4 步内不消除就永久冰封 —— 打乱规划的压力机制。 */
+  {
+    no: 37,
+    rows: 11,
+    cols: 11,
+    moves: 28,
+    needs: [25, 20, 15],
+    themeColor: '#4a9fe8',
+    frost: 5,
+    types: [
+      { key:'37a', img:'naiwa/7/c.webp', color:'#4a9fe8', bg:'#c8e4ff' },
+      { key:'37b', img:'naiwa/3/b3.webp', color:'#e8b84a', bg:'#ffedc4' },
+      { key:'37c', img:'naiwa/9/b.webp', color:'#7ed49a', bg:'#d0f2dc' },
+      { key:'37d', img:'naiwa/1/d.webp', color:'#e87a9a', bg:'#ffd4e0' },
+      { key:'37e', img:'naiwa/10/e.webp', color:'#9a7ae8', bg:'#e0d4ff' },
+    ],
+    shape: function(r,c){
+      if(r===0) return (c>=3&&c<=7)&&c!==5;
+      if(r===1) return c>=2&&c<=8;
+      if(r===2) return c>=1&&c<=9;
+      if(r<=5) return true;
+      if(r===6) return c>=1&&c<=9;
+      if(r===7) return c>=3&&c<=7;
+      if(r<=9) return c>=4&&c<=6;
+      return c===5;
+    },
+    rocks: [ { r:2, c:3 }, { r:2, c:7 }, { r:6, c:5 } ],
+    cages: [ { r:4, c:2 }, { r:4, c:8 } ],
+    frozen: [ { r:3, c:4 }, { r:3, c:6 }, { r:9, c:5 } ],
+    jellies: [ { r:0, c:3 }, { r:0, c:7 }, { r:2, c:5 }, { r:5, c:1 }, { r:5, c:9 }, { r:8, c:5 } ],
+    bg: 'glacier',
+    winImg: 'naiwa/start/start_bj.webp',
+  },
+
+  /* ============ 第三十八关：电光棱镜 ============
+     闪电盘 55 格（三段平行四边形错位）。棱镜 prism：每 6 步一枚普通子化棱镜，
+     消除它把全场 4 枚棋子折射成同色 —— 帮助向，主动凑棱镜是核心策略。 */
+  {
+    no: 38,
+    rows: 11,
+    cols: 11,
+    moves: 25,
+    needs: [19, 15, 11],
+    themeColor: '#8a76ff',
+    prism: 6,
+    types: [
+      { key:'38a', img:'naiwa/4/a4.webp', color:'#e85a5a', bg:'#ffd4d4' },
+      { key:'38b', img:'naiwa/10/a.webp', color:'#8b5cf6', bg:'#e4d4ff' },
+      { key:'38c', img:'naiwa/8/a.webp', color:'#4ab8e8', bg:'#c8ecff' },
+      { key:'38d', img:'naiwa/3/c3.webp', color:'#e8a04a', bg:'#ffe4c4' },
+      { key:'38e', img:'naiwa/1/f.webp', color:'#5ac87a', bg:'#c8f0d8' },
+    ],
+    shape: function(r,c){
+      if(c<=3) return r<=4;
+      if(c<=7) return r>=3&&r<=7;
+      return r>=6;
+    },
+    rocks: [ { r:1, c:2 }, { r:5, c:5 }, { r:9, c:9 } ],
+    cages: [ { r:4, c:4 }, { r:6, c:7 } ],
+    frozen: [ { r:2, c:1 }, { r:6, c:6 }, { r:10, c:9 } ],
+    jellies: [ { r:0, c:0 }, { r:0, c:3 }, { r:4, c:5 }, { r:4, c:6 }, { r:7, c:8 }, { r:10, c:10 } ],
+    bg: 'volt',
+    winImg: 'naiwa/start/start_bj.webp',
+  },
+
+  /* ============ 第三十九关：花田絮语 ============
+     郁金香盘 63 格（宽口、细茎）。花苞 seed：每 6 步开花苞（限时 3 步），
+     限时内消除就绽放 —— 8 邻全部染成同色，围绕花苞排布消除次序是核心。 */
+  {
+    no: 39,
+    rows: 11,
+    cols: 11,
+    moves: 26,
+    needs: [21, 17, 13],
+    themeColor: '#d470b8',
+    seed: 6,
+    types: [
+      { key:'39a', img:'naiwa/8/d.webp', color:'#7ed49a', bg:'#c8f0d8' },
+      { key:'39b', img:'naiwa/10/b.webp', color:'#e87a9a', bg:'#ffd4e0' },
+      { key:'39c', img:'naiwa/3/d3.webp', color:'#e8a04a', bg:'#ffe4c4' },
+      { key:'39d', img:'naiwa/1/f.webp', color:'#4a9fe8', bg:'#c8e4ff' },
+      { key:'39e', img:'naiwa/4/c4.webp', color:'#b88ae8', bg:'#e8dcff' },
+    ],
+    shape: function(r,c){
+      if(r<=1) return c>=1&&c<=9;
+      if(r===2) return true;
+      if(r<=6) return c>=2&&c<=8;
+      if(r===7) return c>=4&&c<=6;
+      return c===5;
+    },
+    rocks: [ { r:2, c:0 }, { r:2, c:10 }, { r:5, c:5 } ],
+    frozen: [ { r:0, c:2 }, { r:0, c:8 }, { r:9, c:5 } ],
+    jellies: [ { r:1, c:5 }, { r:2, c:3 }, { r:2, c:7 }, { r:4, c:2 }, { r:4, c:8 }, { r:7, c:5 }, { r:10, c:5 } ],
+    bg: 'orchid',
+    winImg: 'naiwa/start/start_bj.webp',
+  },
+
+  /* ============ 第四十关：断桥玄机 ============
+     断桥盘 71 格（两座孤岛 + 一格窄桥相连）。本关没有自动机制 ——
+     特色是新道具「妙手」×3：强制交换相邻两子不必成三连，专治孤岛间的错位僵局。 */
+  {
+    no: 40,
+    rows: 11,
+    cols: 11,
+    moves: 27,
+    needs: [22, 18, 14],
+    themeColor: '#5a7a9a',
+    swaps: 3,
+    types: [
+      { key:'40a', img:'naiwa/10/a.webp', color:'#8b5cf6', bg:'#e4d4ff' },
+      { key:'40b', img:'naiwa/3/a3.webp', color:'#e8b84a', bg:'#ffedc4' },
+      { key:'40c', img:'naiwa/7/a.webp', color:'#4ab8e8', bg:'#c8ecff' },
+      { key:'40d', img:'naiwa/1/b.webp', color:'#e87a9a', bg:'#ffd4e0' },
+      { key:'40e', img:'naiwa/8/c.webp', color:'#7ed49a', bg:'#d0f2dc' },
+    ],
+    shape: function(r,c){
+      if(c<=4) return r>=2&&r<=8;
+      if(c===5) return r===5;
+      return r>=2&&r<=8;
+    },
+    rocks: [ { r:3, c:1 }, { r:3, c:9 }, { r:6, c:2 }, { r:6, c:8 } ],
+    frozen: [ { r:2, c:0 }, { r:2, c:10 }, { r:8, c:4 }, { r:8, c:6 }, { r:5, c:5 } ],
+    jellies: [ { r:2, c:2 }, { r:2, c:8 }, { r:5, c:0 }, { r:5, c:10 }, { r:6, c:4 }, { r:4, c:4 }, { r:4, c:6 } ],
+    cages: [ { r:5, c:2 }, { r:5, c:8 } ],
+    bg: 'chasm',
+    winImg: 'naiwa/start/start_bj.webp',
+  },
+
+  /* ============ 第四十一关：满月星爆 ============
+     满月圆盘 75 格（欧氏圆）。星爆 surge：每 6 步随机一枚普通子升级成
+     随机特殊棋子 —— 终局帮助向，特殊子雨配大棋盘，连锁一浪接一浪。 */
+  {
+    no: 41,
+    rows: 11,
+    cols: 11,
+    moves: 29,
+    needs: [27, 21, 16],
+    themeColor: '#b8860b',
+    surge: 6,
+    types: [
+      { key:'41a', img:'naiwa/4/f4.webp', color:'#e8b84a', bg:'#ffedc4' },
+      { key:'41b', img:'naiwa/1/g.webp', color:'#e87a9a', bg:'#ffd4e0' },
+      { key:'41c', img:'naiwa/9/d.webp', color:'#4ab8e8', bg:'#c8ecff' },
+      { key:'41d', img:'naiwa/8/b.webp', color:'#7ed49a', bg:'#d0f2dc' },
+      { key:'41e', img:'naiwa/5/5d.webp', color:'#b88ae8', bg:'#e8dcff' },
+    ],
+    shape: function(r,c){
+      var dr = r-5, dc = c-5;
+      return dr*dr + dc*dc <= 30;
+    },
+    rocks: [ { r:0, c:5 }, { r:10, c:5 }, { r:5, c:0 }, { r:5, c:10 } ],
+    cages: [ { r:4, c:4 }, { r:4, c:6 }, { r:6, c:4 }, { r:6, c:6 } ],
+    frozen: [ { r:2, c:2 }, { r:2, c:8 }, { r:8, c:2 }, { r:8, c:8 } ],
+    jellies: [ { r:1, c:5 }, { r:9, c:5 }, { r:5, c:1 }, { r:5, c:9 }, { r:3, c:3 }, { r:3, c:7 }, { r:7, c:3 }, { r:7, c:7 } ],
+    bg: 'nova',
+    winImg: 'naiwa/start/start_bj.webp',
+  },
 ];
 
 /* 关卡选择面板至少铺这么多格，超出的格子显示为「敬请期待」 */
-const LEVEL_SLOTS = 36;
+const LEVEL_SLOTS = 41;
 
 /* 当前关的图标。startLevel() 时随关卡切换，其余逻辑一律读这个变量 */
 let TYPES = LEVELS[0].types;
@@ -3537,6 +3766,11 @@ const I18N = {
     sink_hit:'地陷！底部的棋子坠入了深渊', sink_note:'本关：每 5 步大地塌陷，每列最底部的棋子坠落（照常计入目标）',
     bond_mark:'金链缔结！', bond_hit:'双子连结！+2 步', bond_note:'本关：每 4 步一对相邻同色棋子结成金链，同一波双双消掉就 +2 步',
     chest_hit:'宝箱受击！', chest_open:'宝箱开启！开出十字条纹', chest_note:'本关：每 7 步落下一个宝箱，消除紧邻三次砸开它',
+    frost_hit:'寒霜降临！', frost_lock:'寒霜冻结——棋子被冰封', frost_note:'本关：每 5 步 2 枚棋子结霜，4 步内不消除就冻成冰',
+    prism_drop:'棱镜出现了！', prism_hit:'棱镜折射！4 枚棋子变色', prism_note:'本关：每 6 步出现一枚棱镜，消除它把 4 枚棋子折射成同色',
+    seed_drop:'花苞悄悄冒头', seed_bloom:'花开！周围 8 格染成同色', seed_wither:'花苞枯萎了…', seed_note:'本关：每 6 步开花苞，3 步内消除它就绽放染色周围',
+    swap_t:'妙手：强制交换相邻两子', swap_note:'本关：妙手 ×3 —— 强制交换任意相邻两枚棋子，不必成三连', swap_far:'妙手：请点相邻的棋子',
+    surge_hit:'星爆！特殊棋子降临', surge_note:'本关：每 6 步随机一枚棋子升级成特殊棋子',
     share_win:'成功通关 ·', share_try:'挑战 ·',
     start:'开始', pick_level:'选择关卡',
     home_sub:'滑 动 消 除 · 轻 松 一 夏',
@@ -3624,6 +3858,11 @@ const I18N = {
     sink_hit:'Sinkhole! Bottom tiles fell into the abyss', sink_note:'Sinkhole: every 5 moves the ground caves — each column\'s bottom tile falls (still counts)',
     bond_mark:'Chain formed!', bond_hit:'Twin bond! +2 moves', bond_note:'Bond: every 4 moves a same-color adjacent pair gets chained — clear both in one wave for +2 moves',
     chest_hit:'Chest hit!', chest_open:'Chest opened! Cross stripes inside', chest_note:'Chest: every 7 moves a chest drops — clear next to it 3 times to crack it open',
+    frost_hit:'Frost falls!', frost_lock:'Frost hardened — tile frozen', frost_note:'Frost: every 5 moves 2 tiles frosted — clear them within 4 moves or they freeze solid',
+    prism_drop:'A prism appears!', prism_hit:'Prism refract! 4 tiles recolored', prism_note:'Prism: every 6 moves a prism appears — clear it to refract 4 tiles into one color',
+    seed_drop:'A bud sprouts', seed_bloom:'Bloom! 8 neighbors recolored', seed_wither:'The bud withered…', seed_note:'Bloom: every 6 moves a bud sprouts — clear it within 3 moves to dye its neighbors',
+    swap_t:'Swaps: force-swap 2 adjacent tiles', swap_note:'Swaps: 3 Swaps this level — force-swap any two adjacent tiles, no match needed', swap_far:'Swaps: pick an adjacent tile',
+    surge_hit:'Starburst! A special tile is born', surge_note:'Starburst: every 6 moves a random tile upgrades into a special tile',
     share_win:'Level Clear ·', share_try:'Challenge ·',
     start:'Start Game', pick_level:'Levels',
     home_sub:'Swipe · Match · Relax',
@@ -3964,7 +4203,7 @@ let jellyGrid = [];        // 本关果冻层 [r][c] = 0/1/2：0 为空，>0 时
 /* 每关道具的初始数量。restart() 会按这份模板复原 ——
    之前只在初始化时赋过一次值，用掉的道具重开 / 切关都不会回来，
    玩家玩几局后道具就永久耗尽，必须刷新页面才能恢复。 */
-const BOOSTER_MAX = { hammer:3, bomb:3, shuffle:3, moves:3 };
+const BOOSTER_MAX = { hammer:3, bomb:3, shuffle:3, moves:3, swap:0 };   /* swap=妙手，按关配额（第四十关 swaps） */
 let boosters = Object.assign({}, BOOSTER_MAX);
 let hintTimer = null;
 
@@ -5164,6 +5403,47 @@ function hitJelly(hit){
 async function clearSet(hit, combo, info){
   thawFrozen(hit);
   hitJelly(hit);
+  /* 棱镜（第三十八关）：这一波里若有棱镜被消，全场随机 4 枚普通棋子
+     被折射染成它的颜色 —— 为下一波制造大片同色机会。 */
+  hit.forEach(function(i){
+    var r = (i/COLS)|0, c = i%COLS, t = board[r] && board[r][c];
+    if(!t || !t.prism) return;
+    t.prism = false;
+    var myType = t.type, pool = [];
+    forEachActive(function(rr,cc){
+      var q = board[rr][cc];
+      if(q && q !== t && !q.rock && !q.caged && !q.frozen && !q.effect && !q.prism && !q.seed && !q.wild && !q.chest && !q.bond && !q.frost && !q.ink && !q.star && q.type !== myType) pool.push(q);
+    });
+    var nn = Math.min(4, pool.length);
+    for(var k = 0; k < nn; k++){
+      var idx = (Math.random()*pool.length)|0;
+      var q = pool.splice(idx,1)[0];
+      q.type = myType;
+      renderTileFace(q);
+      if(settings.anim) burst(q.r, q.c, '#ffffff');
+    }
+    if(nn){ toast(T('prism_hit')); SFX.swap(); buzz([10,26,10]); }
+  });
+  /* 花苞（第三十九关）：这一波里若有花苞被消，「绽放」—— 8 邻普通棋子
+     全部染成它的颜色，往往直接连锁出下一波大消除。 */
+  hit.forEach(function(i){
+    var r = (i/COLS)|0, c = i%COLS, t = board[r] && board[r][c];
+    if(!t || !t.seed) return;
+    t.seed = false;
+    var myType = t.type, bloomed = 0;
+    for(var dr = -1; dr <= 1; dr++) for(var dc = -1; dc <= 1; dc++){
+      if(!dr && !dc) continue;
+      var rr = r + dr, cc = c + dc;
+      if(rr < 0 || rr >= ROWS || cc < 0 || cc >= COLS || !isActive(rr,cc)) continue;
+      var q = board[rr][cc];
+      if(!q || q.rock || q.caged || q.frozen || q.effect || q.prism || q.seed || q.wild || q.chest || q.bond || q.frost || q.ink || q.star) continue;
+      q.type = myType;
+      renderTileFace(q);
+      if(settings.anim) burst(rr, cc, '#ffc4e0');
+      bloomed++;
+    }
+    if(bloomed){ toast(T('seed_bloom')); SFX.crack(); buzz([14,30,14]); shakeBoard(2); }
+  });
   /* 毒沼（第十七关）：这一组里每含一枚毒子，就额外烧掉 1 步。
      立刻刷 HUD —— 数字不动玩家会以为没生效。 */
   let venomBite = 0;
@@ -5466,7 +5746,12 @@ let curseLeft = 0, cursePending = false, petrifyLeft = 0, petrifyPending = false
     wildLeft = 0, wildPending = false,
     sinkLeft = 0, sinkPending = false,
     bondLeft = 0, bondPending = false,
-    chestLeft = 0, chestPending = false;
+    chestLeft = 0, chestPending = false,
+    frostLeft = 0, frostPending = false, frostList = [],
+    prismLeft = 0, prismPending = false,
+    seedLeft = 0, seedPending = false, seedList = [],
+    surgeLeft = 0, surgePending = false,
+    swapSel = null;
 function tickCurse(){
   const def = currentLevelDef();
   if(!def) return;
@@ -5493,10 +5778,17 @@ function tickCurse(){
   if(def.sink){ if(--sinkLeft <= 0){ sinkLeft = def.sink; sinkPending = true; } }
   if(def.bond){ if(--bondLeft <= 0){ bondLeft = def.bond; bondPending = true; } }
   if(def.chest){ if(--chestLeft <= 0){ chestLeft = def.chest; chestPending = true; } }
+  if(def.frost){ if(--frostLeft <= 0){ frostLeft = def.frost; frostPending = true; } }
+  if(def.prism){ if(--prismLeft <= 0){ prismLeft = def.prism; prismPending = true; } }
+  if(def.seed){ if(--seedLeft <= 0){ seedLeft = def.seed; seedPending = true; } }
+  if(def.surge){ if(--surgeLeft <= 0){ surgeLeft = def.surge; surgePending = true; } }
   /* 引信倒计时每步都走（不管这步有没有新点着的），到期就烧成石头 */
   tickFuses();
   /* 缠藤倒计时同理：每步递减，到期自动解开 */
   tickVines();
+  /* 霜冻 / 花苞的限时倒计时同理：每步递减，到期各自结算 */
+  tickFrosts();
+  tickSeeds();
 }
 function applyCurse(){
   const cands = [];
@@ -6126,6 +6418,130 @@ function tickVines(){
 /* ---------- 馈赠（第二十八关 gift 机制）----------
    全系列第一个帮助向机制：每消耗 gift 步，随机挑一对相邻的普通棋子，
    把其中一枚的花色改成另一枚 —— 白送一个「至少凑成对」的机会。 */
+/* ---------- 霜冻（第三十七关 frost 机制）----------
+   每消耗 frost 步，随机 2 枚普通棋子结霜（❄徽标）。每枚霜有 4 步倒计时，
+   到期还没被消除就永久冰封（与第五关冰封同款，只能靠消除紧邻破冰）。
+   被消除的霜直接解除。压迫点：霜落的位置会打乱既有规划，逼玩家优先处理。 */
+var FROST_FUSE = 4;
+function applyFrost(){
+  var cands = [];
+  forEachActive(function(r,c){
+    var t = board[r][c];
+    if(t && !t.rock && !t.caged && !t.frozen && !t.frost && !t.prism && !t.seed && !t.wild && !t.chest && !t.bond && !t.effect && !t.ink && !t.star) cands.push(t);
+  });
+  var n = Math.min(2, cands.length);
+  if(!n) return;
+  for(var k = 0; k < n; k++){
+    var idx = (Math.random()*cands.length)|0;
+    var t = cands.splice(idx,1)[0];
+    t.frost = true; t.frostLeft = FROST_FUSE;
+    var f = t.el && t.el.firstChild;
+    if(f) f.classList.add('frost');
+    frostList.push(t);
+    if(settings.anim) burst(t.r, t.c, '#bfe6ff');
+  }
+  SFX.swap(); buzz([12,20,12]);
+  toast(T('frost_hit'));
+}
+function tickFrosts(){
+  if(!frostList.length) return;
+  var keep = [], froze = 0;
+  for(var i = 0; i < frostList.length; i++){
+    var t = frostList[i];
+    /* live 兜底：霜子可能已被炸掉（board 引用不在了就跳过） */
+    if(!t || !t.el || !t.el.parentNode || !board[t.r] || board[t.r][t.c] !== t) continue;
+    if(--t.frostLeft > 0){ keep.push(t); continue; }
+    t.frost = false;
+    var f = t.el && t.el.firstChild;
+    if(f) f.classList.remove('frost');
+    t.frozen = true;
+    t.el.classList.add('frozen');
+    if(settings.anim) burst(t.r, t.c, '#8fc9f0');
+    froze++;
+  }
+  frostList = keep;
+  if(froze){ SFX.crack(); buzz([16,34,16]); toast(T('frost_lock')); }
+}
+/* ---------- 棱镜（第三十八关 prism 机制）----------
+   每 6 步一枚普通棋子化棱镜（彩虹菱标，全场最多一枚）。
+   棱镜被消除的瞬间，全场随机 4 枚普通棋子被折射染成它的颜色。
+   帮助向：主动凑棱镜消除、再把大部队染成同色是本关核心策略。 */
+var PRISM_CAP = 1;
+function prismCount(){
+  var n = 0;
+  forEachActive(function(r,c){ var t = board[r][c]; if(t && t.prism) n++; });
+  return n;
+}
+function applyPrism(){
+  if(prismCount() >= PRISM_CAP) return;
+  var cands = [];
+  forEachActive(function(r,c){
+    var t = board[r][c];
+    if(t && !t.rock && !t.caged && !t.frozen && !t.effect && !t.prism && !t.seed && !t.wild && !t.chest && !t.bond && !t.frost && !t.ink && !t.star) cands.push(t);
+  });
+  if(!cands.length) return;
+  var t = cands[(Math.random()*cands.length)|0];
+  t.prism = true;
+  var f = t.el && t.el.firstChild;
+  if(f) f.classList.add('prism');
+  if(settings.anim) burst(t.r, t.c, '#ffffff');
+  SFX.booster(); buzz([10,22,10]);
+  toast(T('prism_drop'));
+}
+/* ---------- 花苞（第三十九关 seed 机制）----------
+   每 6 步随机一枚普通棋子开花苞（限时 3 步）。花苞被消除的瞬间「绽放」：
+   8 邻普通棋子全部染成它的颜色；到期没消就枯萎变回普通。
+   策略点：围绕花苞排布消除次序，让它开在棋子最密的地方。 */
+var SEED_FUSE = 3;
+function applySeed(){
+  var cands = [];
+  forEachActive(function(r,c){
+    var t = board[r][c];
+    if(t && !t.rock && !t.caged && !t.frozen && !t.effect && !t.prism && !t.seed && !t.wild && !t.chest && !t.bond && !t.frost && !t.ink && !t.star) cands.push(t);
+  });
+  if(!cands.length) return;
+  var t = cands[(Math.random()*cands.length)|0];
+  t.seed = true; t.seedLeft = SEED_FUSE;
+  var f = t.el && t.el.firstChild;
+  if(f) f.classList.add('seed');
+  seedList.push(t);
+  if(settings.anim) burst(t.r, t.c, '#ffc4e0');
+  SFX.swap(); buzz([12,20,12]);
+  toast(T('seed_drop'));
+}
+function tickSeeds(){
+  if(!seedList.length) return;
+  var keep = [], withered = 0;
+  for(var i = 0; i < seedList.length; i++){
+    var t = seedList[i];
+    if(!t || !t.el || !t.el.parentNode || !board[t.r] || board[t.r][t.c] !== t) continue;
+    if(--t.seedLeft > 0){ keep.push(t); continue; }
+    t.seed = false;
+    var f = t.el && t.el.firstChild;
+    if(f) f.classList.remove('seed');
+    withered++;
+  }
+  seedList = keep;
+  if(withered){ toast(T('seed_wither')); buzz([8,16,8]); }
+}
+/* ---------- 星爆（第四十一关 surge 机制）----------
+   每 6 步随机一枚普通棋子升级成随机特殊棋子（横条纹/竖条纹/十字/炸弹）。
+   终局帮助向：特殊子雨配合满月大棋盘，连锁一浪接一浪。 */
+function applySurge(){
+  var cands = [];
+  forEachActive(function(r,c){
+    var t = board[r][c];
+    if(t && !t.rock && !t.caged && !t.frozen && !t.effect && !t.prism && !t.seed && !t.wild && !t.chest && !t.bond && !t.frost && !t.ink && !t.star) cands.push(t);
+  });
+  if(!cands.length) return;
+  var t = cands[(Math.random()*cands.length)|0];
+  var kinds = ['row','col','cross','bomb'];
+  t.effect = kinds[(Math.random()*kinds.length)|0];
+  applyEffectFace(t);
+  if(settings.anim) burst(t.r, t.c, '#ffd76a');
+  SFX.booster(); buzz([10,24,10]);
+  toast(T('surge_hit'));
+}
 function applyGift(){
   var pairs = [];
   forEachActive(function(r,c){
@@ -6462,6 +6878,10 @@ async function resolveBoard(){
       if(chestPending){ chestPending = false; applyChestDrop(); acted = true; }
       if(tidePending){ tidePending = false; await applyTide(); acted = true; }
       if(sinkPending){ sinkPending = false; await applySink(); acted = true; }
+      if(frostPending){ frostPending = false; applyFrost(); acted = true; }
+      if(prismPending){ prismPending = false; applyPrism(); acted = true; }
+      if(seedPending){ seedPending = false; applySeed(); acted = true; }
+      if(surgePending){ surgePending = false; applySurge(); acted = true; }
       if(acted && findMatchInfo().hit.size) continue;
       break;
     }
@@ -6658,6 +7078,32 @@ async function onTapSelect(r, c){
   clearHint();
   if(boosterMode){ await useBoosterOn(r, c); return; }
   const cur = {r,c};
+  /* 妙手（第四十关 swaps）：强制交换相邻两子，不必成三连。
+     两段式：第一次点选源棋子，第二次点相邻目标。锁定子任何时候都点不得。 */
+  if(boosterMode === 'swap'){
+    const st = board[r][c];
+    if(st && (st.caged || st.frozen || st.rock || st.ink)){
+      deselect(); swapSel = null; bumpTile(st); toast(T('tile_locked')); return;
+    }
+    if(!swapSel){ swapSel = {r,c}; select(swapSel); return; }
+    const sa = swapSel;
+    if(sa.r === r && sa.c === c){ deselect(); swapSel = null; return; }
+    if(!adjacent(sa, cur)){
+      deselect(); swapSel = {r,c}; select(swapSel); toast(T('swap_far')); return;
+    }
+    deselect(); swapSel = null;
+    boosterMode = null;
+    document.querySelectorAll('.booster').forEach(x=>x.classList.remove('armed'));
+    boosters.swap--; renderHud();
+    SFX.booster(); buzz(18);
+    swapTiles(sa, cur);
+    busy = true;
+    await dropAndFill(1);
+    busy = false;
+    await resolveBoard();
+    return;
+  }
+
   const t = board[r][c];
   /* 牢笼/冰封/石头都不能选中：以前只挡牢笼，冰封和石头能被选中、
      交换时又静默失败 —— 玩家只会觉得“点了没反应”。统一拒绝并给反馈。 */
@@ -6996,9 +7442,11 @@ function startLevel(no){
   cageList = def.cages || (def.cage ? [def.cage] : []);
   frozenList = def.frozen || [];
   rockList = def.rocks || [];
-  curseLeft = def.curse || 0; cursePending = false; petrifyLeft = def.petrify || 0; petrifyPending = false; blindLeft = def.blind || 0; blindPending = false; devourLeft = def.devour || 0; devourPending = false; rotLeft = def.rotate || 0; rotPending = false; venomLeft = def.venom || 0; venomPending = false; gravLeft = def.gravity || 0; gravPending = false; gravUp = true; riftLeft = def.rift || 0; riftPending = false; collapseLeft = def.collapse || 0; collapsePending = false; collapseLevel = 0; collapsedCells = new Set(); scrambleLeft = def.scramble || 0; scramblePending = false; fuseLeft = def.fuse || 0; fusePending = false; magnetLeft = def.magnet || 0; magnetPending = false; hueLeft = def.hue || 0; huePending = false; stormLeft = def.storm || 0; stormPending = false; vineLeft = def.vine || 0; vinePending = false; giftLeft = def.gift || 0; giftPending = false; inkLeft = def.ink || 0; inkPending = false; starLeft = def.star || 0; starPending = false; tideLeft = def.tide || 0; tidePending = false; wildLeft = def.wild || 0; wildPending = false; sinkLeft = def.sink || 0; sinkPending = false; bondLeft = def.bond || 0; bondPending = false; chestLeft = def.chest || 0; chestPending = false;   /* 侵蚀/迷雾/吞噬/齿轮/崩塌/错乱/引信/磁暴/幻彩/风袭/缠藤/馈赠/墨染/星愿计数 */
+  curseLeft = def.curse || 0; cursePending = false; petrifyLeft = def.petrify || 0; petrifyPending = false; blindLeft = def.blind || 0; blindPending = false; devourLeft = def.devour || 0; devourPending = false; rotLeft = def.rotate || 0; rotPending = false; venomLeft = def.venom || 0; venomPending = false; gravLeft = def.gravity || 0; gravPending = false; gravUp = true; riftLeft = def.rift || 0; riftPending = false; collapseLeft = def.collapse || 0; collapsePending = false; collapseLevel = 0; collapsedCells = new Set(); scrambleLeft = def.scramble || 0; scramblePending = false; fuseLeft = def.fuse || 0; fusePending = false; magnetLeft = def.magnet || 0; magnetPending = false; hueLeft = def.hue || 0; huePending = false; stormLeft = def.storm || 0; stormPending = false; vineLeft = def.vine || 0; vinePending = false; giftLeft = def.gift || 0; giftPending = false; inkLeft = def.ink || 0; inkPending = false; starLeft = def.star || 0; starPending = false; tideLeft = def.tide || 0; tidePending = false; wildLeft = def.wild || 0; wildPending = false; sinkLeft = def.sink || 0; sinkPending = false; bondLeft = def.bond || 0; bondPending = false; chestLeft = def.chest || 0; chestPending = false; frostLeft = def.frost || 0; frostPending = false; frostList = []; prismLeft = def.prism || 0; prismPending = false; seedLeft = def.seed || 0; seedPending = false; seedList = []; surgeLeft = def.surge || 0; surgePending = false;   /* 侵蚀/迷雾/吞噬/齿轮/崩塌/错乱/引信/磁暴/幻彩/风袭/缠藤/馈赠/墨染/星愿/霜冻/棱镜/花苞/星爆计数 */
+  boosters.swap = def.swaps || 0;   /* 妙手按关配额 */
+  swapSel = null;
   /* 主题背景：按关卡 bg 字段切换（夜幕/黄昏/糖果/派对/星云），出关恢复 */
-  ['night','sunset','candy','party','galaxy','abyss','lava','mirror','doom','brass','mist','void','swamp','gravity','chaos','rubble','prism','ruin','forge','magnetic','aurora','gale','jungle','bloom','inkpond','astral','sands','tide','mirage','cavern','meadow','vault'].forEach(function(k){
+  ['night','sunset','candy','party','galaxy','abyss','lava','mirror','doom','brass','mist','void','swamp','gravity','chaos','rubble','prism','ruin','forge','magnetic','aurora','gale','jungle','bloom','inkpond','astral','sands','tide','mirage','cavern','meadow','vault','glacier','volt','orchid','chasm','nova'].forEach(function(k){
     document.body.classList.toggle(k, def.bg === k);
   });
   if(def.bg) ensureSkyDecor(def.bg);
@@ -7031,6 +7479,11 @@ function startLevel(no){
   if(def.sink) setTimeout(function(){ toast(T('sink_note')); }, 1500);
   if(def.bond) setTimeout(function(){ toast(T('bond_note')); }, 1500);
   if(def.chest) setTimeout(function(){ toast(T('chest_note')); }, 1500);
+  if(def.frost) setTimeout(function(){ toast(T('frost_note')); }, 1500);
+  if(def.prism) setTimeout(function(){ toast(T('prism_note')); }, 1500);
+  if(def.seed) setTimeout(function(){ toast(T('seed_note')); }, 1500);
+  if(def.swaps) setTimeout(function(){ toast(T('swap_note')); }, 1500);
+  if(def.surge) setTimeout(function(){ toast(T('surge_note')); }, 1500);
   /* 关卡开场横幅：棋盘就位后大字砸入 */
   if(settings.anim) levelIntroFX(def.no);
 }
@@ -7047,9 +7500,10 @@ function restart(){
      重新上锁（复活走 doRevive()，保留棋盘，所以已破的笼 / 冰保持原状）。
      果冻是格子级状态，restart 要重置；doRevive 保留棋盘，所以不清果冻。 */
   jellyGrid = initJellyGrid((currentLevelDef() || {}).jellies);
-  { const _d = (currentLevelDef() || {}); curseLeft = _d.curse || 0; cursePending = false; petrifyLeft = _d.petrify || 0; petrifyPending = false; blindLeft = _d.blind || 0; blindPending = false; devourLeft = _d.devour || 0; devourPending = false; rotLeft = _d.rotate || 0; rotPending = false; venomLeft = _d.venom || 0; venomPending = false; gravLeft = _d.gravity || 0; gravPending = false; gravUp = true; riftLeft = _d.rift || 0; riftPending = false; collapseLeft = _d.collapse || 0; collapsePending = false; collapseLevel = 0; collapsedCells = new Set(); scrambleLeft = _d.scramble || 0; scramblePending = false; fuseLeft = _d.fuse || 0; fusePending = false; magnetLeft = _d.magnet || 0; magnetPending = false; hueLeft = _d.hue || 0; huePending = false; stormLeft = _d.storm || 0; stormPending = false; vineLeft = _d.vine || 0; vinePending = false; giftLeft = _d.gift || 0; giftPending = false; inkLeft = _d.ink || 0; inkPending = false; starLeft = _d.star || 0; starPending = false; tideLeft = _d.tide || 0; tidePending = false; wildLeft = _d.wild || 0; wildPending = false; sinkLeft = _d.sink || 0; sinkPending = false; bondLeft = _d.bond || 0; bondPending = false; chestLeft = _d.chest || 0; chestPending = false; }
+  { const _d = (currentLevelDef() || {}); curseLeft = _d.curse || 0; cursePending = false; petrifyLeft = _d.petrify || 0; petrifyPending = false; blindLeft = _d.blind || 0; blindPending = false; devourLeft = _d.devour || 0; devourPending = false; rotLeft = _d.rotate || 0; rotPending = false; venomLeft = _d.venom || 0; venomPending = false; gravLeft = _d.gravity || 0; gravPending = false; gravUp = true; riftLeft = _d.rift || 0; riftPending = false; collapseLeft = _d.collapse || 0; collapsePending = false; collapseLevel = 0; collapsedCells = new Set(); scrambleLeft = _d.scramble || 0; scramblePending = false; fuseLeft = _d.fuse || 0; fusePending = false; magnetLeft = _d.magnet || 0; magnetPending = false; hueLeft = _d.hue || 0; huePending = false; stormLeft = _d.storm || 0; stormPending = false; vineLeft = _d.vine || 0; vinePending = false; giftLeft = _d.gift || 0; giftPending = false; inkLeft = _d.ink || 0; inkPending = false; starLeft = _d.star || 0; starPending = false; tideLeft = _d.tide || 0; tidePending = false; wildLeft = _d.wild || 0; wildPending = false; sinkLeft = _d.sink || 0; sinkPending = false; bondLeft = _d.bond || 0; bondPending = false; chestLeft = _d.chest || 0; chestPending = false; frostLeft = _d.frost || 0; frostPending = false; frostList = []; prismLeft = _d.prism || 0; prismPending = false; seedLeft = _d.seed || 0; seedPending = false; seedList = []; surgeLeft = _d.surge || 0; surgePending = false; swapSel = null; }
   score = 0; reviveUsed = false;
   boosters = Object.assign({}, BOOSTER_MAX);   /* 道具每关复原 */
+  boosters.swap = (currentLevelDef() || {}).swaps || 0;   /* 妙手按关配额 */
   deselect(); boosterMode = null;
   document.querySelectorAll('.booster').forEach(x=>x.classList.remove('armed'));
   initGoals();
