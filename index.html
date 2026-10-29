@@ -1560,12 +1560,120 @@
     transition:transform .1s;
   }
   #btn-wallpaper:active { transform:scale(.95); box-shadow:0 2px 0 #7433ad; }
+
+  /* ===== 奶蛙池塘 ===== */
+  .pond-panel { max-width:420px; }
+  #pond-progress {
+    text-align:center; font-size:13px; color:#5a7fa8; font-weight:700;
+    margin:-4px 0 8px; line-height:1.5;
+  }
+  #pond-progress b { color:#e8a33d; }
+  #pond-scene {
+    position:relative; height:330px; border-radius:14px; overflow:hidden;
+    background:linear-gradient(#8fd3f4 0%, #c9edfb 34%, #e9f9ff 40%, #7fd0ee 42%, #3fa8cf 100%);
+    box-shadow:inset 0 -6px 18px rgba(20,90,130,.25), inset 0 4px 10px rgba(255,255,255,.4);
+    user-select:none;
+  }
+  /* 太阳与云：基础免费景物 */
+  #pond-scene .ps-sun {
+    position:absolute; left:8%; top:6%; width:34px; height:34px; border-radius:50%;
+    background:radial-gradient(circle at 38% 35%, #fff6c9, #ffd75e 70%);
+    box-shadow:0 0 18px 6px rgba(255,215,94,.55);
+  }
+  #pond-scene .ps-cloud {
+    position:absolute; width:64px; height:18px; border-radius:999px;
+    background:rgba(255,255,255,.92); box-shadow:20px -8px 0 6px rgba(255,255,255,.92), -18px -5px 0 3px rgba(255,255,255,.85);
+    animation:psDrift 26s linear infinite;
+  }
+  #pond-scene .ps-cloud.c2 { top:12%; left:55%; transform:scale(.7); animation-duration:34s; animation-direction:reverse; }
+  #pond-scene .ps-cloud.c1 { top:8%; left:30%; }
+  @keyframes psDrift { from { margin-left:-80px; } to { margin-left:440px; } }
+  #pond-scene .ps-wave {
+    position:absolute; left:0; right:0; top:41%; height:1px;
+    background:rgba(255,255,255,.6);
+  }
+  /* 装饰槽：绝对定位，JS 注入 */
+  .pond-item { position:absolute; border:none; background:none; padding:0; cursor:pointer; font-family:inherit; z-index:2; }
+  .pond-item .pi-body { display:block; transition:filter .25s; }
+  .pond-item.locked .pi-body { filter:grayscale(1) brightness(1.05) opacity(.38); }
+  .pond-item .pi-badge {
+    position:absolute; left:50%; bottom:-4px; transform:translateX(-50%);
+    background:rgba(70,90,110,.82); color:#fff; font-size:10px; font-weight:900;
+    padding:2px 7px; border-radius:999px; white-space:nowrap; pointer-events:none;
+  }
+  .pond-item:not(.locked) .pi-badge { display:none; }
+  .pond-item img { display:block; width:100%; height:auto; pointer-events:none; }
+  .pond-item.pop .pi-body { animation:pondPop .55s cubic-bezier(.34,1.56,.64,1) both; }
+  @keyframes pondPop { 0% { transform:scale(0) translateY(14px); } 62% { transform:scale(1.18) translateY(-4px); } 100% { transform:scale(1); } }
+  .pond-item.bounce .pi-body { animation:pondBounce .5s ease; }
+  @keyframes pondBounce { 0%,100% { transform:translateY(0); } 30% { transform:translateY(-12px) scale(1.06); } 55% { transform:translateY(0); } 75% { transform:translateY(-5px); } }
+  .pond-item.shake .pi-body { animation:pondShake .35s ease; }
+  @keyframes pondShake { 0%,100% { transform:translateX(0); } 25% { transform:translateX(-4px); } 50% { transform:translateX(4px); } 75% { transform:translateX(-3px); } }
+  .pond-item .pi-bubble {
+    position:absolute; left:50%; bottom:calc(100% + 6px); transform:translateX(-50%);
+    background:#fff; color:#33608c; font-size:12px; font-weight:900; white-space:nowrap;
+    padding:4px 10px; border-radius:10px; box-shadow:0 3px 8px rgba(50,80,120,.25);
+    opacity:0; pointer-events:none; transition:opacity .2s; z-index:9;
+  }
+  .pond-item .pi-bubble::after {
+    content:''; position:absolute; top:100%; left:50%; margin-left:-5px;
+    border:5px solid transparent; border-top-color:#fff;
+  }
+  .pond-item .pi-bubble.show { opacity:1; }
+  /* CSS 手绘景物 */
+  .pi-lily { width:58px; height:26px; border-radius:50%;
+    background:radial-gradient(ellipse at 50% 42%, #7ed48a, #3d9e57 78%);
+    box-shadow:inset 0 -3px 5px rgba(20,90,40,.35), 0 3px 5px rgba(20,80,120,.3); }
+  .pi-lily::after { content:''; position:absolute; left:52%; top:38%; width:26%; height:4px; border-radius:2px;
+    background:#2e7c44; transform:rotate(-18deg); }   /* 叶缺口 */
+  .pi-reeds { width:34px; height:64px; position:relative; }
+  .pi-reeds i { position:absolute; bottom:0; width:3px; border-radius:2px; background:linear-gradient(#5aa85f,#3c7c44); }
+  .pi-reeds i:nth-child(1){ left:4px; height:70%; } .pi-reeds i:nth-child(2){ left:15px; height:100%; } .pi-reeds i:nth-child(3){ left:26px; height:80%; }
+  .pi-reeds i::after { content:''; position:absolute; top:-14px; left:-3px; width:9px; height:16px; border-radius:5px; background:#7a4a2b; }
+  .pi-bridge { width:96px; height:34px; }
+  .pi-bridge::before { content:''; position:absolute; inset:0;
+    border-top:9px solid #b5804f; border-radius:50% 50% 0 0 / 100% 100% 0 0;
+    background:repeating-linear-gradient(90deg, #c99463 0 12px, #b5804f 12px 14px);
+    clip-path:polygon(0 0, 100% 0, 100% 26%, 88% 100%, 12% 100%, 0 26%); }
+  .pi-bridge::after { content:''; position:absolute; left:6px; right:6px; bottom:-4px; height:4px; border-radius:3px; background:#8f5f36; }
+  .pi-lantern { width:26px; height:44px; position:relative; }
+  .pi-lantern::before { content:''; position:absolute; left:0; top:6px; width:26px; height:30px; border-radius:8px;
+    background:radial-gradient(circle at 50% 40%, #ffcf5e, #f09a3e 75%);
+    box-shadow:0 0 14px 5px rgba(255,190,80,.5); border:2px solid #c96a2a; }
+  .pi-lantern::after { content:''; position:absolute; left:9px; top:0; width:8px; height:8px; border-radius:3px; background:#8f5f36;
+    box-shadow:0 40px 0 -2px #c96a2a; }
+  .pi-lotus { width:34px; height:30px; position:relative; }
+  .pi-lotus::before { content:''; position:absolute; left:5px; top:0; width:12px; height:22px; border-radius:60% 60% 45% 45%;
+    background:linear-gradient(#ffc3d8, #f286ae); transform:rotate(-24deg); transform-origin:bottom; }
+  .pi-lotus::after { content:''; position:absolute; right:5px; top:0; width:12px; height:22px; border-radius:60% 60% 45% 45%;
+    background:linear-gradient(#ffc3d8, #f286ae); transform:rotate(24deg); transform-origin:bottom; }
+  .pi-lotus i { position:absolute; left:11px; top:-2px; width:12px; height:24px; border-radius:60% 60% 45% 45%;
+    background:linear-gradient(#ffe0ec, #f8a8c6); z-index:2; }
+  .pi-hut { width:64px; height:52px; position:relative; }
+  .pi-hut::before { content:''; position:absolute; left:0; top:0; width:0; height:0; z-index:2;
+    border-left:32px solid transparent; border-right:32px solid transparent; border-bottom:24px solid #c96a3e; }
+  .pi-hut::after { content:''; position:absolute; left:7px; bottom:0; width:50px; height:26px; background:linear-gradient(#e8c98f,#d4ab63);
+    border-radius:3px 3px 0 0; }
+  .pi-hut i { position:absolute; left:24px; bottom:0; width:16px; height:18px; z-index:3; background:#8f5f36; border-radius:8px 8px 0 0; }
+  .pi-well { width:44px; height:52px; position:relative; }
+  .pi-well::before { content:''; position:absolute; left:0; bottom:0; width:44px; height:30px; border-radius:8px;
+    background:radial-gradient(circle at 40% 30%, #aab7c4, #6e7f92 80%); }
+  .pi-well::after { content:''; position:absolute; left:4px; top:0; width:0; height:0;
+    border-left:18px solid transparent; border-right:18px solid transparent; border-bottom:16px solid #c96a3e; }
+  .pi-well i { position:absolute; left:10px; bottom:8px; width:24px; height:10px; border-radius:50%;
+    background:radial-gradient(circle at 50% 45%, #bfe9ff, #4db3d9 80%);
+    box-shadow:0 0 12px 4px rgba(120,220,255,.6); animation:pondGlow 2.2s ease-in-out infinite; }
+  @keyframes pondGlow { 0%,100% { box-shadow:0 0 8px 3px rgba(120,220,255,.5); } 50% { box-shadow:0 0 16px 7px rgba(120,220,255,.8); } }
+  .pond-item img.orb-float { animation:pondOrb 3.2s ease-in-out infinite; }
+  @keyframes pondOrb { 0%,100% { transform:translateY(0); } 50% { transform:translateY(-7px); } }
+  .pond-item img.angel-fly { animation:pondAngel 4.5s ease-in-out infinite; }
+  @keyframes pondAngel { 0%,100% { transform:translateY(0) rotate(-3deg); } 50% { transform:translateY(-9px) rotate(3deg); } }
   /* 每日挑战 / 无尽模式 / 战绩：与壁纸同档的小号胶囊按钮，两行成对排布省纵向空间 */
   #home-mode-row, #home-util-row {
     display:flex; gap:10px; justify-content:center; align-items:center;
     margin-top:8px; position:relative; z-index:2;
   }
-  #btn-daily, #btn-endless, #btn-stats {
+  #btn-daily, #btn-endless, #btn-stats, #btn-pond {
     margin-top:0; border:none; cursor:pointer; font-family:inherit;
     font-size:14px; font-weight:900; color:#fff; letter-spacing:1px;
     padding:7px 18px; border-radius:999px;
@@ -1588,6 +1696,11 @@
     box-shadow:0 4px 0 #3a5cb0, inset 0 2px 3px rgba(255,255,255,.55), 0 6px 12px rgba(70,100,180,.3);
   }
   #btn-stats:active { transform:scale(.95); box-shadow:0 2px 0 #3a5cb0; }
+  #btn-pond {
+    background:linear-gradient(#5fd6c8,#2fa8a0);
+    box-shadow:0 4px 0 #1e7a74, inset 0 2px 3px rgba(255,255,255,.55), 0 6px 12px rgba(40,140,130,.3);
+  }
+  #btn-pond:active { transform:scale(.95); box-shadow:0 2px 0 #1e7a74; }
   /* 战绩面板：汇总卡片 + 可滚动的逐关列表 */
   #stats-summary { display:flex; flex-wrap:wrap; gap:8px; margin-top:8px; }
   .stat-card {
@@ -2201,6 +2314,7 @@ var _hmt = _hmt || [];
   </div>
   <div id="home-util-row">
     <button id="btn-stats" onclick="openStats()" data-i18n="stats">📊 战绩</button>
+    <button id="btn-pond" onclick="openPond()" data-i18n="pond">🐸 池塘</button>
     <button id="btn-wallpaper" onclick="openWallpaper()" data-i18n="wallpapers">🎨 壁纸</button>
   </div>
   <button id="mascot-space-trigger" onclick="openMascotSpace()" title="奶蛙空间" data-i18n-title="mascot_space"><img src="naiwa/start/start_bj.webp" alt="" draggable="false"><span class="trigger-label" data-i18n="mascot_space">奶蛙空间</span></button>
@@ -2337,6 +2451,16 @@ var _hmt = _hmt || [];
     <div id="stats-summary"></div>
     <div class="sec-title" data-i18n="st_level_list">关卡成绩</div>
     <div id="stats-list"></div>
+  </div>
+</div>
+
+<!-- 奶蛙池塘：累计星星解锁装饰，零存档（直接算 sum(save.stars)） -->
+<div class="overlay" id="pond-overlay">
+  <div class="panel pond-panel">
+    <button class="panel-close" data-close="pond-overlay">✕</button>
+    <h2 data-i18n="pond_title">奶蛙池塘</h2>
+    <div id="pond-progress"></div>
+    <div id="pond-scene"></div>
   </div>
 </div>
 
@@ -3852,6 +3976,13 @@ const I18N = {
     st_stars:'累计星星', st_cleared:'已通关',
     st_daily:'每日挑战', st_days:'{n} 天', st_streak:'连 {n}',
     st_endless:'无尽最佳', st_rounds:'{n} 轮', st_best:'最高分', st_none:'未挑战',
+    pond:'🐸 池塘', pond_title:'奶蛙池塘',
+    pond_sum:'累计收集 <b>{n}</b> / {m} ★', pond_next:'下一个：{name}（还差 {n}★）', pond_all:'池塘已经住满了，谢谢你 🐸💛',
+    pond_locked:'还差 {n} 颗星才能解锁',
+    pond_lily:'小荷叶', pond_frogA:'小奶蛙', pond_reeds:'芦苇丛', pond_bridge:'木桥',
+    pond_angel:'天使奶蛙', pond_lantern:'许愿灯', pond_flag:'插旗蛙', pond_lotus:'荷花',
+    pond_milk:'牛奶蛙', pond_hut:'蛙木屋', pond_satchel:'书包蛙', pond_shock:'惊呆蛙',
+    pond_orb:'池中精灵', pond_boss:'蛙老板', pond_well:'许愿池',
     st_level_list:'关卡成绩',
     home_sub:'滑 动 消 除 · 轻 松 一 夏',
     progress_pre:'当前进度：第 ', progress_post:' 关',
@@ -3951,6 +4082,13 @@ const I18N = {
     st_stars:'Total Stars', st_cleared:'Cleared',
     st_daily:'Daily Streak', st_days:'{n} days', st_streak:'streak {n}',
     st_endless:'Endless Best', st_rounds:'Round {n}', st_best:'Best', st_none:'Not played',
+    pond:'🐸 Pond', pond_title:'Frog Pond',
+    pond_sum:'Collected <b>{n}</b> / {m} ★', pond_next:'Next: {name} ({n}★ to go)', pond_all:'The pond is full — thank you 🐸💛',
+    pond_locked:'{n} more stars to unlock',
+    pond_lily:'Lily Pad', pond_frogA:'Little Frog', pond_reeds:'Reeds', pond_bridge:'Wooden Bridge',
+    pond_angel:'Angel Frog', pond_lantern:'Wish Lantern', pond_flag:'Flag Frog', pond_lotus:'Lotus',
+    pond_milk:'Milk Frog', pond_hut:'Frog Hut', pond_satchel:'Satchel Frog', pond_shock:'Shocked Frog',
+    pond_orb:'Pond Spirit', pond_boss:'Boss Frog', pond_well:'Wishing Well',
     st_level_list:'Level Scores',
     home_sub:'Swipe · Match · Relax',
     progress_pre:'Level ', progress_post:' · Current Progress',
@@ -7876,6 +8014,107 @@ function openStats(){
   SFX.click();
   renderStats();
   openOverlay('stats-overlay');
+}
+
+/* ===== 奶蛙池塘 =====
+   累计星星里程碑制：不消耗、只解锁，直接算 sum(save.stars)，零新增存档。
+   41 关 × 3 星 = 123 星封顶，最后一件「许愿池」是全三星大奖。 */
+const POND_ITEMS = [
+  { id:'lily',    need:3,   name:'pond_lily',    kind:'css', x:10, y:60, w:58 },
+  { id:'frogA',   need:5,   name:'pond_frogA',   kind:'img', src:'naiwa/1/a.webp',          x:28, y:50, w:54 },
+  { id:'reeds',   need:8,   name:'pond_reeds',   kind:'css', x:88, y:42, w:34 },
+  { id:'bridge',  need:12,  name:'pond_bridge',  kind:'css', x:38, y:36, w:96 },
+  { id:'angel',   need:16,  name:'pond_angel',   kind:'img', src:'naiwa/1/c.webp',          x:66, y:26, w:52, fx:'angel-fly' },
+  { id:'lantern', need:21,  name:'pond_lantern', kind:'css', x:5,  y:22, w:26 },
+  { id:'flag',    need:27,  name:'pond_flag',    kind:'img', src:'naiwa/1/f.webp',          x:52, y:60, w:56 },
+  { id:'lotus',   need:34,  name:'pond_lotus',   kind:'css', x:18, y:66, w:34 },
+  { id:'milk',    need:42,  name:'pond_milk',    kind:'img', src:'naiwa/1/d.webp',          x:76, y:54, w:56 },
+  { id:'hut',     need:51,  name:'pond_hut',     kind:'css', x:78, y:30, w:64 },
+  { id:'satchel', need:61,  name:'pond_satchel', kind:'img', src:'naiwa/3/a3.webp',         x:38, y:54, w:54 },
+  { id:'shock',   need:72,  name:'pond_shock',   kind:'img', src:'naiwa/over/jingdai.webp', x:60, y:44, w:58 },
+  { id:'orb',     need:85,  name:'pond_orb',     kind:'img', src:'naiwa/1/b.webp',          x:13, y:34, w:50, fx:'orb-float' },
+  { id:'boss',    need:100, name:'pond_boss',    kind:'img', src:'naiwa/over/naihao.webp',  x:44, y:68, w:64 },
+  { id:'well',    need:123, name:'pond_well',    kind:'css', x:3,  y:69, w:44 },
+];
+/* CSS 景物的内部结构（对应上面的 kind:'css' 项） */
+const POND_CSS_HTML = {
+  lily:    '<span class="pi-body" style="width:58px;height:26px"><span class="pi-lily" style="position:absolute;inset:0"></span></span>',
+  reeds:   '<span class="pi-body" style="width:34px;height:64px"><span class="pi-reeds" style="position:absolute;inset:0"><i></i><i></i><i></i></span></span>',
+  bridge:  '<span class="pi-body" style="width:96px;height:34px"><span class="pi-bridge" style="position:absolute;inset:0"></span></span>',
+  lantern: '<span class="pi-body" style="width:26px;height:44px"><span class="pi-lantern" style="position:absolute;inset:0"></span></span>',
+  lotus:   '<span class="pi-body" style="width:34px;height:30px"><span class="pi-lotus" style="position:absolute;inset:0"><i></i></span></span>',
+  hut:     '<span class="pi-body" style="width:64px;height:52px"><span class="pi-hut" style="position:absolute;inset:0"><i></i></span></span>',
+  well:    '<span class="pi-body" style="width:44px;height:52px"><span class="pi-well" style="position:absolute;inset:0"><i></i></span></span>',
+};
+
+function pondTotalStars(){
+  let n = 0;
+  for(const k in save.stars){ n += Math.min(3, parseInt(save.stars[k], 10) || 0); }
+  return n;
+}
+
+function renderPond(){
+  const scene = $('#pond-scene');
+  if(!scene) return;
+  const total = pondTotalStars();
+  const maxNeed = POND_ITEMS[POND_ITEMS.length-1].need;
+  /* 进度行：当前累计 + 下一件要解锁什么 */
+  const next = POND_ITEMS.find(it => it.need > total);
+  const prog = $('#pond-progress');
+  prog.innerHTML = T('pond_sum', { n: total, m: maxNeed })
+    + (next ? '<br>' + T('pond_next', { name: T(next.name), n: next.need - total }) : '<br>' + T('pond_all'));
+  scene.innerHTML = '';
+  /* 基础景物：太阳 + 两朵云 + 水面高光线（免费） */
+  scene.insertAdjacentHTML('beforeend',
+    '<span class="ps-sun"></span><span class="ps-cloud c1"></span><span class="ps-cloud c2"></span><span class="ps-wave"></span>');
+  for(const it of POND_ITEMS){
+    const unlocked = total >= it.need;
+    const btn = document.createElement('button');
+    btn.className = 'pond-item' + (unlocked ? ' pop' : ' locked');
+    btn.style.left = it.x + '%';
+    btn.style.top = it.y + '%';
+    btn.style.width = it.w + 'px';
+    if(it.kind === 'img'){
+      btn.innerHTML = '<span class="pi-body" style="width:' + it.w + 'px">'
+        + '<img src="' + it.src + '" alt="" draggable="false"' + (it.fx ? ' class="' + it.fx + '"' : '') + '></span>';
+    } else {
+      btn.innerHTML = POND_CSS_HTML[it.id] || '';
+    }
+    btn.insertAdjacentHTML('beforeend',
+      '<span class="pi-badge">★' + it.need + '</span><span class="pi-bubble"></span>');
+    btn.setAttribute('onclick', 'tapPondItem(this, ' + it.need + ', "' + it.name + '")');
+    scene.appendChild(btn);
+  }
+}
+
+function openPond(){
+  SFX.click();
+  renderPond();
+  openOverlay('pond-overlay');
+}
+
+function tapPondItem(el, need, nameKey){
+  const total = pondTotalStars();
+  if(total < need){
+    /* 没解锁：摇一摇 + 提示还差几颗 */
+    el.classList.remove('shake');
+    void el.offsetWidth;
+    el.classList.add('shake');
+    toast(T('pond_locked', { n: need - total }));
+    return;
+  }
+  /* 已解锁：弹一下 + 气泡报名字 */
+  if(settings.sfx) SFX.swap();
+  el.classList.remove('bounce');
+  void el.offsetWidth;
+  el.classList.add('bounce');
+  const bubble = el.querySelector('.pi-bubble');
+  if(bubble){
+    bubble.textContent = T(nameKey);
+    bubble.classList.add('show');
+    clearTimeout(bubble._t);
+    bubble._t = setTimeout(() => bubble.classList.remove('show'), 1500);
+  }
 }
 function renderStats(){
   const sum = $('#stats-summary');
