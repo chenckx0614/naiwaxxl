@@ -1562,14 +1562,15 @@
   #btn-wallpaper:active { transform:scale(.95); box-shadow:0 2px 0 #7433ad; }
 
   /* ===== 奶蛙池塘 ===== */
-  .pond-panel { max-width:420px; }
+  .pond-panel { width:min(94vw, 520px); }
+  .pond-panel h2 { text-align:center; }
   #pond-progress {
-    text-align:center; font-size:13px; color:#5a7fa8; font-weight:700;
-    margin:-4px 0 8px; line-height:1.5;
+    text-align:center; font-size:14px; color:#5a7fa8; font-weight:700;
+    margin:-4px 0 9px; line-height:1.55;
   }
   #pond-progress b { color:#e8a33d; }
   #pond-scene {
-    position:relative; height:330px; border-radius:14px; overflow:hidden;
+    position:relative; height:min(88vw, 380px); border-radius:14px; overflow:hidden;
     background:linear-gradient(#8fd3f4 0%, #c9edfb 34%, #e9f9ff 40%, #7fd0ee 42%, #3fa8cf 100%);
     box-shadow:inset 0 -6px 18px rgba(20,90,130,.25), inset 0 4px 10px rgba(255,255,255,.4);
     user-select:none;
@@ -1592,6 +1593,36 @@
     position:absolute; left:0; right:0; top:41%; height:1px;
     background:rgba(255,255,255,.6);
   }
+  /* 水面光带与游鱼：免费景物 */
+  #pond-scene .ps-streak {
+    position:absolute; height:4px; border-radius:3px;
+    background:rgba(255,255,255,.22);
+  }
+  #pond-scene .ps-streak.s1 { left:12%; top:56%; width:18%; transform:skewX(-30deg); }
+  #pond-scene .ps-streak.s2 { left:56%; top:66%; width:14%; transform:skewX(-30deg); }
+  #pond-scene .ps-streak.s3 { left:30%; top:78%; width:22%; transform:skewX(-30deg); background:rgba(255,255,255,.16); }
+  #pond-scene .ps-streak.s4 { left:70%; top:88%; width:16%; transform:skewX(-30deg); background:rgba(255,255,255,.16); }
+  #pond-scene .ps-fish { position:absolute; width:24px; height:11px; animation:pondSwim 7s ease-in-out infinite alternate; }
+  #pond-scene .ps-fish::before {
+    content:''; position:absolute; left:0; top:0; width:16px; height:11px;
+    border-radius:60% 70% 70% 60%; background:linear-gradient(#ff9d5c,#e86a2e);
+  }
+  #pond-scene .ps-fish::after {
+    content:''; position:absolute; right:0; top:1px; width:0; height:0;
+    border-top:4.5px solid transparent; border-bottom:4.5px solid transparent; border-right:8px solid #e86a2e;
+  }
+  #pond-scene .ps-fish.f1 { left:24%; top:82%; }
+  #pond-scene .ps-fish.f2 { left:66%; top:90%; transform:scaleX(-1) scale(.8); animation-name:pondSwim2; }
+  @keyframes pondSwim  { from { margin-left:0; } to { margin-left:30px; } }
+  @keyframes pondSwim2 { from { margin-left:0; } to { margin-left:-24px; } }
+  /* 漂浮装饰：水下投影 + 轻微起伏 */
+  .pond-item .pi-shadow {
+    position:absolute; left:12%; right:12%; bottom:-7px; height:9px; border-radius:50%;
+    background:rgba(15,70,105,.28); filter:blur(2px); pointer-events:none;
+  }
+  @keyframes pondBob { 0%,100% { transform:translateY(0); } 50% { transform:translateY(-4px); } }
+  .pond-item.bob .pi-body > img:not(.angel-fly):not(.orb-float),
+  .pond-item.bob .pi-body > span { animation:pondBob 3.6s ease-in-out infinite; animation-delay:var(--pd, 0s); }
   /* 装饰槽：绝对定位，JS 注入 */
   .pond-item { position:absolute; border:none; background:none; padding:0; cursor:pointer; font-family:inherit; z-index:2; }
   .pond-item .pi-body { display:block; transition:filter .25s; }
@@ -1621,48 +1652,48 @@
   }
   .pond-item .pi-bubble.show { opacity:1; }
   /* CSS 手绘景物 */
-  .pi-lily { width:58px; height:26px; border-radius:50%;
+  .pi-lily { width:70px; height:31px; border-radius:50%;
     background:radial-gradient(ellipse at 50% 42%, #7ed48a, #3d9e57 78%);
     box-shadow:inset 0 -3px 5px rgba(20,90,40,.35), 0 3px 5px rgba(20,80,120,.3); }
   .pi-lily::after { content:''; position:absolute; left:52%; top:38%; width:26%; height:4px; border-radius:2px;
     background:#2e7c44; transform:rotate(-18deg); }   /* 叶缺口 */
-  .pi-reeds { width:34px; height:64px; position:relative; }
-  .pi-reeds i { position:absolute; bottom:0; width:3px; border-radius:2px; background:linear-gradient(#5aa85f,#3c7c44); }
-  .pi-reeds i:nth-child(1){ left:4px; height:70%; } .pi-reeds i:nth-child(2){ left:15px; height:100%; } .pi-reeds i:nth-child(3){ left:26px; height:80%; }
-  .pi-reeds i::after { content:''; position:absolute; top:-14px; left:-3px; width:9px; height:16px; border-radius:5px; background:#7a4a2b; }
-  .pi-bridge { width:96px; height:34px; }
+  .pi-reeds { width:40px; height:76px; position:relative; }
+  .pi-reeds i { position:absolute; bottom:0; width:4px; border-radius:2px; background:linear-gradient(#5aa85f,#3c7c44); }
+  .pi-reeds i:nth-child(1){ left:5px; height:70%; } .pi-reeds i:nth-child(2){ left:18px; height:100%; } .pi-reeds i:nth-child(3){ left:31px; height:80%; }
+  .pi-reeds i::after { content:''; position:absolute; top:-16px; left:-3px; width:10px; height:18px; border-radius:5px; background:#7a4a2b; }
+  .pi-bridge { width:116px; height:41px; }
   .pi-bridge::before { content:''; position:absolute; inset:0;
-    border-top:9px solid #b5804f; border-radius:50% 50% 0 0 / 100% 100% 0 0;
-    background:repeating-linear-gradient(90deg, #c99463 0 12px, #b5804f 12px 14px);
+    border-top:11px solid #b5804f; border-radius:50% 50% 0 0 / 100% 100% 0 0;
+    background:repeating-linear-gradient(90deg, #c99463 0 14px, #b5804f 14px 17px);
     clip-path:polygon(0 0, 100% 0, 100% 26%, 88% 100%, 12% 100%, 0 26%); }
-  .pi-bridge::after { content:''; position:absolute; left:6px; right:6px; bottom:-4px; height:4px; border-radius:3px; background:#8f5f36; }
-  .pi-lantern { width:26px; height:44px; position:relative; }
-  .pi-lantern::before { content:''; position:absolute; left:0; top:6px; width:26px; height:30px; border-radius:8px;
+  .pi-bridge::after { content:''; position:absolute; left:7px; right:7px; bottom:-5px; height:5px; border-radius:3px; background:#8f5f36; }
+  .pi-lantern { width:31px; height:53px; position:relative; }
+  .pi-lantern::before { content:''; position:absolute; left:0; top:7px; width:31px; height:36px; border-radius:9px;
     background:radial-gradient(circle at 50% 40%, #ffcf5e, #f09a3e 75%);
-    box-shadow:0 0 14px 5px rgba(255,190,80,.5); border:2px solid #c96a2a; }
-  .pi-lantern::after { content:''; position:absolute; left:9px; top:0; width:8px; height:8px; border-radius:3px; background:#8f5f36;
-    box-shadow:0 40px 0 -2px #c96a2a; }
-  .pi-lotus { width:34px; height:30px; position:relative; }
-  .pi-lotus::before { content:''; position:absolute; left:5px; top:0; width:12px; height:22px; border-radius:60% 60% 45% 45%;
+    box-shadow:0 0 16px 6px rgba(255,190,80,.5); border:2px solid #c96a2a; }
+  .pi-lantern::after { content:''; position:absolute; left:11px; top:0; width:9px; height:9px; border-radius:3px; background:#8f5f36;
+    box-shadow:0 48px 0 -2px #c96a2a; }
+  .pi-lotus { width:41px; height:36px; position:relative; }
+  .pi-lotus::before { content:''; position:absolute; left:6px; top:0; width:14px; height:26px; border-radius:60% 60% 45% 45%;
     background:linear-gradient(#ffc3d8, #f286ae); transform:rotate(-24deg); transform-origin:bottom; }
-  .pi-lotus::after { content:''; position:absolute; right:5px; top:0; width:12px; height:22px; border-radius:60% 60% 45% 45%;
+  .pi-lotus::after { content:''; position:absolute; right:6px; top:0; width:14px; height:26px; border-radius:60% 60% 45% 45%;
     background:linear-gradient(#ffc3d8, #f286ae); transform:rotate(24deg); transform-origin:bottom; }
-  .pi-lotus i { position:absolute; left:11px; top:-2px; width:12px; height:24px; border-radius:60% 60% 45% 45%;
+  .pi-lotus i { position:absolute; left:13px; top:-2px; width:14px; height:28px; border-radius:60% 60% 45% 45%;
     background:linear-gradient(#ffe0ec, #f8a8c6); z-index:2; }
-  .pi-hut { width:64px; height:52px; position:relative; }
+  .pi-hut { width:77px; height:62px; position:relative; }
   .pi-hut::before { content:''; position:absolute; left:0; top:0; width:0; height:0; z-index:2;
-    border-left:32px solid transparent; border-right:32px solid transparent; border-bottom:24px solid #c96a3e; }
-  .pi-hut::after { content:''; position:absolute; left:7px; bottom:0; width:50px; height:26px; background:linear-gradient(#e8c98f,#d4ab63);
-    border-radius:3px 3px 0 0; }
-  .pi-hut i { position:absolute; left:24px; bottom:0; width:16px; height:18px; z-index:3; background:#8f5f36; border-radius:8px 8px 0 0; }
-  .pi-well { width:44px; height:52px; position:relative; }
-  .pi-well::before { content:''; position:absolute; left:0; bottom:0; width:44px; height:30px; border-radius:8px;
+    border-left:38px solid transparent; border-right:38px solid transparent; border-bottom:29px solid #c96a3e; }
+  .pi-hut::after { content:''; position:absolute; left:9px; bottom:0; width:59px; height:31px; background:linear-gradient(#e8c98f,#d4ab63);
+    border-radius:4px 4px 0 0; }
+  .pi-hut i { position:absolute; left:29px; bottom:0; width:19px; height:21px; z-index:3; background:#8f5f36; border-radius:9px 9px 0 0; }
+  .pi-well { width:53px; height:62px; position:relative; }
+  .pi-well::before { content:''; position:absolute; left:0; bottom:0; width:53px; height:36px; border-radius:9px;
     background:radial-gradient(circle at 40% 30%, #aab7c4, #6e7f92 80%); }
-  .pi-well::after { content:''; position:absolute; left:4px; top:0; width:0; height:0;
-    border-left:18px solid transparent; border-right:18px solid transparent; border-bottom:16px solid #c96a3e; }
-  .pi-well i { position:absolute; left:10px; bottom:8px; width:24px; height:10px; border-radius:50%;
+  .pi-well::after { content:''; position:absolute; left:5px; top:0; width:0; height:0;
+    border-left:22px solid transparent; border-right:22px solid transparent; border-bottom:19px solid #c96a3e; }
+  .pi-well i { position:absolute; left:12px; bottom:10px; width:29px; height:12px; border-radius:50%;
     background:radial-gradient(circle at 50% 45%, #bfe9ff, #4db3d9 80%);
-    box-shadow:0 0 12px 4px rgba(120,220,255,.6); animation:pondGlow 2.2s ease-in-out infinite; }
+    box-shadow:0 0 14px 5px rgba(120,220,255,.6); animation:pondGlow 2.2s ease-in-out infinite; }
   @keyframes pondGlow { 0%,100% { box-shadow:0 0 8px 3px rgba(120,220,255,.5); } 50% { box-shadow:0 0 16px 7px rgba(120,220,255,.8); } }
   .pond-item img.orb-float { animation:pondOrb 3.2s ease-in-out infinite; }
   @keyframes pondOrb { 0%,100% { transform:translateY(0); } 50% { transform:translateY(-7px); } }
@@ -8020,31 +8051,31 @@ function openStats(){
    累计星星里程碑制：不消耗、只解锁，直接算 sum(save.stars)，零新增存档。
    41 关 × 3 星 = 123 星封顶，最后一件「许愿池」是全三星大奖。 */
 const POND_ITEMS = [
-  { id:'lily',    need:3,   name:'pond_lily',    kind:'css', x:10, y:60, w:58 },
-  { id:'frogA',   need:5,   name:'pond_frogA',   kind:'img', src:'naiwa/1/a.webp',          x:28, y:50, w:54 },
-  { id:'reeds',   need:8,   name:'pond_reeds',   kind:'css', x:88, y:42, w:34 },
-  { id:'bridge',  need:12,  name:'pond_bridge',  kind:'css', x:38, y:36, w:96 },
-  { id:'angel',   need:16,  name:'pond_angel',   kind:'img', src:'naiwa/1/c.webp',          x:66, y:26, w:52, fx:'angel-fly' },
-  { id:'lantern', need:21,  name:'pond_lantern', kind:'css', x:5,  y:22, w:26 },
-  { id:'flag',    need:27,  name:'pond_flag',    kind:'img', src:'naiwa/1/f.webp',          x:52, y:60, w:56 },
-  { id:'lotus',   need:34,  name:'pond_lotus',   kind:'css', x:18, y:66, w:34 },
-  { id:'milk',    need:42,  name:'pond_milk',    kind:'img', src:'naiwa/1/d.webp',          x:76, y:54, w:56 },
-  { id:'hut',     need:51,  name:'pond_hut',     kind:'css', x:78, y:30, w:64 },
-  { id:'satchel', need:61,  name:'pond_satchel', kind:'img', src:'naiwa/3/a3.webp',         x:38, y:54, w:54 },
-  { id:'shock',   need:72,  name:'pond_shock',   kind:'img', src:'naiwa/over/jingdai.webp', x:60, y:44, w:58 },
-  { id:'orb',     need:85,  name:'pond_orb',     kind:'img', src:'naiwa/1/b.webp',          x:13, y:34, w:50, fx:'orb-float' },
-  { id:'boss',    need:100, name:'pond_boss',    kind:'img', src:'naiwa/over/naihao.webp',  x:44, y:68, w:64 },
-  { id:'well',    need:123, name:'pond_well',    kind:'css', x:3,  y:69, w:44 },
+  { id:'lily',    need:3,   name:'pond_lily',    kind:'css', x:8,  y:64, w:70, float:true },
+  { id:'frogA',   need:5,   name:'pond_frogA',   kind:'img', src:'naiwa/1/a.webp',          x:18, y:44, w:64, float:true },
+  { id:'reeds',   need:8,   name:'pond_reeds',   kind:'css', x:3,  y:44, w:40 },
+  { id:'bridge',  need:12,  name:'pond_bridge',  kind:'css', cx:true, y:30, w:116 },
+  { id:'angel',   need:16,  name:'pond_angel',   kind:'img', src:'naiwa/1/c.webp',          cx:true, y:10, w:62, fx:'angel-fly' },
+  { id:'lantern', need:21,  name:'pond_lantern', kind:'css', x:6,  y:14, w:30 },
+  { id:'flag',    need:27,  name:'pond_flag',    kind:'img', src:'naiwa/1/f.webp',          x:56, y:54, w:66, float:true },
+  { id:'lotus',   need:34,  name:'pond_lotus',   kind:'css', x:17, y:74, w:40, float:true },
+  { id:'milk',    need:42,  name:'pond_milk',    kind:'img', src:'naiwa/1/d.webp',          x:78, y:56, w:66, float:true },
+  { id:'hut',     need:51,  name:'pond_hut',     kind:'css', x:78, y:16, w:76 },
+  { id:'satchel', need:61,  name:'pond_satchel', kind:'img', src:'naiwa/3/a3.webp',         x:36, y:54, w:64, float:true },
+  { id:'shock',   need:72,  name:'pond_shock',   kind:'img', src:'naiwa/over/jingdai.webp', x:74, y:34, w:68, float:true },
+  { id:'orb',     need:85,  name:'pond_orb',     kind:'img', src:'naiwa/1/b.webp',          x:15, y:26, w:60, fx:'orb-float' },
+  { id:'boss',    need:100, name:'pond_boss',    kind:'img', src:'naiwa/over/naihao.webp',  x:46, y:73, w:76, float:true },
+  { id:'well',    need:123, name:'pond_well',    kind:'css', x:84, y:76, w:52 },
 ];
 /* CSS 景物的内部结构（对应上面的 kind:'css' 项） */
 const POND_CSS_HTML = {
-  lily:    '<span class="pi-body" style="width:58px;height:26px"><span class="pi-lily" style="position:absolute;inset:0"></span></span>',
-  reeds:   '<span class="pi-body" style="width:34px;height:64px"><span class="pi-reeds" style="position:absolute;inset:0"><i></i><i></i><i></i></span></span>',
-  bridge:  '<span class="pi-body" style="width:96px;height:34px"><span class="pi-bridge" style="position:absolute;inset:0"></span></span>',
-  lantern: '<span class="pi-body" style="width:26px;height:44px"><span class="pi-lantern" style="position:absolute;inset:0"></span></span>',
-  lotus:   '<span class="pi-body" style="width:34px;height:30px"><span class="pi-lotus" style="position:absolute;inset:0"><i></i></span></span>',
-  hut:     '<span class="pi-body" style="width:64px;height:52px"><span class="pi-hut" style="position:absolute;inset:0"><i></i></span></span>',
-  well:    '<span class="pi-body" style="width:44px;height:52px"><span class="pi-well" style="position:absolute;inset:0"><i></i></span></span>',
+  lily:    '<span class="pi-body" style="width:70px;height:31px"><span class="pi-lily" style="position:absolute;inset:0"></span></span>',
+  reeds:   '<span class="pi-body" style="width:40px;height:76px"><span class="pi-reeds" style="position:absolute;inset:0"><i></i><i></i><i></i></span></span>',
+  bridge:  '<span class="pi-body" style="width:116px;height:41px"><span class="pi-bridge" style="position:absolute;inset:0"></span></span>',
+  lantern: '<span class="pi-body" style="width:30px;height:53px"><span class="pi-lantern" style="position:absolute;inset:0"></span></span>',
+  lotus:   '<span class="pi-body" style="width:41px;height:36px"><span class="pi-lotus" style="position:absolute;inset:0"><i></i></span></span>',
+  hut:     '<span class="pi-body" style="width:76px;height:62px"><span class="pi-hut" style="position:absolute;inset:0"><i></i></span></span>',
+  well:    '<span class="pi-body" style="width:52px;height:62px"><span class="pi-well" style="position:absolute;inset:0"><i></i></span></span>',
 };
 
 function pondTotalStars(){
@@ -8064,14 +8095,18 @@ function renderPond(){
   prog.innerHTML = T('pond_sum', { n: total, m: maxNeed })
     + (next ? '<br>' + T('pond_next', { name: T(next.name), n: next.need - total }) : '<br>' + T('pond_all'));
   scene.innerHTML = '';
-  /* 基础景物：太阳 + 两朵云 + 水面高光线（免费） */
+  /* 基础景物：太阳 + 两朵云 + 水面高光 + 光带 + 游鱼（免费） */
   scene.insertAdjacentHTML('beforeend',
-    '<span class="ps-sun"></span><span class="ps-cloud c1"></span><span class="ps-cloud c2"></span><span class="ps-wave"></span>');
+    '<span class="ps-sun"></span><span class="ps-cloud c1"></span><span class="ps-cloud c2"></span><span class="ps-wave"></span>'
+    + '<span class="ps-streak s1"></span><span class="ps-streak s2"></span><span class="ps-streak s3"></span><span class="ps-streak s4"></span>'
+    + '<span class="ps-fish f1"></span><span class="ps-fish f2"></span>');
+  let bi = 0;
   for(const it of POND_ITEMS){
     const unlocked = total >= it.need;
     const btn = document.createElement('button');
     btn.className = 'pond-item' + (unlocked ? ' pop' : ' locked');
-    btn.style.left = it.x + '%';
+    btn.style.left = it.cx ? '50%' : it.x + '%';
+    if(it.cx) btn.style.transform = 'translateX(-50%)';
     btn.style.top = it.y + '%';
     btn.style.width = it.w + 'px';
     if(it.kind === 'img'){
@@ -8079,6 +8114,11 @@ function renderPond(){
         + '<img src="' + it.src + '" alt="" draggable="false"' + (it.fx ? ' class="' + it.fx + '"' : '') + '></span>';
     } else {
       btn.innerHTML = POND_CSS_HTML[it.id] || '';
+    }
+    if(it.float && unlocked){
+      btn.classList.add('bob');
+      btn.style.setProperty('--pd', ((bi++ % 5) * 0.7) + 's');
+      btn.insertAdjacentHTML('beforeend', '<span class="pi-shadow"></span>');
     }
     btn.insertAdjacentHTML('beforeend',
       '<span class="pi-badge">★' + it.need + '</span><span class="pi-bubble"></span>');
