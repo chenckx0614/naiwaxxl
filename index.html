@@ -1556,6 +1556,11 @@
   .br-enter span { margin-left:16px; font-size:19px; vertical-align:-1px; }
   .br-enter:hover { background:#ffecad; }
   .br-mask .br-tip { max-width:440px; margin-top:18px; color:#9e977c; font:500 11px 'Consolas','Courier New',monospace; line-height:1.6; }
+  .br-progress { display:flex; align-items:center; gap:12px; width:min(340px,72vw); margin-top:6px; }
+  .br-progress.hide { display:none; }
+  .br-progress-track { position:relative; flex:1; height:8px; border-radius:99px; background:rgba(255,240,180,.12); overflow:hidden; box-shadow:inset 0 0 0 1px rgba(224,210,128,.22); }
+  .br-progress-fill { width:0%; height:100%; border-radius:99px; background:linear-gradient(90deg,#8f7d3a,#e8d26a); transition:width .18s ease-out; }
+  .br-progress-pct { min-width:44px; text-align:right; color:#e8d26a; font:700 12px 'Consolas','Courier New',monospace; letter-spacing:.05em; }
   #br-j { z-index:9; left:12px; bottom:10px; }
   #br-j::before { border-color:rgba(230,216,161,.42); background:rgba(19,21,12,.3); }
   #br-jk { background:rgba(230,216,161,.74); }
@@ -2865,6 +2870,10 @@ var _hmt = _hmt || [];
       <div class="br-mask-kicker">NAIWA / ARCHIVE 001</div>
       <h2 id="br-mask-title">蛙后室</h2>
       <p id="br-msg">救出 3 只迷路奶鼠，再找到出口。奶蛋会短暂追逐，趁它停下时绕开。</p>
+      <div class="br-progress hide" id="br-progress">
+        <div class="br-progress-track"><div class="br-progress-fill" id="br-progress-fill"></div></div>
+        <span class="br-progress-pct" id="br-progress-pct">0%</span>
+      </div>
       <button class="br-enter" id="br-start-btn">进入 LEVEL 0 <span>→</span></button>
       <p class="br-tip" id="br-tip">WASD 移动 · 鼠标转向 · 点击或空格泼牛奶 · Shift 奔跑</p>
     </div>
@@ -8533,25 +8542,100 @@ function openBackrooms(){
     window.Backrooms3D.open({music:settings.music,sfx:settings.sfx});
     return;
   }
-  /* 3D 包按需加载：首次进入才下载，加载完自动进入；期间显示加载态 */
+  /* 3D 包按需加载：首次进入才下载，fetch 流式读取拿真实进度；加载完自动进入 */
   var msg = document.getElementById('br-msg'), startBtn = document.getElementById('br-start-btn');
+  var progWrap = document.getElementById('br-progress');
+  var progFill = document.getElementById('br-progress-fill');
+  var progPct = document.getElementById('br-progress-pct');
   msg.textContent = T('br_loading');
   startBtn.disabled = true;
+  progWrap.classList.remove('hide');
+  progFill.style.width = '0%';
+  progPct.textContent = '0%';
   document.getElementById('br-mask').classList.remove('hide');
-  if(window.__br3dLoading) return;                       /* 已在加载，onload 后自动进入 */
+  loadBackrooms3d(screenEl, function(){
+    if(screenEl.classList.contains('hide')) return;        /* 用户已退出，等下次进入 */
+    progFill.style.width = '100%'; progPct.textContent = '100%';
+    if(window.Backrooms3D){
+      progWrap.classList.add('hide');                      /* 进入 open() 后由其自带「准备模型」态接管 */
+      window.Backrooms3D.open({music:settings.music,sfx:settings.sfx});
+    } else {
+      progWrap.classList.add('hide');
+      msg.textContent = T('br_load_error');
+    }
+  }, function(err){
+    window.__br3dLoading = false;                          /* 允许下次重试 */
+    if(!screenEl.classList.contains('hide')){
+      progWrap.classList.add('hide');
+      msg.textContent = T('br_load_error');
+    }
+  });
+}
+/* fetch 流式下载 backrooms3d.bundle.js（onProgress 0~1），完成后以 blob URL 注入执行 */
+function loadBackrooms3d(screenEl, onReady, onFail){
+  if(window.Backrooms3D){ onReady(); return; }
+  if(window.__br3dLoading) return;
   window.__br3dLoading = true;
-  var s = document.createElement('script');
-  s.src = 'backrooms3d.bundle.js';
-  s.onload = function(){
-    if(screenEl.classList.contains('hide')) return;      /* 用户已退出，等下次进入 */
-    if(window.Backrooms3D) window.Backrooms3D.open({music:settings.music,sfx:settings.sfx});
-    else { msg.textContent = T('br_load_error'); }
+  var progFill = document.getElementById('br-progress-fill');
+  var progPct = document.getElementById('br-progress-pct');
+  var setPct = function(p){
+    p = Math.max(0, Math.min(1, p));
+    progFill.style.width = Math.round(p*100) + '%';
+    progPct.textContent = Math.round(p*100) + '%';
   };
-  s.onerror = function(){
-    window.__br3dLoading = false;                        /* 允许下次重试 */
-    if(!screenEl.classList.contains('hide')) msg.textContent = T('br_load_error');
+  var inject = function(url){
+    var s = document.createElement('script');
+    s.src = url;
+    s.onload = function(){
+      window.__br3dLoading = false;
+      if(!screenEl.classList.contains('hide')) onReady();
+    };
+    s.onerror = function(){
+      window.__br3dLoading = false;
+      if(!screenEl.classList.contains('hide')) onFail(new Error('inject failed'));
+    };
+    document.head.appendChild(s);
   };
-  document.head.appendChild(s);
+  fetch('backrooms3d.bundle.js').then(function(res){
+    if(!res.ok) throw new Error('http ' + res.status);
+    var total = parseInt(res.headers.get('Content-Length') || '0', 10);
+    if(!res.body || !total){ return res.text().then(function(t){ setPct(1); return t; }); }  /* 无流/无长度：退化为整段 */
+    var reader = res.body.getReader(), chunks = [], got = 0;
+    function pump(){
+      return reader.read().then(function(r){
+        if(r.done) return concatChunks(chunks);
+        chunks.push(r.value); got += r.value.length;
+        setPct(got / total);
+        return pump();
+      });
+    }
+    return pump().then(function(buf){
+      setPct(1);
+      return URL.createObjectURL(new Blob([buf], {type:'text/javascript'}));
+    });
+  }).then(function(url){ if(url) inject(url); })
+    .catch(function(err){
+      /* fetch 失败（老浏览器/环境限制）：退回 script 标签直载，进度条走假动画 */
+      progPct.textContent = '…';
+      var fake = 0;
+      var timer = setInterval(function(){
+        if(window.Backrooms3D || !window.__br3dLoading){ clearInterval(timer); return; }
+        fake = Math.min(92, fake + Math.random()*4);
+        setPct(fake/100);
+      }, 400);
+      var s = document.createElement('script');
+      s.src = 'backrooms3d.bundle.js';
+      s.onload = function(){ window.__br3dLoading = false; clearInterval(timer); if(!screenEl.classList.contains('hide')) onReady(); };
+      s.onerror = function(){ window.__br3dLoading = false; clearInterval(timer); if(!screenEl.classList.contains('hide')) onFail(err); };
+      document.head.appendChild(s);
+    });
+}
+function concatChunks(chunks){
+  var len = 0, i;
+  for(i = 0; i < chunks.length; i++) len += chunks[i].length;
+  var out = new Uint8Array(len), off = 0;
+  for(i = 0; i < chunks.length; i++){ out.set(chunks[i], off); off += chunks[i].length; }
+  return out.buffer;
 }
 function closeBackrooms(){
   if(window.Backrooms3D) window.Backrooms3D.stop();
