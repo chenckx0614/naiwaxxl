@@ -2514,6 +2514,25 @@
     transition:width .25s ease;
   }
   #loader-pct { margin-top:10px; font-size:14px; font-weight:700; color:#2b7fb8; }
+  /* 关卡内加载遮罩（进关时优先拉音频+素材，就绪才开打） */
+  #level-loader {
+    position:fixed; left:0; top:0; right:0; bottom:0; z-index:4600;
+    display:flex; align-items:center; justify-content:center;
+    background:linear-gradient(180deg,#8ed8f8 0%,#bfeaff 60%,#e2f7ff 100%);
+    transition:opacity .3s ease;
+  }
+  #level-loader.hide { opacity:0; pointer-events:none; }
+  .ll-card { display:flex; flex-direction:column; align-items:center; gap:10px; }
+  .ll-frog { font-size:44px; line-height:1; animation:ll-bob 1.1s ease-in-out infinite; }
+  @keyframes ll-bob { 0%,100%{ transform:translateY(0) } 50%{ transform:translateY(-8px) } }
+  .ll-title { font-size:22px; font-weight:900; color:#fff; letter-spacing:2px; text-shadow:0 3px 0 #5db6e0, 0 5px 8px rgba(0,0,0,.15); }
+  .ll-track {
+    width:min(240px,64vw); height:14px; border-radius:999px;
+    background:rgba(255,255,255,.55); box-shadow:inset 0 2px 4px rgba(0,0,0,.12);
+    overflow:hidden;
+  }
+  .ll-fill { width:0%; height:100%; border-radius:999px; background:linear-gradient(90deg,#ffcf5c,#ffb14a); transition:width .18s ease-out; }
+  .ll-pct { font-size:13px; font-weight:700; color:#2b7fb8; }
 </style>
 <script>
 /* 百度统计（数据后台 tongji.baidu.com，仅站长可见；玩家端只是一行不可见的异步脚本） */
@@ -2532,6 +2551,15 @@ var _hmt = _hmt || [];
   <div id="loader-logo"><span>奶</span><span>蛙</span><span>消</span><span>消</span><span>乐</span></div>
   <div id="loader-bar"><div id="loader-fill"></div></div>
   <div id="loader-pct">0%</div>
+</div>
+<!-- 关卡内加载遮罩：点进关卡先等 音频(BGM/音效) + 当关素材 就绪再开打 -->
+<div id="level-loader" class="hide">
+  <div class="ll-card">
+    <div class="ll-frog">🐸</div>
+    <div class="ll-title" id="ll-title">LEVEL 1</div>
+    <div class="ll-track"><div class="ll-fill" id="ll-fill"></div></div>
+    <div class="ll-pct" id="ll-pct">0%</div>
+  </div>
 </div>
 <!-- 开始页 -->
 <div id="home">
@@ -4308,6 +4336,7 @@ const I18N = {
     br_tip:'电脑：WASD 移动 · A/D 或拖动转向 · 点击/空格射击',
     br_load_error:'找不到 3D 游戏脚本，请确认 backrooms3d.bundle.js 与 index.html 在同一目录。',
     br_loading:'正在加载 3D 场景…',
+    ll_daily:'每日挑战', ll_endless:'无尽模式',
     revive:'复活 +5 步',
     revived:'复活成功，加油！',
     home_best:'最高分 {n}',
@@ -4424,6 +4453,7 @@ const I18N = {
     br_tip:'Desktop: WASD to move · A/D or drag to look · click/space to shoot',
     br_load_error:'3D game script missing. Keep backrooms3d.bundle.js beside index.html.',
     br_loading:'LOADING 3D SCENE…',
+    ll_daily:'Daily Challenge', ll_endless:'Endless Mode',
     revive:'Revive +5',
     revived:'Revived — keep going!',
     home_best:'Best {n}',
@@ -8012,9 +8042,9 @@ function startLevel(no){
   startLevelCore(def);
 }
 
-/* 通用进关核心：正常关卡 / 每日挑战 / 无尽模式共用。
+/* 通用进关核心：正常关卡 / 每日挑战 / 无尽模式共用（由 startLevelCore 包装前置加载）。
    调用方先把 gameMode / levelOverride 摆好（正常关两个都是默认值）。 */
-function startLevelCore(def){
+function startLevelCoreGo(def){
   track('level', 'start', (gameMode==='normal' ? 'L' : gameMode==='daily' ? 'D' : 'E') + def.no);
   level = def.no;
   TYPES = def.types;
@@ -9267,6 +9297,90 @@ function startBackgroundLoad(){
 PRELOAD.init();
 preloadImages(collectPreloadImages());
 setTimeout(()=>{ PRELOAD.force(); }, 8000);   /* 超时兜底：8 秒强制放行 */
+
+/* ---------- 关卡内加载：点进关卡先弹进度条，音频(BGM/音效)最优先、当关素材随后，
+   全部就绪才真正开打。首屏 8s 兜底放行时 BGM 还没下完的坑由这里接住继续等。
+   音频权重 60% / 素材 40%；单路 0 资源时按另一路算满。超时 6s 强制放行。 */
+const LEVEL_LOADER = {
+  el:null, fill:null, pct:null, title:null, token:0, timer:null,
+  init(){
+    this.el = document.getElementById('level-loader');
+    this.fill = document.getElementById('ll-fill');
+    this.pct = document.getElementById('ll-pct');
+    this.title = document.getElementById('ll-title');
+  },
+  run(def, done){
+    this.init();
+    const token = ++this.token;
+    if(this.timer){ clearTimeout(this.timer); this.timer = null; }
+    /* 标题：普通关 LEVEL X，每日/无尽用各自文案 */
+    this.title.textContent = gameMode === 'daily' ? T('ll_daily')
+                           : gameMode === 'endless' ? T('ll_endless')
+                           : 'LEVEL ' + def.no;
+    const t0 = Date.now();
+    this.el.classList.remove('hide');
+    this.fill.style.width = '0%';
+    this.pct.textContent = '0%';
+    let aTotal = 0, aDone = 0, iTotal = 0, iDone = 0;
+    let finished = false;
+    const AUDIO_W = 0.6;
+    const self = this;
+    function paint(){
+      const ap = aTotal ? aDone / aTotal : 1;
+      const ip = iTotal ? iDone / iTotal : 1;
+      const pct = Math.round((ap * AUDIO_W + ip * (1 - AUDIO_W)) * 100);
+      self.fill.style.width = pct + '%';
+      self.pct.textContent = pct + '%';
+      if(aDone >= aTotal && iDone >= iTotal) finish();
+    }
+    function finish(){
+      if(finished) return;
+      finished = true;
+      if(self.timer){ clearTimeout(self.timer); self.timer = null; }
+      self.fill.style.width = '100%';
+      self.pct.textContent = '100%';
+      /* 最短显示 350ms，避免素材全在缓存时进度条闪烁 */
+      const wait = Math.max(0, 350 - (Date.now() - t0));
+      setTimeout(function(){
+        if(token !== self.token) return;        /* 期间又点了别的关，这次作废 */
+        self.el.classList.add('hide');
+        done();
+      }, wait + 120);
+    }
+    /* 音频就绪 = readyState≥3（与首屏预载同一标准）；error 也放行，别卡死入口 */
+    function waitAudio(a){
+      aTotal++;
+      if(a.readyState >= 3){ aDone++; paint(); return; }
+      const h = function(){ cleanup(); aDone++; paint(); };
+      const cleanup = function(){
+        a.removeEventListener('canplaythrough', h);
+        a.removeEventListener('canplay', h);
+        a.removeEventListener('error', h);
+      };
+      a.addEventListener('canplaythrough', h);
+      a.addEventListener('canplay', h);
+      a.addEventListener('error', h);
+    }
+    function waitImg(src){
+      if(!src) return;
+      iTotal++;
+      const im = new Image();
+      im.onload = im.onerror = function(){ iDone++; paint(); };
+      im.src = src;
+    }
+    /* 音频优先：BGM（当前选中曲目，可能是 10MB 备用曲）+ combo 音效 + 结算音效 */
+    [curBgm()].concat(comboAudios, [endAudio]).forEach(waitAudio);
+    /* 当关素材：棋子图 + 专属胜利插图 */
+    (def.types || []).forEach(t => waitImg(t.img));
+    if(def.winImg) waitImg(def.winImg);
+    paint();
+    this.timer = setTimeout(function(){ finish(); }, 6000);   /* 弱网兜底 */
+  }
+};
+/* startLevelCore 前置关卡加载：加载完才执行真正的进关初始化 */
+function startLevelCore(def){
+  LEVEL_LOADER.run(def, function(){ startLevelCoreGo(def); });
+}
 
 /* ---------- 启动 ---------- */
 window.addEventListener('resize', ()=>{ layoutBoard(); for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++){ const t=board[r]&&board[r][c]; if(t) placeTile(t,r,c); } });
