@@ -9313,8 +9313,8 @@ function startBackgroundLoad(){
   const imgs = collectDeferredImages();
   let i = 0;
   const idle = window.requestIdleCallback || function(f){ setTimeout(f, 150); };
-  /* 一张一张拉 + 批间隔 500ms：1080px PNG 解码是主线程长任务，
-     一次 4 张会连着卡顿掉帧（首页动画明显发卡），串行+间隔把突发摊平 */
+  /* 一张一张拉 + 批间隔 500ms：把几十个小 webp 的请求摊开，
+     弱网下不与音频抢带宽，也避免解码突发掉帧 */
   const next = function(){
     if(i >= imgs.length) return;
     const im = new Image(); im.onload = im.onerror = null; im.src = imgs[i];
@@ -9322,7 +9322,8 @@ function startBackgroundLoad(){
     setTimeout(function(){ idle(next); }, 500);
   };
   idle(next);
-  ensureMascot3d(null, true);                  /* 奶蛙空间 3D 包（2.4MB）也在后台预热 */
+  /* mascot3d 包（2.4MB）不再后台预热：弱网下会抢走 BGM/素材的带宽
+     （BGM 加载慢的直接原因），改成点进奶蛙空间时才按需加载（ensureMascot3d 已支持） */
 }
 PRELOAD.init();
 preloadImages(collectPreloadImages());
