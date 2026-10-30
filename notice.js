@@ -18,8 +18,8 @@ window.XXL_NOTICE = {
   frequency: 'always',
   title: { zh:'公告', en:'Notice' },
   body: {
-    zh:'大家可以来抖音找我催更哦！',
-    en:'Come find me on Douyin to ask for more levels!'
+    zh:'近期上线了奶蛙池塘，更新了奶蛙后室，修复了奶蛙吃豆人。\n大家也可以来抖音找我催更哦！',
+    en:'New: Naiwa Pond! Updated: Naiwa Backrooms. Fixed: Naiwa Pac-Man.\nCome find me on Douyin to ask for more!'
   },
   img: null,                          /* 不要配图：渲染时自动隐藏 img 且不预载 */
   end: null,                          /* 一直显示：不设失效日期（frequency 为 always，每次进游戏都弹） */
