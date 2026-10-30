@@ -1466,24 +1466,23 @@
   #backrooms-trigger:active { transform:scale(.92); }
   #backrooms-screen {
     position:fixed; top:0; right:0; bottom:0; left:0; z-index:40;
-    background:radial-gradient(ellipse at 50% 38%, #241c08 0%, #14100a 55%, #0a0804 100%);
-    display:flex; flex-direction:column; align-items:center; justify-content:center;
-    gap:10px; padding:56px 12px 16px; overflow-y:auto;
+    background:#0a0804; overflow:hidden; padding:0;
+    -webkit-user-select:none; user-select:none; touch-action:none;
   }
   #backrooms-screen.hide { display:none; }
+  html.br-lock, html.br-lock body { overflow:hidden !important; }
   #br-back {
-    position:absolute; top:14px; left:14px; height:40px; padding:0 14px; border:none; border-radius:12px;
+    position:absolute; top:14px; left:14px; z-index:5; height:40px; padding:0 14px; border:none; border-radius:12px;
     background:rgba(255,255,255,.14); color:#ffe9a0; font-size:15px; font-weight:900; cursor:pointer;
     -webkit-tap-highlight-color:transparent;
   }
   #br-back:active { transform:scale(.92); }
-  .br-title { font-size:22px; font-weight:900; color:#d8c26a; letter-spacing:4px; text-shadow:0 0 12px rgba(216,194,106,.35); }
   .br-stage {
-    position:relative; width:min(94vw, 470px); border-radius:12px; overflow:hidden;
-    box-shadow:0 6px 24px rgba(0,0,0,.6), 0 0 0 1px rgba(216,194,106,.18);
+    position:absolute; top:0; right:0; bottom:0; left:0; overflow:hidden;
   }
   #br-cv {
-    display:block; width:100%; image-rendering:pixelated; background:#000;
+    display:block; width:100%; height:100%; image-rendering:pixelated; background:#000;
+    touch-action:none;
   }
   /* VHS 扫描线叠层 */
   .br-stage::after {
@@ -1499,12 +1498,7 @@
   .br-mask.hide { display:none; }
   .br-mask p { color:#e8dca0; font-weight:900; font-size:16px; line-height:1.6; margin:0; }
   .br-mask .btn { min-width:150px; }
-  .br-hud {
-    display:flex; align-items:center; gap:18px;
-    font-size:14px; font-weight:900; color:#b8a86a;
-  }
-  .br-hud b { color:#ffe9a0; font-size:16px; }
-  .br-tip { font-size:12px; color:#8a7d50; font-weight:700; }
+  .br-mask .br-tip { font-size:12px; color:#8a7d50; font-weight:700; }
   /* 手机摇杆 + 牛奶开火键（仅触屏显示） */
   #br-j {
     display:none; position:fixed; left:0; bottom:0; width:150px; height:150px; touch-action:none; z-index:41;
@@ -1530,7 +1524,6 @@
   @media (pointer:coarse) and (hover:none) {
     #br-j { display:block; }
     #br-fire { display:block; }
-    #backrooms-screen { padding-bottom:170px; }
   }
 
   /* ---- 奶蛙空间（整页模式）---- */
@@ -2719,19 +2712,14 @@ var _hmt = _hmt || [];
 <!-- 蛙后室：整页模式（隐藏首页进入）-->
 <div id="backrooms-screen" class="hide">
   <button id="br-back" onclick="closeBackrooms()" data-i18n="br_back">‹ 返回主页</button>
-  <div class="br-title" data-i18n="br_title">蛙后室 · Level 0</div>
   <div class="br-stage">
     <canvas id="br-cv" width="320" height="240"></canvas>
     <div class="br-mask" id="br-mask">
       <p id="br-msg" data-i18n="br_ready">救出迷路的奶蛙，躲开黑化的它们…</p>
       <button class="btn btn-green" id="br-start-btn" data-i18n="br_start">进入 Level 0</button>
+      <p class="br-tip" data-i18n="br_tip">电脑：WASD 移动 · A/D 转向 · 点击射击 · 手机：摇杆 + 牛奶键</p>
     </div>
   </div>
-  <div class="br-hud">
-    <span data-i18n="br_rescued">救援</span><b id="br-rescued">0</b>
-    <span data-i18n="br_milk">牛奶</span><b id="br-milk">25</b>
-  </div>
-  <p class="br-tip" data-i18n="br_tip">电脑：WASD 移动 · A/D 转向 · 点击射击 · 手机：摇杆 + 牛奶键</p>
   <div id="br-j"><div id="br-jk"></div></div>
   <button id="br-fire" title="牛奶">🥛</button>
 </div>
@@ -8347,7 +8335,7 @@ function closePacman(){
    - 弹药：牛奶，随时间回复，泼黑化蛙两发制服
    操控：WASD/方向键 + 拖动转向 + 点击/空格射击；手机摇杆 + 🥛 键。 */
 var Backrooms = (function(){
-  var W = 320, HH = 240;
+  var W = 320, HH = 240, CX = 160, HOR = 120, S = 1, UH = 1;
   var cv, ctx, raf = 0, running = false;
   var SEED = 0, px = 4, py = 4, pa = 0;
   var hp = 100, milk = 25, rescued = 0, flash = 0, kick = 0;
@@ -8355,6 +8343,20 @@ var Backrooms = (function(){
   var friendImg = null, corruptImg = null;
   var jx = 0, jy = 0;                      /* 摇杆输入 [-1,1] */
   var lastTs = 0, milkTimer = 0;
+
+  /* 视口自适应：内部分辨率跟随屏幕（横向最多 480 列，像素风放大铺满全屏） */
+  function fit(){
+    var vw = Math.max(1, window.innerWidth), vh = Math.max(1, window.innerHeight);
+    W = Math.min(480, Math.max(160, Math.round(vw)));
+    HH = Math.max(120, Math.round(W * vh / vw));
+    CX = W / 2; HOR = Math.round(HH * 0.5); S = HH / 240;
+    UH = Math.max(1, Math.min(1.5, W / 320));
+    if(cv){
+      cv.width = W; cv.height = HH;
+      Backrooms.depth = new Array(W);
+    }
+  }
+  function onResize(){ fit(); if(!running && cv) render(); }
 
   /* 地图：确定性哈希，走廊每 7 格一条，出生区清空 */
   function wall(i, j){
@@ -8446,11 +8448,11 @@ var Backrooms = (function(){
     list.sort(function(a, b){ return b.d - a.d; });
     for(var i = 0; i < list.length; i++){
       var it = list[i], d = it.d, r = it.r;
-      var sz = 150/d;
-      var cx = 160 + r*160;
-      var col = Math.max(0, Math.min(319, Math.floor(cx)));
+      var sz = 150*S/d;
+      var cx = CX + r*CX;
+      var col = Math.max(0, Math.min(W-1, Math.floor(cx)));
       if(d > depth[col]*1.08) continue;
-      var bottom = 120 + 110/d + kick*6;
+      var bottom = HOR + 110*S/d + kick*6*S;
       var x0 = cx - sz/2, y0 = bottom - sz;
       var img = friendImg;
       if(it.o.corrupt && corruptImg){
@@ -8531,37 +8533,39 @@ var Backrooms = (function(){
   }
   function render(){
     /* 天花板：上暗下亮，近地平线一条荧光灯带 */
-    ctx.fillStyle = '#0f0b03'; ctx.fillRect(0, 0, W, 96);
-    ctx.fillStyle = '#241a06'; ctx.fillRect(0, 96, W, 24);
-    ctx.fillStyle = '#3a2c0c'; ctx.fillRect(0, 116, W, 4);
+    var lt = Math.max(2, S*2);
+    ctx.fillStyle = '#0f0b03'; ctx.fillRect(0, 0, W, HOR*0.8);
+    ctx.fillStyle = '#241a06'; ctx.fillRect(0, HOR*0.8, W, HOR*0.2 - lt);
+    ctx.fillStyle = '#3a2c0c'; ctx.fillRect(0, HOR - lt, W, lt);
     /* 地毯：远处暗近处亮 */
-    ctx.fillStyle = '#241b09'; ctx.fillRect(0, 120, W, 60);
-    ctx.fillStyle = '#382b10'; ctx.fillRect(0, 180, W, 60);
+    ctx.fillStyle = '#241b09'; ctx.fillRect(0, HOR, W, (HH-HOR)/2);
+    ctx.fillStyle = '#382b10'; ctx.fillRect(0, HOR + (HH-HOR)/2, W, HH);
     var depth = Backrooms.depth;
     for(var i = 0; i < W; i++){
-      var r = pa + Math.atan((i - 160)/160);
+      var r = pa + Math.atan((i - CX)/CX);
       var rx = px, ry = py, s = Math.sin(r), c = Math.cos(r), d = 0;
       while(d < 20 && !wall(Math.floor(rx), Math.floor(ry))){ rx += c*0.1; ry += s*0.1; d += 0.1; }
       d *= Math.cos(r - pa);
       depth[i] = d;
-      var h2 = Math.min(240, 240/(d + 0.01));
+      var h2 = Math.min(HH, HH/(d + 0.01));
       var g = (46 + 215/(d*0.55 + 0.75)) | 0;
       if(g > 255) g = 255;
       if(i % 10 < 2) g = (g*0.82) | 0;                              /* 墙纸接缝 */
       ctx.fillStyle = 'rgb(' + g + ',' + ((g*0.85) | 0) + ',' + ((g*0.38) | 0) + ')';
-      ctx.fillRect(i, 120 - h2/2 + kick*6, 1, h2);
+      ctx.fillRect(i, HOR - h2/2 + kick*6*S, 1, h2);
     }
     drawEnts(depth);
     if(flash > 0){ ctx.fillStyle = 'rgba(140,20,20,.35)'; ctx.fillRect(0, 0, W, HH); }
-    /* HUD：血条 / 牛奶 / 救援 */
-    ctx.fillStyle = '#000'; ctx.fillRect(8, 8, 104, 22);
-    ctx.fillStyle = '#5a0f0f'; ctx.fillRect(10, 10, 100, 8);
-    ctx.fillStyle = '#e33'; ctx.fillRect(10, 10, Math.max(0, hp), 8);
-    ctx.fillStyle = '#ffe9a0'; ctx.font = '8px Arial'; ctx.textAlign = 'left';
-    ctx.fillText('HP', 10, 28);
-    ctx.fillText('🥛 ' + milk, 44, 28);
+    /* HUD：血条 / 牛奶 / 救援（随分辨率缩放） */
+    var u = UH;
+    ctx.fillStyle = '#000'; ctx.fillRect(8*u, 8*u, 104*u, 22*u);
+    ctx.fillStyle = '#5a0f0f'; ctx.fillRect(10*u, 10*u, 100*u, 8*u);
+    ctx.fillStyle = '#e33'; ctx.fillRect(10*u, 10*u, Math.max(0, hp)*u, 8*u);
+    ctx.fillStyle = '#ffe9a0'; ctx.font = (8*u) + 'px Arial'; ctx.textAlign = 'left';
+    ctx.fillText('HP', 10*u, 28*u);
+    ctx.fillText('🥛 ' + milk, 44*u, 28*u);
     ctx.textAlign = 'right';
-    ctx.fillText('🐾 ' + rescued, 312, 28);
+    ctx.fillText('🐾 ' + rescued, W - 8*u, 28*u);
     ctx.textAlign = 'left';
   }
   /* ---------- 操控接线 ---------- */
@@ -8618,8 +8622,9 @@ var Backrooms = (function(){
     if(!cv){
       cv = document.getElementById('br-cv');
       ctx = cv.getContext('2d');
-      Backrooms.depth = new Array(W);
       bindInput();
+      window.addEventListener('resize', onResize);
+      window.addEventListener('orientationchange', onResize);
       document.getElementById('br-start-btn').addEventListener('click', function(){
         if(!friendImg){
           friendImg = new Image(); friendImg.src = 'naiwa/1/a.webp';
@@ -8636,6 +8641,7 @@ var Backrooms = (function(){
         raf = requestAnimationFrame(frame);
       });
     }
+    fit();
     reset();
     document.getElementById('br-msg').textContent = T('br_ready');
     document.getElementById('br-start-btn').textContent = T('br_start');
@@ -8655,12 +8661,14 @@ var Backrooms = (function(){
 function openBackrooms(){
   SFX.click();
   track('backrooms', 'open', 'home');
+  document.documentElement.classList.add('br-lock');
   document.getElementById('home').classList.add('hide');
   document.getElementById('backrooms-screen').classList.remove('hide');
   Backrooms.open();
 }
 function closeBackrooms(){
   Backrooms.stop();
+  document.documentElement.classList.remove('br-lock');
   document.getElementById('backrooms-screen').classList.add('hide');
   document.getElementById('home').classList.remove('hide');
   refreshHome();
