@@ -2879,8 +2879,8 @@ var _hmt = _hmt || [];
 
 <script src="notice.js"></script>
 <script src="share-art.js"></script>
-<!-- 蛙后室 3D 包（12.6MB）按需加载：首次点进后室才拉取，见 openBackrooms() -->
-<script src="mascot3d.bundle.js"></script>
+<!-- 蛙后室 3D 包（12.6MB）与奶蛙空间 3D 包（2.4MB）均不随首屏加载：
+     后者由 startBackgroundLoad() 在进首页后预热，点进对应入口时若还没好会动态注入 -->
 <script>
 /* ============================================================
  * 消消乐核心逻辑
@@ -4211,6 +4211,7 @@ const I18N = {
     wallpapers:'壁纸', wp_hint_grid:'点击查看大图', wp_hint_view:'长按图片保存到相册，设为壁纸',
     mascot_space:'奶蛙空间', mascot_space_hint:'这里是奶蛙的小空间，更多互动 coming soon~',
     mascot_3d_loading:'3D 加载中...',
+    mascot_3d_error:'3D 加载失败，请重试',
     rock_hard:'石头太硬了，砸不动！在它旁边消除试试',
     tile_locked:'它被锁住啦，消除它旁边的棋子解开它',
     curse_hit:'深渊侵蚀！一枚棋子被冰封了',
@@ -4326,6 +4327,7 @@ const I18N = {
     wallpapers:'Wallpapers', wp_hint_grid:'Tap to view full size', wp_hint_view:'Long-press the image to save & set as wallpaper',
     mascot_space:'Naiwa Space', mascot_space_hint:'A little corner for the Milk Frog. More interactions coming soon~',
     mascot_3d_loading:'Loading 3D...',
+    mascot_3d_error:'3D failed to load, please retry',
     rock_hard:'The rock is too hard! Clear tiles next to it instead',
     tile_locked:'It is locked! Clear tiles next to it to unlock it',
     curse_hit:'The abyss spreads! A tile has been frozen',
@@ -8466,12 +8468,34 @@ function renderStats(){
       + '</div>';
   }).join('');
 }
+/* mascot3d.bundle.js 按需装载：后台预热（startBackgroundLoad）或首次点进时注入。
+   cb 在脚本就绪后回调；warm=true 时静默失败（下次进入再试）。 */
+let __mascotLoading = false;
+function ensureMascot3d(cb, warm){
+  if(window.startMascot3D){ if(cb) cb(); return; }
+  if(!window.__mascotCbs) window.__mascotCbs = [];
+  if(cb) window.__mascotCbs.push(cb);
+  if(__mascotLoading) return;
+  __mascotLoading = true;
+  const s = document.createElement('script');
+  s.src = 'mascot3d.bundle.js';
+  s.onload = function(){
+    __mascotLoading = false;
+    (window.__mascotCbs || []).splice(0).forEach(function(f){ try{ f(); }catch(e){} });
+  };
+  s.onerror = function(){
+    __mascotLoading = false;
+    window.__mascotCbs = [];
+    if(!warm) toast(T('mascot_3d_error'));
+  };
+  document.head.appendChild(s);
+}
 function openMascotSpace(){
   SFX.click();
   track('mascot','open','home');
   document.getElementById('home').classList.add('hide');
   document.getElementById('mascot-screen').classList.remove('hide');
-  if(window.startMascot3D) window.startMascot3D();
+  ensureMascot3d(function(){ if(window.startMascot3D) window.startMascot3D(); });
 }
 function closeMascotSpace(){
   if(window.stopMascot3D) window.stopMascot3D();
@@ -9094,17 +9118,39 @@ const PRELOAD = {
     }, 300);
     /* 进首页后弹公告：等 loader 淡出完再弹，避免两个浮层打架 */
     setTimeout(function(){ try { maybeShowNotice(); } catch(e){} }, 900);
+    /* 后台补载：其余关卡素材 + mascot3d 包，放行后再慢慢拉 */
+    setTimeout(function(){ try { startBackgroundLoad(); } catch(e){} }, 600);
   },
   /* 兜底：个别资源挂起（代理卡住 / 弱网无响应）时不永久黑屏 */
   force: function(){ this.done = this.total; this.reveal(); }
 };
+/* 首屏只等「马上要用的」：页面内 <img> + 结算插图 + 公告图 + 当前进度那一关的棋子图。
+   其余 40 关的素材、各关胜利插图转后台分批拉（见 startBackgroundLoad），不卡进度条。 */
+function readSavedLevel(){
+  try{
+    const s = JSON.parse(localStorage.getItem(SAVE_KEY) || '{}');
+    const lv = parseInt(s && s.level, 10) || 1;
+    return Math.min(LEVELS.length, Math.max(1, lv));
+  }catch(e){ return 1; }
+}
 function collectPreloadImages(){
   const set = {};
   document.querySelectorAll('img[src]').forEach(im=>{ set[im.getAttribute('src')] = 1; });
-  LEVELS.forEach(L=>{ (L.types || []).forEach(t=>{ set[t.img] = 1; }); });
   if(typeof OVER_IMG !== 'undefined'){ set[OVER_IMG.win] = 1; set[OVER_IMG.lose] = 1; }
-  LEVELS.forEach(function(L){ if(L.winImg) set[L.winImg] = 1; });   /* 各关专属胜利插图 */
   if(window.XXL_NOTICE && XXL_NOTICE.img) set[XXL_NOTICE.img] = 1;  /* 公告配图（不预载弹窗会闪一下） */
+  const cur = readSavedLevel();                                    /* 当关棋子素材：随首屏进度条 */
+  const L = LEVELS[cur - 1];
+  if(L) (L.types || []).forEach(t=>{ set[t.img] = 1; });
+  return Object.keys(set);
+}
+function collectDeferredImages(){
+  const set = {};
+  const cur = readSavedLevel();
+  LEVELS.forEach(function(L, idx){
+    if(idx + 1 === cur) return;
+    (L.types || []).forEach(t=>{ set[t.img] = 1; });
+    if(L.winImg) set[L.winImg] = 1;                                /* 各关专属胜利插图 */
+  });
   return Object.keys(set);
 }
 function preloadImages(list){
@@ -9116,6 +9162,23 @@ function preloadImages(list){
     im.onerror = ()=>{ PRELOAD.bump(); };
     im.src = src;
   });
+}
+/* 后台补载：进度条放行后才启动，每批 4 张、借空闲时段分批，不与首屏抢带宽 */
+let bgLoadStarted = false;
+function startBackgroundLoad(){
+  if(bgLoadStarted) return;
+  bgLoadStarted = true;
+  const imgs = collectDeferredImages();
+  let i = 0;
+  const idle = window.requestIdleCallback || function(f){ setTimeout(f, 150); };
+  const next = function(){
+    if(i >= imgs.length) return;
+    imgs.slice(i, i + 4).forEach(src=>{ const im = new Image(); im.onload = im.onerror = null; im.src = src; });
+    i += 4;
+    idle(next);
+  };
+  idle(next);
+  ensureMascot3d(null, true);                  /* 奶蛙空间 3D 包（2.4MB）也在后台预热 */
 }
 PRELOAD.init();
 preloadImages(collectPreloadImages());
