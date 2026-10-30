@@ -1,11 +1,18 @@
 # 奶蛙消消乐（Match-3）
 
-纯前端三消小游戏，单文件 `index.html` + 图片/音频资源，无框架、无构建步骤，直接用浏览器打开即可游玩。
+纯前端三消小游戏，`index.html` + 图片/音频资源。主游戏、蛙后室和奶蛙空间可直接用浏览器打开；运行时不需要安装依赖。
 
 ## 目录结构
 
 ```
-index.html          游戏本体（HTML + CSS + JS 全部内联）
+index.html          游戏本体（HTML + CSS + 主游戏 JS）
+backrooms3d.js      蛙后室 Three.js 场景与玩法
+backrooms3d.bundle.js  已打包的蛙后室脚本（浏览器实际加载此文件）
+mascot3d.js        奶蛙空间 Three.js 模型与交互
+mascot3d.bundle.js  已打包的奶蛙空间脚本与内置 GLB 模型
+package.json         两个 3D 场景重新打包的依赖与命令
+package-lock.json    固定打包依赖版本
+third-party/         内置 Three.js 的 MIT 许可文本
 minitool/           小红书小工具打包版（脚本外置，兼容 Chrome 61，无音频文件）
 icons/              底部道具栏图标（Fluent Emoji 3D 转出的 WebP）
 naiwa/
@@ -15,6 +22,15 @@ bgm/
   combo1~5.mp3       消除成功音效（每次随机播放一个）
   end.mp3            通关结算音效
 ```
+
+## 蛙后室（Three.js）
+
+首页点击「蛙后室」进入 3D Level 0。每局会生成一座新迷宫；救出 3 只迷路奶鼠后，找到发绿光的出口。奶蛋发现玩家后会缓慢追逐一小段路，然后停下；可以绕开它们，也可以用牛奶制服。支持暂停、重试、中英文界面和触屏操作。
+
+- 电脑：WASD 移动，鼠标上下左右观察，点击或空格泼牛奶，Shift 奔跑，Esc 暂停。
+- 手机：左侧摇杆移动，在右侧场景上下左右滑动观察，右下角按钮攻击与奔跑。
+
+两个 3D 场景都已把 Three.js 打进本地 bundle；蛙后室内置优化后的奶蛋、奶鼠 GLB，奶蛙空间内置奶蛙 GLB，运行时不依赖 CDN，也可以用 `file://` 打开。修改 3D 源码后，运行 `npm ci` 和 `npm run build` 重新生成两个 bundle。原始奶蛋、奶鼠模型各约 67 MB；`scripts/optimize-backrooms-models.py` 可从 `Downloads` 重新生成游戏用模型（需要 numpy、scipy、Pillow、fast-simplification）。
 
 ## 视觉素材来源
 

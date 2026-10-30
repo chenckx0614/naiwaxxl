@@ -1,0 +1,13 @@
+{
+  "name": "naiwa-match3",
+  "private": true,
+  "scripts": {
+    "build:backrooms": "esbuild backrooms3d.js --bundle --format=iife --target=es2018 --loader:.glb=base64 --minify --outfile=backrooms3d.bundle.js",
+    "build:mascot": "esbuild mascot3d.js --bundle --format=iife --target=es2018 --loader:.glb=base64 --minify --outfile=mascot3d.bundle.js",
+    "build": "npm run build:backrooms && npm run build:mascot"
+  },
+  "devDependencies": {
+    "esbuild": "0.28.2",
+    "three": "0.180.0"
+  }
+}

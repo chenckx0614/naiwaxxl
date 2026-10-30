@@ -1526,6 +1526,56 @@
     #br-fire { display:block; }
   }
 
+  /* 蛙后室 3D：低照度档案录像，而非主游戏的糖果色界面。 */
+  #backrooms-screen { background:#171509; font-family:'Consolas','Courier New',monospace; color:#f2e8bd; }
+  #backrooms-screen .br-stage::after { display:none; }
+  #br-cv { image-rendering:auto; }
+  .br-vignette,.br-scanlines { position:absolute; inset:0; pointer-events:none; z-index:2; }
+  .br-vignette { background:radial-gradient(ellipse at center,transparent 40%,rgba(0,0,0,.54) 100%); }
+  .br-scanlines { background:repeating-linear-gradient(0deg,rgba(0,0,0,.075) 0 1px,transparent 1px 4px); opacity:.48; }
+  #br-back { z-index:10; top:22px; left:24px; height:36px; border:1px solid rgba(241,225,165,.38); border-radius:2px; background:rgba(15,16,10,.7); font:600 11px 'Consolas','Courier New',monospace; letter-spacing:.08em; color:#f4e5af; }
+  .br-topline { position:absolute; z-index:4; top:24px; right:28px; display:flex; align-items:center; gap:18px; color:#e6d69b; font:600 11px 'Consolas','Courier New',monospace; letter-spacing:.14em; text-shadow:0 1px 3px #000; }
+  .br-rec { color:#ff715f; animation:br-rec-pulse 1.4s steps(2,end) infinite; }
+  @keyframes br-rec-pulse { 50% { opacity:.35; } }
+  .br-crosshair { position:absolute; z-index:3; left:50%; top:50%; width:18px; height:18px; transform:translate(-50%,-50%); pointer-events:none; opacity:.8; }
+  .br-crosshair span { position:absolute; background:#f4edcf; box-shadow:0 0 3px #0b0b07; }
+  .br-crosshair span:first-child { width:12px; height:1px; left:3px; top:8px; }
+  .br-crosshair span:last-child { width:1px; height:12px; left:8px; top:3px; }
+  .br-hud { position:absolute; z-index:4; left:24px; right:24px; bottom:24px; display:flex; align-items:end; gap:10px; pointer-events:none; }
+  .br-hud-item { min-width:93px; padding:8px 11px 7px; border-top:1px solid rgba(241,225,165,.72); background:linear-gradient(180deg,rgba(16,19,12,.74),rgba(16,19,12,.9)); box-shadow:0 2px 14px rgba(0,0,0,.22); }
+  .br-hud-item small { display:block; color:#b4aa86; font:600 10px 'Consolas','Courier New',monospace; letter-spacing:.12em; }
+  .br-hud-item strong { display:block; margin-top:3px; color:#f5edc8; font:700 25px 'Consolas','Courier New',monospace; line-height:1; }
+  .br-objective { margin-left:auto; padding:10px 13px; max-width:32vw; border-left:2px solid #e8d796; background:rgba(16,19,12,.74); color:#f0e3af; font:600 11px 'Consolas','Courier New',monospace; line-height:1.4; letter-spacing:.06em; }
+  #br-toast { position:absolute; z-index:5; left:50%; top:17%; transform:translate(-50%,-8px); max-width:80vw; padding:9px 16px; border:1px solid rgba(239,222,156,.6); background:rgba(19,21,12,.87); color:#f7e9ae; font:700 12px 'Consolas','Courier New',monospace; text-align:center; opacity:0; transition:opacity .2s,transform .2s; pointer-events:none; }
+  #br-toast.show { opacity:1; transform:translate(-50%,0); }
+  .br-mask { z-index:7; gap:0; background:radial-gradient(ellipse at center,rgba(20,22,13,.75),rgba(8,9,6,.96)); backdrop-filter:blur(5px); }
+  .br-mask-kicker { margin-bottom:13px; color:#baa96f; font:700 10px 'Consolas','Courier New',monospace; letter-spacing:.3em; }
+  #br-mask-title { margin:0 0 12px; color:#f4eac4; font:900 clamp(36px,8vw,76px) 'Microsoft YaHei','PingFang SC',sans-serif; letter-spacing:.15em; text-shadow:0 0 28px rgba(224,210,128,.3); }
+  .br-mask #br-msg { max-width:480px; color:#d4c99d; font:500 14px 'Microsoft YaHei','PingFang SC',sans-serif; line-height:1.8; }
+  .br-enter { margin-top:28px; min-width:220px; height:52px; padding:0 20px; border:1px solid #e9d796; border-radius:2px; background:linear-gradient(90deg,#d4bd76,#f0dfa0); color:#242316; font:800 13px 'Consolas','Courier New',monospace; letter-spacing:.12em; cursor:pointer; box-shadow:0 8px 30px rgba(0,0,0,.3); }
+  .br-enter span { margin-left:16px; font-size:19px; vertical-align:-1px; }
+  .br-enter:hover { background:#ffecad; }
+  .br-mask .br-tip { max-width:440px; margin-top:18px; color:#9e977c; font:500 11px 'Consolas','Courier New',monospace; line-height:1.6; }
+  #br-j { z-index:9; left:12px; bottom:10px; }
+  #br-j::before { border-color:rgba(230,216,161,.42); background:rgba(19,21,12,.3); }
+  #br-jk { background:rgba(230,216,161,.74); }
+  #br-fire,#br-run { z-index:9; display:none; position:fixed; border:1px solid rgba(239,226,170,.65); color:#f3e5b4; background:rgba(19,21,12,.7); box-shadow:0 0 16px rgba(0,0,0,.3); touch-action:none; }
+  #br-fire { right:23px; bottom:23px; width:72px; height:72px; font-size:30px; }
+  #br-run { right:103px; bottom:33px; width:52px; height:52px; border-radius:50%; font-size:30px; cursor:pointer; }
+  #backrooms-screen:not(.playing) #br-j,#backrooms-screen:not(.playing) #br-fire,#backrooms-screen:not(.playing) #br-run { display:none; }
+  @media (pointer:coarse) { #backrooms-screen.playing #br-j,#backrooms-screen.playing #br-fire,#backrooms-screen.playing #br-run { display:block; } }
+  @media (max-width:650px) {
+    #br-back { top:14px; left:13px; }
+    .br-topline { top:19px; right:14px; gap:8px; font-size:9px; }
+    .br-topline span:nth-child(2) { display:none; }
+    .br-hud { left:12px; right:12px; bottom:175px; gap:6px; align-items:stretch; }
+    .br-hud-item { min-width:0; flex:1; padding:6px 8px; }
+    .br-hud-item small { font-size:8px; }
+    .br-hud-item strong { font-size:18px; }
+    .br-objective { max-width:110px; padding:6px 8px; font-size:9px; }
+    #br-toast { top:14%; }
+  }
+
   /* ---- 奶蛙空间（整页模式）---- */
   #mascot-screen {
     position:fixed; top:0; right:0; bottom:0; left:0; z-index:40;
@@ -1776,6 +1826,82 @@
   @keyframes pondOrb { 0%,100% { transform:translateY(0); } 50% { transform:translateY(-7px); } }
   .pond-item img.angel-fly { animation:pondAngel 4.5s ease-in-out infinite; }
   @keyframes pondAngel { 0%,100% { transform:translateY(0) rotate(-3deg); } 50% { transform:translateY(-9px) rotate(3deg); } }
+  /* 池塘图鉴：把星星解锁做成一幅可逐渐填满的湿地绘本。 */
+  #pond-overlay { background:rgba(13,38,39,.72); backdrop-filter:blur(12px); padding:18px; }
+  #pond-overlay .pond-panel {
+    width:min(900px,96vw); max-height:calc(100vh - 36px); overflow-y:auto;
+    padding:26px 28px 22px; border:1px solid #a8c8b2; border-radius:26px;
+    background:#eaf1e4; box-shadow:0 34px 90px rgba(4,28,30,.48),inset 0 1px #fff;
+    scrollbar-color:#91bba5 transparent;
+  }
+  #pond-overlay .panel-close {
+    top:18px; right:18px; z-index:8; width:38px; height:38px;
+    border:1px solid #9bb9a6; background:#f5f8ed; color:#28514c;
+    box-shadow:0 4px 12px rgba(25,72,63,.13); font-size:17px;
+  }
+  .pond-header { display:flex; align-items:end; justify-content:space-between; gap:18px; padding-right:48px; }
+  .pond-eyebrow { color:#648279; font:800 10px 'Trebuchet MS','Microsoft YaHei',sans-serif; letter-spacing:.24em; }
+  #pond-overlay .pond-header h2 { margin:5px 0 2px; text-align:left; color:#173f3b; font:900 clamp(27px,4vw,42px) 'Microsoft YaHei','PingFang SC',sans-serif; letter-spacing:.08em; }
+  .pond-header p { margin:0; color:#57756c; font-size:13px; line-height:1.5; }
+  .pond-star-count { white-space:nowrap; color:#8c7550; font:800 13px 'Trebuchet MS','Microsoft YaHei',sans-serif; }
+  .pond-star-count strong { color:#d39238; font-size:34px; line-height:1; }
+  .pond-progress-track { height:8px; margin-top:18px; border-radius:99px; background:#d2e0d2; overflow:hidden; box-shadow:inset 0 1px 3px rgba(28,71,55,.12); }
+  #pond-progress-fill { display:block; width:0; height:100%; border-radius:inherit; background:linear-gradient(90deg,#7aab74,#e8bd6f); transition:width .5s ease; }
+  #pond-progress { margin:7px 0 13px; color:#53736d; font-size:12px; text-align:left; min-height:18px; }
+  #pond-scene {
+    height:clamp(310px,47vh,455px); border:1px solid #8abaaa; border-radius:18px;
+    background:radial-gradient(circle at 78% 15%,#fff9d1 0 5%,transparent 14%),linear-gradient(180deg,#89c8c7 0%,#bee0d0 40%,#daebce 47%,#72b7a0 48%,#267b7b 100%);
+    box-shadow:inset 0 0 36px rgba(255,255,255,.15),0 13px 24px rgba(36,95,85,.16);
+    isolation:isolate;
+  }
+  #pond-scene::before {
+    content:''; position:absolute; inset:20% 0 41%; z-index:0;
+    background:linear-gradient(180deg,#89bbb1,#528f83);
+    clip-path:polygon(0 86%,8% 68%,15% 73%,23% 43%,32% 69%,42% 49%,53% 72%,63% 34%,73% 67%,82% 46%,92% 71%,100% 56%,100% 100%,0 100%);
+    opacity:.58;
+  }
+  #pond-scene::after {
+    content:''; position:absolute; inset:auto 0 0; height:20%; z-index:3; pointer-events:none;
+    background:linear-gradient(180deg,#82aa77,#386d5b);
+    clip-path:polygon(0 55%,10% 40%,22% 55%,35% 32%,51% 57%,65% 36%,79% 58%,90% 30%,100% 48%,100% 100%,0 100%);
+    box-shadow:inset 0 12px 14px rgba(19,74,66,.2);
+  }
+  #pond-scene .ps-water { position:absolute; inset:47% 0 0; z-index:1; background:radial-gradient(ellipse at 50% 12%,rgba(216,248,214,.5),transparent 63%),repeating-linear-gradient(172deg,transparent 0 27px,rgba(217,250,225,.08) 28px 29px,transparent 30px 50px); }
+  #pond-scene .ps-ripple { position:absolute; z-index:2; width:76px; height:18px; border:1px solid rgba(226,255,232,.55); border-radius:50%; opacity:.7; animation:pondRipple 4s ease-in-out infinite; }
+  #pond-scene .ps-ripple.r1 { left:18%; top:70%; } #pond-scene .ps-ripple.r2 { left:65%; top:59%; animation-delay:1.6s; }
+  @keyframes pondRipple { 0%,100% { transform:scale(.65); opacity:.22; } 50% { transform:scale(1.35); opacity:.8; } }
+  #pond-scene .ps-sun { left:auto; right:14%; top:10%; width:58px; height:58px; opacity:.75; box-shadow:0 0 55px 25px rgba(255,239,175,.36); }
+  #pond-scene .ps-cloud { z-index:1; opacity:.7; }
+  #pond-scene .ps-wave { z-index:2; top:47%; height:2px; background:rgba(244,255,232,.64); }
+  #pond-scene .ps-fish { z-index:2; }
+  #pond-scene .ps-fish.f1 { left:24%; top:72%; } #pond-scene .ps-fish.f2 { left:71%; top:82%; }
+  #pond-scene .pond-item { z-index:4; transition:filter .2s,transform .2s; }
+  #pond-scene .pond-item:hover { filter:drop-shadow(0 5px 9px rgba(12,59,55,.25)); }
+  #pond-scene .pond-item .pi-bubble { z-index:12; }
+  .pond-collection-heading { display:flex; justify-content:space-between; align-items:center; margin:17px 2px 8px; color:#24544c; font-weight:900; font-size:15px; }
+  .pond-collection-heading small { color:#63847a; font-size:11px; }
+  #pond-collection { display:flex; gap:9px; overflow-x:auto; padding:2px 2px 12px; scroll-snap-type:x mandatory; scrollbar-color:#a1c5ae transparent; }
+  .pond-card { flex:0 0 106px; height:112px; scroll-snap-align:start; border:1px solid #b7cfbc; border-radius:13px; background:#f7f9ef; color:#28574e; padding:8px; text-align:center; cursor:pointer; box-shadow:0 3px 8px rgba(34,91,70,.08); }
+  .pond-card.locked { background:#e4ebe1; color:#91a39b; }
+  .pond-card-icon { display:flex; align-items:center; justify-content:center; height:56px; font-size:29px; }
+  .pond-card-icon img { max-width:62px; max-height:55px; object-fit:contain; }
+  .pond-card.locked .pond-card-icon { filter:grayscale(1); opacity:.48; }
+  .pond-card-name { display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:11px; font-weight:900; }
+  .pond-card-need { display:block; margin-top:2px; color:#a47d43; font-size:10px; font-weight:800; }
+  .pond-card.locked .pond-card-need { color:#899c93; }
+  .pond-card.bounce { animation:pondBounce .5s ease; }
+  .pond-card.shake { animation:pondShake .35s ease; }
+  @media(max-width:600px) {
+    #pond-overlay { padding:8px; }
+    #pond-overlay .pond-panel { width:100%; max-height:calc(100vh - 16px); padding:18px 14px 13px; border-radius:19px; }
+    #pond-overlay .panel-close { top:11px; right:11px; width:33px; height:33px; }
+    .pond-header { padding-right:34px; gap:7px; }
+    .pond-header p { font-size:11px; }
+    .pond-star-count strong { font-size:26px; }
+    #pond-scene { height:340px; }
+    #pond-scene .pond-item { zoom:.78; }
+    .pond-card { flex-basis:91px; height:104px; }
+  }
   /* 每日挑战 / 无尽模式 / 战绩：与壁纸同档的小号胶囊按钮，两行成对排布省纵向空间 */
   #home-mode-row, #home-util-row {
     display:flex; gap:10px; justify-content:center; align-items:center;
@@ -2566,10 +2692,20 @@ var _hmt = _hmt || [];
 <!-- 奶蛙池塘：累计星星解锁装饰，零存档（直接算 sum(save.stars)） -->
 <div class="overlay" id="pond-overlay">
   <div class="panel pond-panel">
-    <button class="panel-close" data-close="pond-overlay">✕</button>
-    <h2 data-i18n="pond_title">奶蛙池塘</h2>
+    <button class="panel-close" data-close="pond-overlay" aria-label="关闭">✕</button>
+    <div class="pond-header">
+      <div>
+        <div class="pond-eyebrow">NAIWA · WETLAND JOURNAL</div>
+        <h2 data-i18n="pond_title">奶蛙池塘</h2>
+        <p data-i18n="pond_intro">把冒险收集的星星，变成池塘里的新朋友。</p>
+      </div>
+      <div class="pond-star-count"><strong id="pond-star-total">0</strong><span> / 123 ★</span></div>
+    </div>
+    <div class="pond-progress-track"><span id="pond-progress-fill"></span></div>
     <div id="pond-progress"></div>
-    <div id="pond-scene"></div>
+    <div id="pond-scene" aria-label="奶蛙池塘场景"></div>
+    <div class="pond-collection-heading"><span data-i18n="pond_collection">池塘图鉴</span><small id="pond-unlocked-count"></small></div>
+    <div id="pond-collection"></div>
   </div>
 </div>
 
@@ -2711,17 +2847,31 @@ var _hmt = _hmt || [];
 
 <!-- 蛙后室：整页模式（隐藏首页进入）-->
 <div id="backrooms-screen" class="hide">
-  <button id="br-back" onclick="closeBackrooms()" data-i18n="br_back">‹ 返回主页</button>
+  <button id="br-back" onclick="closeBackrooms()">← <span id="br-back-label">返回大厅</span></button>
   <div class="br-stage">
-    <canvas id="br-cv" width="320" height="240"></canvas>
+    <canvas id="br-cv" aria-label="奶蛙后室 3D 场景"></canvas>
+    <div class="br-vignette"></div>
+    <div class="br-scanlines"></div>
+    <div class="br-crosshair" aria-hidden="true"><span></span><span></span></div>
+    <div class="br-topline"><span class="br-rec">● REC</span><span>NAIWA // LEVEL 0</span><span id="br-clock">00:00</span></div>
+    <div class="br-hud">
+      <div class="br-hud-item"><small id="br-hp-label">生命</small><strong id="br-hp">100</strong></div>
+      <div class="br-hud-item"><small id="br-milk-label">牛奶</small><strong id="br-milk">12</strong></div>
+      <div class="br-hud-item"><small id="br-rescued-label">已救援</small><strong id="br-rescued">0 / 3</strong></div>
+      <div class="br-objective" id="br-objective">寻找迷路的奶蛙</div>
+    </div>
+    <div id="br-toast" role="status"></div>
     <div class="br-mask" id="br-mask">
-      <p id="br-msg" data-i18n="br_ready">救出迷路的奶蛙，躲开黑化的它们…</p>
-      <button class="btn btn-green" id="br-start-btn" data-i18n="br_start">进入 Level 0</button>
-      <p class="br-tip" data-i18n="br_tip">电脑：WASD 移动 · A/D 转向 · 点击射击 · 手机：摇杆 + 牛奶键</p>
+      <div class="br-mask-kicker">NAIWA / ARCHIVE 001</div>
+      <h2 id="br-mask-title">蛙后室</h2>
+      <p id="br-msg">救出 3 只迷路奶鼠，再找到出口。奶蛋会短暂追逐，趁它停下时绕开。</p>
+      <button class="br-enter" id="br-start-btn">进入 LEVEL 0 <span>→</span></button>
+      <p class="br-tip" id="br-tip">WASD 移动 · 鼠标转向 · 点击或空格泼牛奶 · Shift 奔跑</p>
     </div>
   </div>
   <div id="br-j"><div id="br-jk"></div></div>
-  <button id="br-fire" title="牛奶">🥛</button>
+  <button id="br-run" title="奔跑">↟</button>
+  <button id="br-fire" title="泼牛奶">🥛</button>
 </div>
 
 <div id="toast"></div>
@@ -2729,6 +2879,8 @@ var _hmt = _hmt || [];
 
 <script src="notice.js"></script>
 <script src="share-art.js"></script>
+<script src="backrooms3d.bundle.js"></script>
+<script src="mascot3d.bundle.js"></script>
 <script>
 /* ============================================================
  * 消消乐核心逻辑
@@ -4100,7 +4252,7 @@ const I18N = {
     st_stars:'累计星星', st_cleared:'已通关',
     st_daily:'每日挑战', st_days:'{n} 天', st_streak:'连 {n}',
     st_endless:'无尽最佳', st_rounds:'{n} 轮', st_best:'最高分', st_none:'未挑战',
-    pond:'🐸 池塘', pond_title:'奶蛙池塘',
+    pond:'🐸 池塘', pond_title:'奶蛙池塘', pond_intro:'把冒险收集的星星，变成池塘里的新朋友。', pond_collection:'池塘图鉴', pond_unlocked:'已发现 {n} / {m}',
     pond_sum:'累计收集 <b>{n}</b> / {m} ★', pond_next:'下一个：{name}（还差 {n}★）', pond_all:'池塘已经住满了，谢谢你 🐸💛',
     pond_locked:'还差 {n} 颗星才能解锁',
     pond_lily:'小荷叶', pond_frogA:'小奶蛙', pond_reeds:'芦苇丛', pond_bridge:'木桥',
@@ -4136,14 +4288,15 @@ const I18N = {
     combo_2:'连击 x{n}！', combo_3:'漂亮！', combo_4:'厉害！', combo_5:'无敌了！', combo_6:'封神 x{n}！！！',
     pacman:'吃豆人',
     pac_score:'分数', pac_left:'剩余', pac_ready:'吃光所有豆子，别被鬼抓住！', pac_start:'开始', pac_again:'再来一次',
-    pac_win:'通关！奖励道具各 +1', pac_lose:'被抓住了…', pac_resume:'继续', pac_tip:'电脑：方向键 / WASD · 手机：滑动或按钮',
+    pac_win:'通关！奖励道具各 +1', pac_lose:'游戏结束，再试一次吧', pac_caught:'被抓住了！还剩 {n} 条命', pac_resume:'继续', pac_tip:'电脑：方向键 / WASD · 手机：滑动或按钮',
     backrooms:'蛙后室', br_back:'‹ 返回主页',
     br_title:'蛙后室 · Level 0',
-    br_ready:'救出迷路的奶蛙（🐾），躲开黑化的它们…牛奶泼两发就能制服！',
+    br_ready:'救出迷路的奶鼠，避开会短暂追逐的奶蛋；两发牛奶可以制服它。',
     br_start:'进入 Level 0', br_again:'再试一次',
     br_dead:'你被同化了…',
     br_rescued:'救援', br_milk:'牛奶', br_rescued_n:'救出 {n} 只',
     br_tip:'电脑：WASD 移动 · A/D 或拖动转向 · 点击/空格射击',
+    br_load_error:'找不到 3D 游戏脚本，请确认 backrooms3d.bundle.js 与 index.html 在同一目录。',
     revive:'复活 +5 步',
     revived:'复活成功，加油！',
     home_best:'最高分 {n}',
@@ -4213,7 +4366,7 @@ const I18N = {
     st_stars:'Total Stars', st_cleared:'Cleared',
     st_daily:'Daily Streak', st_days:'{n} days', st_streak:'streak {n}',
     st_endless:'Endless Best', st_rounds:'Round {n}', st_best:'Best', st_none:'Not played',
-    pond:'🐸 Pond', pond_title:'Frog Pond',
+    pond:'🐸 Pond', pond_title:'Frog Pond', pond_intro:'Every star you earn brings a new friend to the pond.', pond_collection:'Pond Field Guide', pond_unlocked:'Discovered {n} / {m}',
     pond_sum:'Collected <b>{n}</b> / {m} ★', pond_next:'Next: {name} ({n}★ to go)', pond_all:'The pond is full — thank you 🐸💛',
     pond_locked:'{n} more stars to unlock',
     pond_lily:'Lily Pad', pond_frogA:'Little Frog', pond_reeds:'Reeds', pond_bridge:'Wooden Bridge',
@@ -4249,14 +4402,15 @@ const I18N = {
     combo_2:'Combo x{n}!', combo_3:'Nice!', combo_4:'Great!', combo_5:'UNSTOPPABLE!', combo_6:'GODLIKE x{n}!!!',
     pacman:'PAC-BLOB',
     pac_score:'Score', pac_left:'Left', pac_ready:'Eat all dots, dodge the ghosts!', pac_start:'Start', pac_again:'Play again',
-    pac_win:'Cleared! All boosters +1', pac_lose:'Caught…', pac_resume:'Resume', pac_tip:'Desktop: arrows / WASD · Mobile: swipe or buttons',
+    pac_win:'Cleared! All boosters +1', pac_lose:'Game over. Try again!', pac_caught:'Caught! {n} lives left', pac_resume:'Resume', pac_tip:'Desktop: arrows / WASD · Mobile: swipe or buttons',
     backrooms:'Backrooms', br_back:'‹ Home',
     br_title:'Naiwa Backrooms · Level 0',
-    br_ready:'Rescue the lost milk frogs (🐾). Avoid the corrupted ones — two splashes of milk takes them down!',
+    br_ready:'Rescue the lost mice. Avoid the eggs during their short chase; two splashes of milk stop one.',
     br_start:'Enter Level 0', br_again:'Try again',
     br_dead:'You were assimilated…',
     br_rescued:'Rescued', br_milk:'Milk', br_rescued_n:'{n} rescued',
     br_tip:'Desktop: WASD to move · A/D or drag to look · click/space to shoot',
+    br_load_error:'3D game script missing. Keep backrooms3d.bundle.js beside index.html.',
     revive:'Revive +5',
     revived:'Revived — keep going!',
     home_best:'Best {n}',
@@ -8159,7 +8313,7 @@ function openStats(){
    41 关 × 3 星 = 123 星封顶，最后一件「许愿池」是全三星大奖。 */
 const POND_ITEMS = [
   { id:'lily',    need:3,   name:'pond_lily',    kind:'css', x:8,  y:64, w:70, float:true },
-  { id:'frogA',   need:5,   name:'pond_frogA',   kind:'img', src:'naiwa/1/a.webp',          x:18, y:44, w:64, float:true },
+  { id:'frogA',   need:5,   name:'pond_frogA',   kind:'img', src:'naiwa/1/a.webp',          x:20, y:49, w:106, float:true },
   { id:'reeds',   need:8,   name:'pond_reeds',   kind:'css', x:3,  y:44, w:40 },
   { id:'bridge',  need:12,  name:'pond_bridge',  kind:'css', cx:true, y:30, w:116 },
   { id:'angel',   need:16,  name:'pond_angel',   kind:'img', src:'naiwa/1/c.webp',          cx:true, y:10, w:62, fx:'angel-fly' },
@@ -8184,11 +8338,14 @@ const POND_CSS_HTML = {
   hut:     '<span class="pi-body" style="width:76px;height:62px"><span class="pi-hut" style="position:absolute;inset:0"><i></i></span></span>',
   well:    '<span class="pi-body" style="width:52px;height:62px"><span class="pi-well" style="position:absolute;inset:0"><i></i></span></span>',
 };
+const POND_ICONS = {
+  lily:'🍃', reeds:'🌾', bridge:'🌉', lantern:'🏮', lotus:'🪷', hut:'🏡', well:'⛲'
+};
 
 function pondTotalStars(){
   let n = 0;
-  for(const k in save.stars){ n += Math.min(3, parseInt(save.stars[k], 10) || 0); }
-  return n;
+  for(const k in save.stars){ n += Math.max(0, Math.min(3, parseInt(save.stars[k], 10) || 0)); }
+  return Math.min(POND_ITEMS[POND_ITEMS.length-1].need, n);
 }
 
 function renderPond(){
@@ -8196,41 +8353,52 @@ function renderPond(){
   if(!scene) return;
   const total = pondTotalStars();
   const maxNeed = POND_ITEMS[POND_ITEMS.length-1].need;
-  /* 进度行：当前累计 + 下一件要解锁什么 */
   const next = POND_ITEMS.find(it => it.need > total);
   const prog = $('#pond-progress');
-  prog.innerHTML = T('pond_sum', { n: total, m: maxNeed })
-    + (next ? '<br>' + T('pond_next', { name: T(next.name), n: next.need - total }) : '<br>' + T('pond_all'));
+  $('#pond-star-total').textContent = total;
+  $('#pond-progress-fill').style.width = (total / maxNeed * 100) + '%';
+  $('#pond-unlocked-count').textContent = T('pond_unlocked', { n:POND_ITEMS.filter(it => total >= it.need).length, m:POND_ITEMS.length });
+  prog.textContent = next ? T('pond_next', { name:T(next.name), n:next.need - total }) : T('pond_all');
   scene.innerHTML = '';
-  /* 基础景物：太阳 + 两朵云 + 水面高光 + 光带 + 游鱼（免费） */
+  const collection = $('#pond-collection');
+  collection.innerHTML = '';
   scene.insertAdjacentHTML('beforeend',
-    '<span class="ps-sun"></span><span class="ps-cloud c1"></span><span class="ps-cloud c2"></span><span class="ps-wave"></span>'
+    '<span class="ps-sun"></span><span class="ps-cloud c1"></span><span class="ps-cloud c2"></span><span class="ps-water"></span><span class="ps-wave"></span>'
+    + '<span class="ps-ripple r1"></span><span class="ps-ripple r2"></span>'
     + '<span class="ps-streak s1"></span><span class="ps-streak s2"></span><span class="ps-streak s3"></span><span class="ps-streak s4"></span>'
     + '<span class="ps-fish f1"></span><span class="ps-fish f2"></span>');
   let bi = 0;
   for(const it of POND_ITEMS){
     const unlocked = total >= it.need;
-    const btn = document.createElement('button');
-    btn.className = 'pond-item' + (unlocked ? ' pop' : ' locked');
-    btn.style.left = it.cx ? '50%' : it.x + '%';
-    if(it.cx) btn.style.transform = 'translateX(-50%)';
-    btn.style.top = it.y + '%';
-    btn.style.width = it.w + 'px';
-    if(it.kind === 'img'){
-      btn.innerHTML = '<span class="pi-body" style="width:' + it.w + 'px">'
-        + '<img src="' + it.src + '" alt="" draggable="false"' + (it.fx ? ' class="' + it.fx + '"' : '') + '></span>';
-    } else {
-      btn.innerHTML = POND_CSS_HTML[it.id] || '';
+    if(unlocked){
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'pond-item pop';
+      btn.setAttribute('aria-label', T(it.name));
+      btn.style.left = it.cx ? '50%' : 'clamp(0px,' + it.x + '%,calc(100% - ' + it.w + 'px))';
+      if(it.cx) btn.style.transform = 'translateX(-50%)';
+      btn.style.top = it.y + '%';
+      btn.style.width = it.w + 'px';
+      btn.innerHTML = it.kind === 'img'
+        ? '<span class="pi-body" style="width:' + it.w + 'px"><img src="' + it.src + '" alt="" draggable="false"' + (it.fx ? ' class="' + it.fx + '"' : '') + '></span>'
+        : POND_CSS_HTML[it.id] || '';
+      if(it.float){
+        btn.classList.add('bob');
+        btn.style.setProperty('--pd', ((bi++ % 5) * 0.7) + 's');
+        btn.insertAdjacentHTML('beforeend', '<span class="pi-shadow"></span>');
+      }
+      btn.insertAdjacentHTML('beforeend', '<span class="pi-bubble"></span>');
+      btn.addEventListener('click', () => tapPondItem(btn, it.need, it.name));
+      scene.appendChild(btn);
     }
-    if(it.float && unlocked){
-      btn.classList.add('bob');
-      btn.style.setProperty('--pd', ((bi++ % 5) * 0.7) + 's');
-      btn.insertAdjacentHTML('beforeend', '<span class="pi-shadow"></span>');
-    }
-    btn.insertAdjacentHTML('beforeend',
-      '<span class="pi-badge">★' + it.need + '</span><span class="pi-bubble"></span>');
-    btn.setAttribute('onclick', 'tapPondItem(this, ' + it.need + ', "' + it.name + '")');
-    scene.appendChild(btn);
+    const card = document.createElement('button');
+    card.type = 'button';
+    card.className = 'pond-card' + (unlocked ? '' : ' locked');
+    card.setAttribute('aria-label', T(it.name) + ' · ★' + it.need);
+    card.innerHTML = '<span class="pond-card-icon">' + (it.kind === 'img' ? '<img src="' + it.src + '" alt="">' : POND_ICONS[it.id] || '✦') + '</span>'
+      + '<span class="pond-card-name">' + T(it.name) + '</span><span class="pond-card-need">★ ' + it.need + '</span>';
+    card.addEventListener('click', () => tapPondItem(card, it.need, it.name));
+    collection.appendChild(card);
   }
 }
 
@@ -8261,7 +8429,7 @@ function tapPondItem(el, need, nameKey){
     bubble.classList.add('show');
     clearTimeout(bubble._t);
     bubble._t = setTimeout(() => bubble.classList.remove('show'), 1500);
-  }
+  } else toast(T(nameKey));
 }
 function renderStats(){
   const sum = $('#stats-summary');
@@ -8327,351 +8495,27 @@ function closePacman(){
   refreshHome();
 }
 
-/* ---------- 蛙后室（Level 0 无限回廊）----------
-   Canvas 2D 光线投射（致敬 backdooms / DOOM，MIT）：
-   - 地图：哈希函数即时判定任意格子，每 7 格一条走廊，5% 随机墙，无限不重复
-   - 敌人：黑化奶蛙（去饱和+红眼）缓慢逼近，接触掉血
-   - 救援：迷路的正常奶蛙碰到即救走，+3 牛奶
-   - 弹药：牛奶，随时间回复，泼黑化蛙两发制服
-   操控：WASD/方向键 + 拖动转向 + 点击/空格射击；手机摇杆 + 🥛 键。 */
-var Backrooms = (function(){
-  var W = 320, HH = 240, CX = 160, HOR = 120, S = 1, UH = 1;
-  var cv, ctx, raf = 0, running = false;
-  var SEED = 0, px = 4, py = 4, pa = 0;
-  var hp = 100, milk = 25, rescued = 0, flash = 0, kick = 0;
-  var ents = [], keys = {};
-  var friendImg = null, corruptImg = null;
-  var jx = 0, jy = 0;                      /* 摇杆输入 [-1,1] */
-  var lastTs = 0, milkTimer = 0;
-
-  /* 视口自适应：内部分辨率跟随屏幕（横向最多 480 列，像素风放大铺满全屏） */
-  function fit(){
-    var vw = Math.max(1, window.innerWidth), vh = Math.max(1, window.innerHeight);
-    W = Math.min(480, Math.max(160, Math.round(vw)));
-    HH = Math.max(120, Math.round(W * vh / vw));
-    CX = W / 2; HOR = Math.round(HH * 0.5); S = HH / 240;
-    UH = Math.max(1, Math.min(1.5, W / 320));
-    if(cv){
-      cv.width = W; cv.height = HH;
-      Backrooms.depth = new Array(W);
-    }
-  }
-  function onResize(){ fit(); if(!running && cv) render(); }
-
-  /* 地图：确定性哈希，走廊每 7 格一条，出生区清空 */
-  function wall(i, j){
-    if(Math.abs(i-4) < 4 && Math.abs(j-4) < 4) return 0;
-    if(((i+1000) % 7) === 3 || ((j+1000) % 7) === 3) return 0;
-    var n = Math.sin(i*12.9898 + j*78.233 + SEED) * 43758.5453;
-    return (n - Math.floor(n)) < 0.05 ? 1 : 0;
-  }
-  function tryMove(nx, ny){
-    if(!wall(Math.floor(nx), Math.floor(ny))){ px = nx; py = ny; }
-  }
-  function spawnEnts(){
-    if(ents.length >= 6) return;
-    var near = 0;
-    for(var q = 0; q < ents.length; q++) if(Math.hypot(ents[q].x-px, ents[q].y-py) < 5) near++;
-    if(near >= 5 || Math.random() >= 0.03) return;
-    var n = 1 + Math.floor(Math.random()*2);
-    for(var i = 0; i < n && ents.length < 6; i++){
-      var t = Math.random()*6.283, R = 1 + Math.random()*2;
-      var X = px + Math.cos(t)*R, Y = py + Math.sin(t)*R;
-      if(!wall(Math.floor(X), Math.floor(Y))){
-        ents.push({ x:X, y:Y, hp:100, corrupt: Math.random() > 0.25, dir: Math.random()*6.283 });
-      }
-    }
-  }
-  function beep(freq, dur, type, vol, slide){
-    try{
-      if(!Backrooms.ac) Backrooms.ac = new (window.AudioContext || window.webkitAudioContext)();
-      var ac = Backrooms.ac;
-      if(ac.state === 'suspended') ac.resume();
-      var o = ac.createOscillator(), g = ac.createGain();
-      o.type = type || 'square';
-      o.frequency.setValueAtTime(freq, ac.currentTime);
-      if(slide) o.frequency.exponentialRampToValueAtTime(Math.max(30, slide), ac.currentTime + dur);
-      g.gain.setValueAtTime(vol || 0.08, ac.currentTime);
-      g.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + dur);
-      o.connect(g); g.connect(ac.destination);
-      o.start(); o.stop(ac.currentTime + dur);
-    }catch(e){}
-  }
-  function shoot(){
-    if(!running) return;
-    if(milk <= 0){ beep(120, 0.08, 'square', 0.05); return; }
-    milk--;
-    kick = 3;
-    beep(340, 0.1, 'square', 0.09, 90);
-    var hit = false;
-    for(var i = 0; i < ents.length; i++){
-      var o = ents[i];
-      var d = Math.hypot(o.x-px, o.y-py);
-      var r = Math.atan2(o.y-py, o.x-px) - pa;
-      r = r > Math.PI ? r - 2*Math.PI : r < -Math.PI ? r + 2*Math.PI : r;
-      if(o.corrupt && d < 5 && Math.abs(r) < 0.3){ o.hp -= 50; hit = true; }
-    }
-    if(hit) beep(160, 0.12, 'sawtooth', 0.1, 60);
-    paintHud();
-  }
-  function reset(){
-    SEED = Math.random()*100;
-    px = 4; py = 4; pa = 0;
-    hp = 100; milk = 25; rescued = 0; flash = 0; kick = 0;
-    ents = []; milkTimer = 0;
-    paintHud();
-  }
-  function paintHud(){
-    var r = document.getElementById('br-rescued'), m = document.getElementById('br-milk');
-    if(r) r.textContent = rescued;
-    if(m) m.textContent = milk;
-  }
-  function gameOver(){
-    running = false;
-    beep(200, 0.6, 'sawtooth', 0.12, 40);
-    track('backrooms', 'over', String(rescued));
-    var mask = document.getElementById('br-mask');
-    document.getElementById('br-msg').textContent = T('br_dead') + ' ' + T('br_rescued_n', { n: rescued });
-    document.getElementById('br-start-btn').textContent = T('br_again');
-    mask.classList.remove('hide');
-  }
-  /* 精灵绘制：billboard + 深度遮挡 */
-  function drawEnts(depth){
-    var list = [];
-    for(var i = 0; i < ents.length; i++){
-      var o = ents[i];
-      var d = Math.hypot(o.x-px, o.y-py);
-      var r = Math.atan2(o.y-py, o.x-px) - pa;
-      r = r > Math.PI ? r - 2*Math.PI : r < -Math.PI ? r + 2*Math.PI : r;
-      if(Math.abs(r) < 1.2 && d > 0.15) list.push({ o:o, d:d, r:r });
-    }
-    list.sort(function(a, b){ return b.d - a.d; });
-    for(var i = 0; i < list.length; i++){
-      var it = list[i], d = it.d, r = it.r;
-      var sz = 150*S/d;
-      var cx = CX + r*CX;
-      var col = Math.max(0, Math.min(W-1, Math.floor(cx)));
-      if(d > depth[col]*1.08) continue;
-      var bottom = HOR + 110*S/d + kick*6*S;
-      var x0 = cx - sz/2, y0 = bottom - sz;
-      var img = friendImg;
-      if(it.o.corrupt && corruptImg){
-        ctx.filter = 'grayscale(.85) brightness(.72)';
-        img = corruptImg;
-      }
-      if(img){
-        var bob = it.o.corrupt ? 0 : Math.sin(it.o.dir*3 + SEED)*sz*0.03;
-        ctx.drawImage(img, x0, y0 + bob, sz, sz);
-        ctx.filter = 'none';
-      }
-      if(it.o.corrupt){                       /* 红眼 */
-        ctx.fillStyle = '#f33';
-        ctx.fillRect(x0 + sz*0.32, y0 + sz*0.24, sz*0.1, sz*0.07);
-        ctx.fillRect(x0 + sz*0.58, y0 + sz*0.24, sz*0.1, sz*0.07);
-      }
-      if(it.o.corrupt && it.o.hp < 100){      /* 血条 */
-        ctx.fillStyle = '#300'; ctx.fillRect(x0, y0 - 5, sz, 3);
-        ctx.fillStyle = '#f44'; ctx.fillRect(x0, y0 - 5, sz*(it.o.hp/100), 3);
-      }
-    }
-  }
-  function frame(ts){
-    if(!running) return;
-    raf = requestAnimationFrame(frame);
-    var dt = Math.min(50, ts - lastTs || 16); lastTs = ts;
-    kick = Math.max(0, kick - 1);
-    flash = Math.max(0, flash - 1);
-    /* 输入：键盘 + 摇杆 */
-    var turn = 0, mv = 0;
-    if(keys.ArrowLeft || keys.a) turn -= 0.09;
-    if(keys.ArrowRight || keys.d) turn += 0.09;
-    if(keys.ArrowUp || keys.w) mv += 1;
-    if(keys.ArrowDown || keys.s) mv -= 1;
-    turn += jx * 0.07;
-    mv += -jy;
-    mv = Math.max(-1, Math.min(1, mv));
-    pa += turn;
-    var spd = 0.055 * mv;
-    if(spd){
-      tryMove(px + Math.cos(pa)*spd, py + Math.sin(pa)*spd);
-      spawnEnts();
-    }
-    /* 牛奶回复：约每 3 秒 +1 */
-    milkTimer += dt;
-    if(milkTimer > 3000){ milkTimer = 0; if(milk < 25) milk++; paintHud(); }
-    /* 实体行为 */
-    for(var i = ents.length - 1; i >= 0; i--){
-      var o = ents[i];
-      var dx = px - o.x, dy = py - o.y, di = Math.hypot(dx, dy);
-      if(!o.corrupt){
-        /* 迷路奶蛙：慢速游荡，碰到即救 */
-        if(Math.random() < 0.02) o.dir += (Math.random() - 0.5) * 1.2;
-        var fx = o.x + Math.cos(o.dir)*0.006, fy = o.y + Math.sin(o.dir)*0.006;
-        if(!wall(Math.floor(fx), Math.floor(fy))){ o.x = fx; o.y = fy; }
-        if(di < 0.55){
-          ents.splice(i, 1);
-          rescued++; milk = Math.min(25, milk + 3);
-          beep(520, 0.09, 'square', 0.09); beep(780, 0.12, 'square', 0.09);
-          paintHud();
-        }
-        continue;
-      }
-      if(di > 0.2){
-        var sp = 0.0015 + 0.003/di;
-        var nx = o.x + dx/di*sp, ny = o.y + dy/di*sp;
-        if(!wall(Math.floor(nx), Math.floor(ny))){ o.x = nx; o.y = ny; }
-      }
-      if(di < 0.55){ hp -= 2; flash = 3; if(hp <= 0){ paintHud(); gameOver(); return; } }
-      if(o.hp <= 0){
-        ents.splice(i, 1);
-        beep(90, 0.25, 'sawtooth', 0.12, 40);
-        milk = Math.min(25, milk + 2);
-        paintHud();
-      }
-    }
-    render();
-  }
-  function render(){
-    /* 天花板：上暗下亮，近地平线一条荧光灯带 */
-    var lt = Math.max(2, S*2);
-    ctx.fillStyle = '#0f0b03'; ctx.fillRect(0, 0, W, HOR*0.8);
-    ctx.fillStyle = '#241a06'; ctx.fillRect(0, HOR*0.8, W, HOR*0.2 - lt);
-    ctx.fillStyle = '#3a2c0c'; ctx.fillRect(0, HOR - lt, W, lt);
-    /* 地毯：远处暗近处亮 */
-    ctx.fillStyle = '#241b09'; ctx.fillRect(0, HOR, W, (HH-HOR)/2);
-    ctx.fillStyle = '#382b10'; ctx.fillRect(0, HOR + (HH-HOR)/2, W, HH);
-    var depth = Backrooms.depth;
-    for(var i = 0; i < W; i++){
-      var r = pa + Math.atan((i - CX)/CX);
-      var rx = px, ry = py, s = Math.sin(r), c = Math.cos(r), d = 0;
-      while(d < 20 && !wall(Math.floor(rx), Math.floor(ry))){ rx += c*0.1; ry += s*0.1; d += 0.1; }
-      d *= Math.cos(r - pa);
-      depth[i] = d;
-      var h2 = Math.min(HH, HH/(d + 0.01));
-      var g = (46 + 215/(d*0.55 + 0.75)) | 0;
-      if(g > 255) g = 255;
-      if(i % 10 < 2) g = (g*0.82) | 0;                              /* 墙纸接缝 */
-      ctx.fillStyle = 'rgb(' + g + ',' + ((g*0.85) | 0) + ',' + ((g*0.38) | 0) + ')';
-      ctx.fillRect(i, HOR - h2/2 + kick*6*S, 1, h2);
-    }
-    drawEnts(depth);
-    if(flash > 0){ ctx.fillStyle = 'rgba(140,20,20,.35)'; ctx.fillRect(0, 0, W, HH); }
-    /* HUD：血条 / 牛奶 / 救援（随分辨率缩放） */
-    var u = UH;
-    ctx.fillStyle = '#000'; ctx.fillRect(8*u, 8*u, 104*u, 22*u);
-    ctx.fillStyle = '#5a0f0f'; ctx.fillRect(10*u, 10*u, 100*u, 8*u);
-    ctx.fillStyle = '#e33'; ctx.fillRect(10*u, 10*u, Math.max(0, hp)*u, 8*u);
-    ctx.fillStyle = '#ffe9a0'; ctx.font = (8*u) + 'px Arial'; ctx.textAlign = 'left';
-    ctx.fillText('HP', 10*u, 28*u);
-    ctx.fillText('🥛 ' + milk, 44*u, 28*u);
-    ctx.textAlign = 'right';
-    ctx.fillText('🐾 ' + rescued, W - 8*u, 28*u);
-    ctx.textAlign = 'left';
-  }
-  /* ---------- 操控接线 ---------- */
-  function bindInput(){
-    window.addEventListener('keydown', onKey);
-    window.addEventListener('keyup', onKey);
-    cv.addEventListener('pointerdown', onCvDown);
-    cv.addEventListener('pointermove', onCvMove);
-    cv.addEventListener('pointerup', onCvUp);
-    document.getElementById('br-fire').addEventListener('pointerdown', function(e){ e.preventDefault(); shoot(); });
-    var j = document.getElementById('br-j'), jk = document.getElementById('br-jk');
-    var jid = null, jcx = 0, jcy = 0;
-    j.addEventListener('pointerdown', function(e){
-      e.preventDefault();
-      jid = e.pointerId;
-      var r = j.getBoundingClientRect();
-      jcx = r.left + 75; jcy = r.top + 75;
-      moveKnob(e);
-    });
-    j.addEventListener('pointermove', function(e){ if(e.pointerId === jid) moveKnob(e); });
-    function moveKnob(e){
-      var dx = (e.clientX - jcx)/55, dy = (e.clientY - jcy)/55;
-      var len = Math.hypot(dx, dy);
-      if(len > 1){ dx /= len; dy /= len; }
-      jx = dx; jy = dy;
-      jk.style.left = (50 + dx*35) + '%';
-      jk.style.top = (50 + dy*35) + '%';
-    }
-    function endKnob(e){
-      if(e.pointerId !== jid) return;
-      jid = null; jx = 0; jy = 0;
-      jk.style.left = '50%'; jk.style.top = '50%';
-    }
-    j.addEventListener('pointerup', endKnob);
-    j.addEventListener('pointercancel', endKnob);
-    /* 拖动转向 + 轻点射击 */
-    var dragging = false, lastX = 0, moved = 0;
-    function onCvDown(e){ dragging = true; lastX = e.clientX; moved = 0; }
-    function onCvMove(e){
-      if(!dragging) return;
-      var dx = e.clientX - lastX; lastX = e.clientX;
-      moved += Math.abs(dx);
-      pa += dx * 0.006;
-    }
-    function onCvUp(){ if(dragging && moved < 6) shoot(); dragging = false; }
-  }
-  function onKey(e){
-    var k = e.key.length === 1 ? e.key.toLowerCase() : e.key;
-    keys[k] = e.type === 'keydown';
-    if(e.type === 'keydown' && (k === ' ' || k === 'Spacebar')){ e.preventDefault(); shoot(); }
-    if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight',' '].indexOf(k) >= 0 && running) e.preventDefault();
-  }
-  function open(){
-    if(!cv){
-      cv = document.getElementById('br-cv');
-      ctx = cv.getContext('2d');
-      bindInput();
-      window.addEventListener('resize', onResize);
-      window.addEventListener('orientationchange', onResize);
-      document.getElementById('br-start-btn').addEventListener('click', function(){
-        if(!friendImg){
-          friendImg = new Image(); friendImg.src = 'naiwa/1/a.webp';
-        }
-        if(!corruptImg){
-          corruptImg = new Image(); corruptImg.src = 'naiwa/1/a.webp';
-        }
-        try{ if(Backrooms.ac && Backrooms.ac.state === 'suspended') Backrooms.ac.resume(); }catch(e){}
-        reset();
-        document.getElementById('br-mask').classList.add('hide');
-        running = true; lastTs = 0;
-        track('backrooms', 'start');
-        beep(440, 0.08, 'square', 0.06);
-        raf = requestAnimationFrame(frame);
-      });
-    }
-    fit();
-    reset();
-    document.getElementById('br-msg').textContent = T('br_ready');
-    document.getElementById('br-start-btn').textContent = T('br_start');
-    document.getElementById('br-mask').classList.remove('hide');
-    render();                                  /* mask 后面先铺一帧画面 */
-  }
-  function stop(){
-    running = false;
-    if(raf){ cancelAnimationFrame(raf); raf = 0; }
-    jx = 0; jy = 0;
-  }
-  return { open: open, stop: stop, reset: reset, ac: null, depth: null,
-           _dbg: function(){ return { px:px, py:py, ents:ents.length, hp:hp, rescued:rescued }; },
-           _spawn: function(corrupt){ ents.push({ x:px + Math.cos(pa)*1.2, y:py + Math.sin(pa)*1.2, hp:100, corrupt:!!corrupt, dir:0 }); } };
-})();
-
 function openBackrooms(){
   SFX.click();
   track('backrooms', 'open', 'home');
+  stopBgm();
   document.documentElement.classList.add('br-lock');
   document.getElementById('home').classList.add('hide');
   document.getElementById('backrooms-screen').classList.remove('hide');
-  Backrooms.open();
+  if(window.Backrooms3D) window.Backrooms3D.open({music:settings.music,sfx:settings.sfx});
+  else {
+    document.getElementById('br-msg').textContent = T('br_load_error');
+    document.getElementById('br-mask').classList.remove('hide');
+    document.getElementById('br-start-btn').disabled = true;
+  }
 }
 function closeBackrooms(){
-  Backrooms.stop();
+  if(window.Backrooms3D) window.Backrooms3D.stop();
   document.documentElement.classList.remove('br-lock');
   document.getElementById('backrooms-screen').classList.add('hide');
   document.getElementById('home').classList.remove('hide');
   refreshHome();
+  startBgm();
 }
 
 var PacGame = (function(){
@@ -8703,7 +8547,7 @@ var PacGame = (function(){
   var pellets = {}, left = 0;
   var animT = 0, pops = [], deathT = -1;   /* 动画时钟 / 吃豆粒子 / 死亡动画计时 */
   var player, ghosts, score, lives, running, started, over;
-  var raf = 0, lastTs = 0, state = 'ready', paused = false;   /* ready | play | caught | win | lose */
+  var raf = 0, lastTs = 0, state = 'ready', paused = false, roundId = 0, invulnerableUntil = 0;
 
   function isWall(cx, cy){
     if(cy < 0 || cy >= ROWS || cx < 0 || cx >= COLS) return true;
@@ -8717,6 +8561,7 @@ var PacGame = (function(){
   }
 
   function reset(){
+    roundId++; invulnerableUntil = 0;
     pellets = {}; left = 0;
     for(var r=0;r<ROWS;r++) for(var c=0;c<COLS;c++){
       if(MAZE[r].charAt(c) === '.'){ pellets[c + ',' + r] = 1; left++; }
@@ -8758,7 +8603,7 @@ var PacGame = (function(){
       btn.textContent = T('pac_again');
       mask.classList.remove('hide');
     } else if(kind === 'caught'){
-      msg.textContent = T('pac_lose');
+      msg.textContent = T('pac_caught', { n:lives });
       btn.textContent = T('pac_resume');
       mask.classList.remove('hide');
     } else {
@@ -8861,14 +8706,16 @@ var PacGame = (function(){
     if(lives <= 0){ finish(false); return; }
     /* 中弹：暂停出提示弹窗，点「继续」再走 —— 不再无声传送 */
     paused = true; deathT = 0;
+    invulnerableUntil = animT + 1.5;
+    var thisRound = roundId;
     setTimeout(function(){
-      if(state === 'play'){ showMask('caught'); }
-      else { paused = false; }   /* 期间正好通关/失败就别再弹了 */
+      if(thisRound === roundId && running && state === 'play') showMask('caught');
     }, 750);
   }
 
   var dt_step = 0;
   function frame(ts){
+    raf = 0;
     if(!running) return;
     if(!lastTs) lastTs = ts;
     var dt = Math.min(0.04, (ts - lastTs) / 1000);
@@ -8878,10 +8725,10 @@ var PacGame = (function(){
     if(paused && deathT >= 0) deathT += dt;   /* 死亡旋转动画推进 */
     if(!running) return;
     if(!over && !paused){
-      stepEnt(player, 4.6, playerChoose);
-      ghosts.forEach(function(g){ stepEnt(g, 3.3, ghostChoose); });
+      stepEnt(player, 3.35, playerChoose);
+      ghosts.forEach(function(g){ stepEnt(g, 2.35, ghostChoose); });
       var pp = entPos(player);
-      for(var i=0;i<ghosts.length;i++){
+      for(var i=0;animT >= invulnerableUntil && i<ghosts.length;i++){
         var gp = entPos(ghosts[i]);
         if(Math.abs(pp.x - gp.x) < TS*0.6 && Math.abs(pp.y - gp.y) < TS*0.6){ hitPlayer(); break; }
       }
@@ -8957,39 +8804,26 @@ var PacGame = (function(){
       var pp = entPos(player), s = TS*0.72;
       var moving = !!(player.dir && (player.tx !== player.cx || player.ty !== player.cy));
       var dying = paused && deathT >= 0;
-      var d2 = player.dir || { x:-1, y:0 };   /* 素材原始朝向：左 */
-      var ang, faceRot = 0, flip = false;
-      if(d2.x === 1){ ang = 0; flip = true; }                        /* 右：镜像（眼睛保持朝上）*/
-      else if(d2.x === -1){ ang = Math.PI; }                          /* 左：原始朝向 */
-      else if(d2.y === -1){ ang = -Math.PI/2; faceRot = Math.PI/2; }  /* 上：侧转 90° */
-      else { ang = Math.PI/2; faceRot = -Math.PI/2; }                 /* 下 */
+      var d2 = player.dir || { x:1, y:0 };   /* 素材原始朝向：右 */
       ctx.save();
       ctx.translate(pp.x, pp.y);
       if(dying){
         var dk = Math.min(1, deathT / 0.7);
-        ctx.rotate((flip ? Math.PI : faceRot) + dk * 9);
+        ctx.rotate(dk * 9);
         var dsc = 1 - dk*0.92;
         ctx.scale(dsc, dsc);
         ctx.globalAlpha = 1 - dk*0.5;
       } else {
-        if(flip) ctx.scale(-1, 1); else ctx.rotate(faceRot);
+        if(d2.x < 0) ctx.scale(-1, 1);
+        else if(d2.y) ctx.rotate(d2.y * Math.PI / 2);
         if(moving){
           var wob = Math.sin(animT*14) * 0.045;
           ctx.scale(1 + wob, 1 - wob);   /* 移动时的挤压拉伸 */
         }
       }
-      ctx.drawImage(pacImg, -s, -s, s*2, s*2);
+      /* 原素材右侧还画了两颗展示用豆子；只取奶蛙本体，反向时不会裂出一颗圆点。 */
+      ctx.drawImage(pacImg, 0, 0, 105, 128, -s, -s, s*2, s*2);
       ctx.restore();
-      /* 嘴楔形：ang 已对齐素材嘴的朝向（镜像时随之翻转），随步频张合 */
-      if(moving && !dying){
-        var open = Math.abs(Math.sin(animT * 9)) * 0.5 + 0.1;
-        ctx.fillStyle = '#101430';
-        ctx.beginPath();
-        ctx.moveTo(pp.x, pp.y);
-        ctx.arc(pp.x, pp.y, s*1.08, ang - open, ang + open);
-        ctx.closePath();
-        ctx.fill();
-      }
     }
   }
 
@@ -9012,6 +8846,7 @@ var PacGame = (function(){
 
   function start(){
     reset();
+    onArrive(player);
     started = true; running = true; lastTs = 0;
     paused = false; animT = 0; pops = []; deathT = -1;
     showMask('none');
@@ -9024,8 +8859,8 @@ var PacGame = (function(){
     if(!cv){
       cv = document.getElementById('pac-cv');
       ctx = cv.getContext('2d');
-      pacImg = new Image(); pacImg.src = 'naiwa/chidou/a.webp';
-      dotImg = new Image(); dotImg.src = 'naiwa/chidou/b.webp';
+      pacImg = new Image(); pacImg.onload = draw; pacImg.src = 'naiwa/chidou/a.webp';
+      dotImg = new Image(); dotImg.onload = draw; dotImg.src = 'naiwa/chidou/b.webp';
       bindInput();
     }
     reset();
@@ -9037,6 +8872,7 @@ var PacGame = (function(){
 
   function stop(){
     running = false;
+    roundId++;
     if(raf){ cancelAnimationFrame(raf); raf = 0; }
   }
 
@@ -9078,7 +8914,9 @@ var PacGame = (function(){
       };
       var dir = map[ev.key];
       if(dir){ ev.preventDefault(); setDir(dir); }
-      if((ev.key === 'Enter' || ev.key === ' ') && state !== 'play'){ ev.preventDefault(); start(); }
+      if((ev.key === 'Enter' || ev.key === ' ') && state !== 'play'){
+        ev.preventDefault(); document.getElementById('pac-start-btn').click();
+      }
     });
   }
 
@@ -9793,231 +9631,5 @@ function viewWallpaper(i){
 }
 </script>
 
-<!-- 3D 奶蛙空间：three.js 占位框架。模型接口预留 loadMascotModel(glbUrl)，
-     拿到 Hunyuan3D 生成的 GLB 后替换占位几何体即可。 -->
-<script type="importmap">
-{
-  "imports": {
-    "three": "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js",
-    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/"
-  }
-}
-</script>
-<script type="module">
-import * as THREE from 'three';
-import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-
-let renderer, scene, camera, controls, frogGroup, placeholderGroup, mascotGroup;
-let isInitialized = false;
-let isAnimating = false;
-let mascotModel = null;   // GLB 加载后替换占位几何体
-let mixer = null;         // GLB 骨骼动画播放器（如果有的话）
-let baseScale = 1;        // normalize 后的基础缩放，呼吸动画基于它（防止覆盖导致压扁）
-
-function initMascot3D() {
-  const container = document.getElementById('mascot-3d-container');
-  const canvas = document.getElementById('mascot-3d-canvas');
-  const loading = document.getElementById('mascot-3d-loading');
-  if (!container || !canvas) return;
-
-  const w = container.clientWidth, h = container.clientHeight;
-
-  scene = new THREE.Scene();
-  scene.background = new THREE.Color(0xbfeaff);
-
-  camera = new THREE.PerspectiveCamera(45, w / h, 0.1, 100);
-  camera.position.set(0, 0.8, 2.6);
-  camera.lookAt(0, 0.6, 0);   // 看向模型脸部高度
-
-  renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
-  renderer.setSize(w, h);
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-
-  // 灯光：提亮版——主光 + 补光 + 轮廓光 + 半球环境光（用户反馈暗淡，整体提亮）
-  const keyLight = new THREE.DirectionalLight(0xffffff, 2.0);
-  keyLight.position.set(2, 3, 2);
-  scene.add(keyLight);
-  const fillLight = new THREE.DirectionalLight(0xffffff, 1.0);
-  fillLight.position.set(-2, 1, 1.5);
-  scene.add(fillLight);
-  const rimLight = new THREE.DirectionalLight(0xffeecc, 0.6);
-  rimLight.position.set(0, 1, -2);
-  scene.add(rimLight);
-  const hemiLight = new THREE.HemisphereLight(0xe6f4ff, 0xc8e6c9, 0.9);
-  scene.add(hemiLight);
-
-  // ---- 占位奶蛙：黄色椭球身体 + 黑眼睛（GLB 加载失败时的兜底） ----
-  const bodyGeo = new THREE.SphereGeometry(1, 32, 32);
-  bodyGeo.scale(0.75, 1.15, 0.55);
-  const bodyMat = new THREE.MeshStandardMaterial({
-    color: 0xffd54d, roughness: 0.72, metalness: 0.05,
-  });
-  const body = new THREE.Mesh(bodyGeo, bodyMat);
-
-  const eyeGeo = new THREE.SphereGeometry(0.1, 16, 16);
-  const eyeMat = new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.3 });
-  const leftEye = new THREE.Mesh(eyeGeo, eyeMat);
-  leftEye.position.set(-0.32, 0.42, 0.5);
-  const rightEye = new THREE.Mesh(eyeGeo, eyeMat);
-  rightEye.position.set(0.32, 0.42, 0.5);
-
-  const mouthGeo = new THREE.TorusGeometry(0.18, 0.035, 8, 16, Math.PI * 0.9);
-  const mouthMat = new THREE.MeshStandardMaterial({ color: 0xd4a017, roughness: 0.6 });
-  const mouth = new THREE.Mesh(mouthGeo, mouthMat);
-  mouth.position.set(0, 0.12, 0.56);
-  mouth.rotation.z = Math.PI;
-
-  const limbGeo = new THREE.CapsuleGeometry(0.08, 0.28, 4, 12);
-  const mkLimb = (x, y, z, rotZ) => {
-    const m = new THREE.Mesh(limbGeo, bodyMat);
-    m.position.set(x, y, z);
-    m.rotation.z = rotZ;
-    return m;
-  };
-  const armL = mkLimb(-0.68, 0.05, 0.15, 0.6);
-  const armR = mkLimb(0.68, 0.05, 0.15, -0.6);
-  const legL = mkLimb(-0.28, -0.95, 0.1, 0.15);
-  const legR = mkLimb(0.28, -0.95, 0.1, -0.15);
-
-  placeholderGroup = new THREE.Group();
-  placeholderGroup.add(body, leftEye, rightEye, mouth, armL, armR, legL, legR);
-  scene.add(placeholderGroup);
-  frogGroup = placeholderGroup;   // 交互目标：先指向占位体，GLB 加载后替换
-
-  // 控制器：拖拽旋转，禁止缩放/平移
-  controls = new OrbitControls(camera, canvas);
-  controls.enableDamping = true;
-  controls.dampingFactor = 0.06;
-  controls.enableZoom = false;
-  controls.enablePan = false;
-  controls.autoRotate = true;
-  controls.autoRotateSpeed = 1.5;
-
-  // 点击交互：点中奶蛙 → 跳一下
-  canvas.addEventListener('pointerdown', (e) => {
-    if (!frogGroup) return;
-    const rect = canvas.getBoundingClientRect();
-    const x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
-    const y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
-    const raycaster = new THREE.Raycaster();
-    raycaster.setFromCamera(new THREE.Vector2(x, y), camera);
-    const hits = raycaster.intersectObject(frogGroup, true);
-    if (hits.length) {
-      // 点击跳一下：基于 baseScale 的 scale 脉冲（防止覆盖 normalize 导致压扁）
-      frogGroup.scale.set(baseScale * 1.15, baseScale * 0.85, baseScale * 1.15);
-      setTimeout(() => frogGroup.scale.set(baseScale * 0.9, baseScale * 1.1, baseScale * 0.9), 100);
-      setTimeout(() => frogGroup.scale.set(baseScale, baseScale, baseScale), 220);
-    }
-  });
-
-  // 隐藏 loading 和 2D 兜底图，显示 3D 进度条
-  loading.style.display = 'none';
-  const overlay = document.getElementById('mascot-screen');
-  overlay.classList.add('mascot-3d-ready', 'mascot-3d-loading');
-  isInitialized = true;
-
-  // 加载 GLB 模型替换占位几何体（轻度压缩版：1.39MB，11万三角形，平衡质量与加载速度）
-  loadMascotModel('naiwa/naiwa3d/naiwa_lite.glb');
-}
-
-function animate() {
-  if (!isAnimating) return;
-  requestAnimationFrame(animate);
-  const t = performance.now() * 0.001;
-  if (mixer) {
-    mixer.update(0.016);   // 骨骼动画按固定帧率推进
-  }
-  if (frogGroup) {
-    // 待机呼吸：基于 normalize 后的 baseScale 轻微缩放（防止覆盖导致压扁）
-    frogGroup.scale.y = baseScale * (1 + Math.sin(t * 2.2) * 0.025);
-  }
-  controls.update();
-  renderer.render(scene, camera);
-}
-
-function startMascot3D() {
-  if (!isInitialized) initMascot3D();
-  if (isAnimating) return;
-  isAnimating = true;
-  animate();
-}
-
-function stopMascot3D() {
-  isAnimating = false;
-}
-
-/* 加载 GLB 模型替换占位几何体。
-   自动 normalize：计算 bounding box，缩放到统一高度（~2 单位），居中到原点。 */
-function loadMascotModel(glbUrl) {
-  const loader = new GLTFLoader();
-  loader.load(
-    glbUrl,
-    (gltf) => {
-      const model = gltf.scene;
-
-      // 自动 normalize：包围盒 → 缩放到统一尺寸 → 居中
-      const box = new THREE.Box3().setFromObject(model);
-      const size = box.getSize(new THREE.Vector3());
-      const center = box.getCenter(new THREE.Vector3());
-      const maxDim = Math.max(size.x, size.y, size.z);
-      const scale = 2.0 / maxDim;   // 统一缩放到最大边 ~2 单位
-      model.scale.setScalar(scale);
-      model.position.set(-center.x * scale, -center.y * scale, -center.z * scale);
-      /* 模型方向：先不旋转，看原始朝向再调 */
-      // model.rotation.y = Math.PI;
-      /* 模型偏高（脸在视野上方被裁），额外下移让全身居中 */
-      model.position.y -= 0.6;
-      baseScale = scale;   // 存起来，呼吸/跳跃动画基于它（防止 scale.y 覆盖导致压扁）
-
-      // 外层 Group 负责 normalize，内层模型负责动画（分离不冲突）
-      mascotGroup = new THREE.Group();
-      mascotGroup.add(model);
-      scene.remove(placeholderGroup);
-      scene.add(mascotGroup);
-      frogGroup = mascotGroup;   // 交互目标指向外层 Group
-      mascotModel = model;
-      /* GLB 加载成功：加标记 class，方便探针/调试确认 */
-      document.getElementById('mascot-screen').classList.add('mascot-glb-loaded');
-
-      // 骨骼动画：如果有，用 AnimationMixer 播放
-      if (gltf.animations && gltf.animations.length) {
-        mixer = new THREE.AnimationMixer(model);
-        const action = mixer.clipAction(gltf.animations[0]);
-        action.play();
-      }
-
-      console.log('[mascot3d] GLB loaded:', glbUrl, 'bbox:', size, 'anims:', gltf.animations?.length || 0);
-    },
-    (xhr) => {
-      /* GLB 下载进度：更新奶蛙空间独立进度条（和游戏开头全局加载条分开） */
-      if (xhr.total > 0) {
-        const pct = Math.round((xhr.loaded / xhr.total) * 100);
-        const bar = document.getElementById('mascot-3d-progress-fill');
-        const pctText = document.getElementById('mascot-3d-progress-pct');
-        if (bar) bar.style.width = pct + '%';
-        if (pctText) pctText.textContent = pct + '%';
-      }
-    },   // progress
-    (err) => {
-      console.error('[mascot3d] GLB load failed:', err);
-      /* 加载失败：显示错误信息，方便排查 */
-      const loading = document.getElementById('mascot-3d-loading');
-      if (loading) {
-        loading.textContent = '3D 模型加载失败: ' + (err.message || err);
-        loading.style.display = 'block';
-        loading.style.color = '#d32f2f';
-      }
-      /* 隐藏进度条 */
-      const overlay = document.getElementById('mascot-screen');
-      if (overlay) overlay.classList.remove('mascot-3d-loading');
-    }
-  );
-}
-
-window.startMascot3D = startMascot3D;
-window.stopMascot3D = stopMascot3D;
-window.loadMascotModel = loadMascotModel;
-</script>
 </body>
 </html>

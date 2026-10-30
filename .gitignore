@@ -35,6 +35,9 @@ naiwa/**/*.png
 naiwa/naiwa3d/naiwa.glb
 naiwa/naiwa3d/*.jpg
 
+# BGM 源曲（原曲 mp3 留本地，线上用 bgm/ 里的入库版）
+naiwa/*.mp3
+
 # TapTap H5 构建产物（taptap/ 暂存 + 成品 zip）
 /taptap/
 /naiwaxxl-taptap.zip
