@@ -2879,7 +2879,7 @@ var _hmt = _hmt || [];
 
 <script src="notice.js"></script>
 <script src="share-art.js"></script>
-<script src="backrooms3d.bundle.js"></script>
+<!-- 蛙后室 3D 包（12.6MB）按需加载：首次点进后室才拉取，见 openBackrooms() -->
 <script src="mascot3d.bundle.js"></script>
 <script>
 /* ============================================================
@@ -4297,6 +4297,7 @@ const I18N = {
     br_rescued:'救援', br_milk:'牛奶', br_rescued_n:'救出 {n} 只',
     br_tip:'电脑：WASD 移动 · A/D 或拖动转向 · 点击/空格射击',
     br_load_error:'找不到 3D 游戏脚本，请确认 backrooms3d.bundle.js 与 index.html 在同一目录。',
+    br_loading:'正在加载 3D 场景…',
     revive:'复活 +5 步',
     revived:'复活成功，加油！',
     home_best:'最高分 {n}',
@@ -4411,6 +4412,7 @@ const I18N = {
     br_rescued:'Rescued', br_milk:'Milk', br_rescued_n:'{n} rescued',
     br_tip:'Desktop: WASD to move · A/D or drag to look · click/space to shoot',
     br_load_error:'3D game script missing. Keep backrooms3d.bundle.js beside index.html.',
+    br_loading:'LOADING 3D SCENE…',
     revive:'Revive +5',
     revived:'Revived — keep going!',
     home_best:'Best {n}',
@@ -8501,13 +8503,31 @@ function openBackrooms(){
   stopBgm();
   document.documentElement.classList.add('br-lock');
   document.getElementById('home').classList.add('hide');
-  document.getElementById('backrooms-screen').classList.remove('hide');
-  if(window.Backrooms3D) window.Backrooms3D.open({music:settings.music,sfx:settings.sfx});
-  else {
-    document.getElementById('br-msg').textContent = T('br_load_error');
-    document.getElementById('br-mask').classList.remove('hide');
-    document.getElementById('br-start-btn').disabled = true;
+  var screenEl = document.getElementById('backrooms-screen');
+  screenEl.classList.remove('hide');
+  if(window.Backrooms3D){
+    window.Backrooms3D.open({music:settings.music,sfx:settings.sfx});
+    return;
   }
+  /* 3D 包按需加载：首次进入才下载，加载完自动进入；期间显示加载态 */
+  var msg = document.getElementById('br-msg'), startBtn = document.getElementById('br-start-btn');
+  msg.textContent = T('br_loading');
+  startBtn.disabled = true;
+  document.getElementById('br-mask').classList.remove('hide');
+  if(window.__br3dLoading) return;                       /* 已在加载，onload 后自动进入 */
+  window.__br3dLoading = true;
+  var s = document.createElement('script');
+  s.src = 'backrooms3d.bundle.js';
+  s.onload = function(){
+    if(screenEl.classList.contains('hide')) return;      /* 用户已退出，等下次进入 */
+    if(window.Backrooms3D) window.Backrooms3D.open({music:settings.music,sfx:settings.sfx});
+    else { msg.textContent = T('br_load_error'); }
+  };
+  s.onerror = function(){
+    window.__br3dLoading = false;                        /* 允许下次重试 */
+    if(!screenEl.classList.contains('hide')) msg.textContent = T('br_load_error');
+  };
+  document.head.appendChild(s);
 }
 function closeBackrooms(){
   if(window.Backrooms3D) window.Backrooms3D.stop();
