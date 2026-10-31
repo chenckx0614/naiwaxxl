@@ -8939,16 +8939,22 @@ var PacGame = (function(){
         ctx.fillRect(c*TS+2, r*TS+2, TS-4, 5);
       }
     }
-    /* 豆子 */
-    if(dotImg && dotImg.complete){
-      for(var key in pellets){
-        var pr = key.split(','); 
-        var x = (+pr[0] + 0.5) * TS, y = (+pr[1] + 0.5) * TS, s = TS*0.4;
-        ctx.globalAlpha = 0.72 + 0.28 * Math.sin(animT*3 + (x+y)*0.05);   /* 波纹式呼吸闪烁 */
+    /* 豆子：素材就绪用精灵图；失败/未就绪一律画布圆点兜底（弱网素材 404 时迷宫不再空） */
+    var useDotImg = dotImg && dotImg.complete && dotImg.naturalWidth > 0;
+    if(!useDotImg){ ctx.fillStyle = '#ffd76a'; }
+    for(var key in pellets){
+      var pr = key.split(','); 
+      var x = (+pr[0] + 0.5) * TS, y = (+pr[1] + 0.5) * TS, s = TS*0.4;
+      ctx.globalAlpha = 0.72 + 0.28 * Math.sin(animT*3 + (x+y)*0.05);   /* 波纹式呼吸闪烁 */
+      if(useDotImg){
         ctx.drawImage(dotImg, x - s/2, y - s/2, s, s);
+      } else {
+        ctx.beginPath();
+        ctx.arc(x, y, s*0.32, 0, 7);
+        ctx.fill();
       }
-      ctx.globalAlpha = 1;
     }
+    ctx.globalAlpha = 1;
     /* 吃豆粒子：扩散淡出的光圈 */
     for(var pi = pops.length-1; pi >= 0; pi--){
       var pc = pops[pi], age = animT - pc.t;
@@ -8987,8 +8993,9 @@ var PacGame = (function(){
       ctx.beginPath(); ctx.arc(6 + ex, -4, 2.2, 0, 7); ctx.fill();
       ctx.restore();
     });
-    /* 玩家：嘴巴开合 + 移动挤压 + 死亡旋转缩小 */
-    if(pacImg && pacImg.complete){
+    /* 玩家：嘴巴开合 + 移动挤压 + 死亡旋转缩小；素材不可用时画布圆形奶蛙兜底 */
+    var usePacImg = pacImg && pacImg.complete && pacImg.naturalWidth > 0;
+    if(usePacImg){
       var pp = entPos(player), s = TS*0.72;
       var moving = !!(player.dir && (player.tx !== player.cx || player.ty !== player.cy));
       var dying = paused && deathT >= 0;
@@ -9011,6 +9018,21 @@ var PacGame = (function(){
       }
       /* 原素材右侧还画了两颗展示用豆子；只取奶蛙本体，反向时不会裂出一颗圆点。 */
       ctx.drawImage(pacImg, 0, 0, 105, 128, -s, -s, s*2, s*2);
+      ctx.restore();
+    } else {
+      /* 素材失败兜底：黄色圆 + 嘴巴扇形开口，朝向跟随 */
+      var pp = entPos(player), s = TS*0.62;
+      var d2 = player.dir || { x:1, y:0 };
+      var ang = Math.atan2(d2.y, d2.x);
+      var mouth = 0.22 + 0.18 * Math.abs(Math.sin(animT*10));
+      ctx.save();
+      ctx.translate(pp.x, pp.y);
+      ctx.fillStyle = '#ffd76a';
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.arc(0, 0, s, ang + mouth, ang - mouth + Math.PI*2);
+      ctx.closePath();
+      ctx.fill();
       ctx.restore();
     }
   }
@@ -9047,8 +9069,17 @@ var PacGame = (function(){
     if(!cv){
       cv = document.getElementById('pac-cv');
       ctx = cv.getContext('2d');
-      pacImg = new Image(); pacImg.onload = draw; pacImg.src = 'naiwa/chidou/a.webp';
-      dotImg = new Image(); dotImg.onload = draw; dotImg.src = 'naiwa/chidou/b.webp';
+      /* 弱网素材加载失败自动重试（带缓存穿透）；彻底失败由 draw() 的圆形兜底顶上 */
+      function loadRetry(im, src, tries){
+        im.onerror = function(){
+          if(tries > 0) setTimeout(function(){ im.src = src + (src.indexOf('?')<0?'?':'&') + 'r=' + Date.now(); }, 800);
+          else { im.failed = true; draw(); }
+        };
+        im.onload = draw;
+        im.src = src;
+      }
+      pacImg = new Image(); loadRetry(pacImg, 'naiwa/chidou/a.webp', 3);
+      dotImg = new Image(); loadRetry(dotImg, 'naiwa/chidou/b.webp', 3);
       bindInput();
     }
     reset();
