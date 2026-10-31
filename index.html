@@ -9845,20 +9845,13 @@ function viewWallpaper(i){
   openOverlay('wp-view-overlay');
 }
 
-/* root 专属：外部 mp3 预加载计入加载进度（发行差异 —— minitool 音频 base64
-   内嵌、脚本执行完即素材就绪，无需此段）。<audio> 是惰性加载的，不等就位
-   第一次播 BGM/音效会卡一下；canplaythrough 若在挂事件前已触发（本地缓存
-   极快），用 readyState 兜底判完成。error 也计数 —— 单个音频失败不卡入口。 */
-{
-  const list = [bgmAudio, endAudio].concat(comboAudios);
-  list.forEach(a => {
-    PRELOAD.total++;
-    if(a.readyState >= 3){ PRELOAD.bump(); return; }
-    const step = () => PRELOAD.bump();
-    a.addEventListener('canplaythrough', step, { once:true });
-    a.addEventListener('error', step, { once:true });
-  });
-}
+/* root 专属：外部 mp3 预热（发行差异 —— minitool 音频 base64 内嵌、脚本执行完即
+   素材就绪，无需此段）。**只保证最先发请求，不再阻塞首屏放行**：
+   旧版把 canplaythrough 计入进度条，bgm 608KB 弱网要 5-6 秒 —— 进度条被音频
+   卡死是「打开慢」的主因。现在 <audio> 的 load() 在脚本执行时已发请求
+   （全站最优先），BGM 在首页展示期间继续缓冲，玩家点第一关时基本已就绪；
+   若极端慢网下还没就位，进关卡时 <audio> 自身的缓冲兜底。 */
+/* 音频就绪兜底检查已移除 —— 无需计数，进度条只等图片 */
 </script>
 
 </body>
