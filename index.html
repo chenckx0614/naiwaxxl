@@ -1457,8 +1457,6 @@
     display:flex; flex-direction:column; align-items:center; justify-content:center;
     filter:drop-shadow(0 4px 8px rgba(30,25,5,.5));
     -webkit-tap-highlight-color:transparent;
-    /* 入口暂时隐藏（2026-10-31，用户要求）；恢复=删掉下一行 */
-    display:none;
   }
   #backrooms-trigger img { width:62px; height:62px; object-fit:contain; display:block; pointer-events:none; }
   #backrooms-trigger .trigger-label {
@@ -2588,7 +2586,7 @@ var _hmt = _hmt || [];
   </div>
   <button id="mascot-space-trigger" onclick="openMascotSpace()" title="奶蛙空间" data-i18n-title="mascot_space"><img src="naiwa/start/start_bj.webp" alt="" draggable="false"><span class="trigger-label" data-i18n="mascot_space">奶蛙空间</span></button>
   <button id="pacman-trigger" onclick="openPacman()" title="吃豆人" data-i18n-title="pacman"><img src="naiwa/chidou/a.webp" alt="" draggable="false"><span class="trigger-label" data-i18n="pacman">吃豆人</span></button>
-  <button id="backrooms-trigger" onclick="openBackrooms()" title="蛙后室" data-i18n-title="backrooms"><img src="naiwa/over/jingdai.webp" alt="" draggable="false"><span class="trigger-label" data-i18n="backrooms">蛙后室</span></button>
+  <button id="backrooms-trigger" onclick="openBackroomsSite()" title="蛙后室" data-i18n-title="backrooms"><img src="naiwa/over/jingdai.webp" alt="" draggable="false"><span class="trigger-label" data-i18n="backrooms">蛙后室</span></button>
   <div id="home-level-tag"><span id="home-level-pre">当前进度：第 </span><span id="home-level">1</span><span id="home-level-post"> 关</span></div>
   <div id="home-best"></div>
 </div>
@@ -8590,6 +8588,15 @@ function closePacman(){
   refreshHome();
 }
 
+/* 蛙后室已拆成独立站点：首页入口直接跳转过去（不再在本页加载 12.6MB 的 3D 包）。
+   新标签打开，消消乐页面留在原标签，随时能切回来；弹窗被拦则本页跳转。 */
+var BACKROOMS_SITE = 'https://chenckx0614.github.io/naiwahoushi/';
+function openBackroomsSite(){
+  SFX.click();
+  track('backrooms', 'open', 'home');
+  var w = window.open(BACKROOMS_SITE, '_blank', 'noopener');
+  if(!w) location.href = BACKROOMS_SITE;
+}
 function openBackrooms(){
   SFX.click();
   track('backrooms', 'open', 'home');
