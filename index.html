@@ -4531,9 +4531,9 @@ function setLang(v){
 let actx = null, sfxGain = null;
 
 /* ---------- 数据埋点（Umami 自定义事件，root 专属） ----------
-   后台 cloud.umami.is → Events，看每关通过率/分享与粉丝群使用率。
+   统计后台 → Events，看每关通过率/分享与粉丝群使用率。
    事件名统一 cat_act（如 level_clear），cat/label 另放 props 方便二维筛选。
-   tracker 未就绪（UMAMI_ID 未填 / 脚本没加载完 / 被广告拦截）时静默跳过，
+   tracker 未就绪（统计未配置 / 脚本没加载完 / 被广告拦截）时静默跳过，
    绝不因为统计抛错影响玩法。
    minitool 合规版无统计（CSP 挡外链），埋点只在这份代码里。 */
 const GAME_VER = '1.1.1';
