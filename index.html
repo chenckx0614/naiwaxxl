@@ -2535,13 +2535,22 @@
   .ll-pct { font-size:13px; font-weight:700; color:#2b7fb8; }
 </style>
 <script>
-/* 百度统计（数据后台 tongji.baidu.com，仅站长可见；玩家端只是一行不可见的异步脚本） */
-var _hmt = _hmt || [];
-(function() {
-  var hm = document.createElement("script");
-  hm.src = "https://hm.baidu.com/hm.js?e8d578118e11d8d45f2d10d9bfad18d5";
-  var s = document.getElementsByTagName("script")[0];
-  s.parentNode.insertBefore(hm, s);
+/* ---------- Umami 统计（后台 cloud.umami.is，仅站长可见） ----------
+   为什么自己托管 tracker：官方 script.js 实测 TTFB 4.1s，挂上去等于白丢请求。
+   改成从本站加载 umami.js（几十毫秒），data-host-url 指回官方云，
+   只有上报请求走外网；上报是 sendBeacon 后台发，不参与首屏放行。
+   UMAMI_ID 为空时整段跳过，不发任何请求（本地预览/未配置都安全）。 */
+var UMAMI_ID = '88a43cae-9874-4586-ab04-d981f1ba1654';
+var UMAMI_HOST = 'https://cloud.umami.is';
+(function(){
+  if(!UMAMI_ID) return;
+  var s = document.createElement('script');
+  s.defer = true;
+  s.src = 'umami.js';
+  s.setAttribute('data-website-id', UMAMI_ID);
+  s.setAttribute('data-host-url', UMAMI_HOST);
+  s.setAttribute('data-domains', 'chenckx0614.github.io');
+  document.head.appendChild(s);
 })();
 </script>
 </head>
@@ -4521,12 +4530,19 @@ function setLang(v){
  * ============================================================ */
 let actx = null, sfxGain = null;
 
-/* ---------- 数据埋点（百度统计自定义事件，root 专属） ----------
-   后台 tongji.baidu.com → 自定义事件，看每关通过率/分享与粉丝群使用率。
+/* ---------- 数据埋点（Umami 自定义事件，root 专属） ----------
+   后台 cloud.umami.is → Events，看每关通过率/分享与粉丝群使用率。
+   事件名统一 cat_act（如 level_clear），cat/label 另放 props 方便二维筛选。
+   tracker 未就绪（UMAMI_ID 未填 / 脚本没加载完 / 被广告拦截）时静默跳过，
+   绝不因为统计抛错影响玩法。
    minitool 合规版无统计（CSP 挡外链），埋点只在这份代码里。 */
 const GAME_VER = '1.1.1';
 function track(cat, act, label){
-  try { if(window._hmt) _hmt.push(['_trackEvent', cat, act, label || '']); } catch(e){}
+  try {
+    if(window.umami && typeof window.umami.track === 'function'){
+      window.umami.track(cat + '_' + act, { cat: cat, label: label || '' });
+    }
+  } catch(e){}
 }
 /* 玩家端 JS 报错自动上报：label 带版本号方便对版本排查；同一错误指纹只报
    一次，防止死循环刷量。error 抓同步异常与资源错误，unhandledrejection 抓
