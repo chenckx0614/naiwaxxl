@@ -2536,22 +2536,36 @@
 </style>
 <script>
 /* ---------- Umami 统计（后台 cloud.umami.is，仅站长可见） ----------
-   为什么自己托管 tracker：官方 script.js 实测 TTFB 4.1s，挂上去等于白丢请求。
-   改成从本站加载 umami.js（几十毫秒），data-host-url 指回官方云，
-   只有上报请求走外网；上报是 sendBeacon 后台发，不参与首屏放行。
-   UMAMI_ID 为空时整段跳过，不发任何请求（本地预览/未配置都安全）。 */
+   1) tracker 自托管在 umami.js：官方 script.js 实测 TTFB 4.1s，直连等于白丢请求
+   2) 等首屏放行后才插（loader.reveal 调 __loadUmami），不跟关卡素材抢带宽；
+      load 事件兜底 3s，主脚本没跑到 reveal 也能补上
+   3) data-host-url 指回官方云，只有上报走外网，sendBeacon 后台发不占首屏
+   4) UMAMI_ID 为空整段跳过，本地预览/分叉站都不会污染数据 */
 var UMAMI_ID = '88a43cae-9874-4586-ab04-d981f1ba1654';
 var UMAMI_HOST = 'https://cloud.umami.is';
-(function(){
-  if(!UMAMI_ID) return;
+var UMAMI_QMAX = 60;                     /* 队列上限：tracker 被广告拦截时不无限堆积 */
+window.__umamiQ = [];
+window.__umamiLoaded = false;
+window.__loadUmami = function(){
+  if(!UMAMI_ID || window.__umamiLoaded) return;
+  window.__umamiLoaded = true;
   var s = document.createElement('script');
-  s.defer = true;
   s.src = 'umami.js';
+  s.async = true;                        /* 动态插入的 script 本身就是 async，defer 无意义 */
   s.setAttribute('data-website-id', UMAMI_ID);
   s.setAttribute('data-host-url', UMAMI_HOST);
   s.setAttribute('data-domains', 'chenckx0614.github.io');
+  s.onload = function(){
+    /* tracker 就绪，把排队的事件补发（顺序即发生顺序） */
+    var q = window.__umamiQ; window.__umamiQ = [];
+    for(var i = 0; i < q.length; i++){
+      try{ window.umami.track(q[i][0], q[i][1]); }catch(e){}
+    }
+  };
+  s.onerror = function(){ window.__umamiLoaded = false; };   /* 失败允许下次重试 */
   document.head.appendChild(s);
-})();
+};
+window.addEventListener('load', function(){ setTimeout(window.__loadUmami, 3000); });
 </script>
 </head>
 <body>
@@ -4532,15 +4546,22 @@ let actx = null, sfxGain = null;
 
 /* ---------- 数据埋点（Umami 自定义事件，root 专属） ----------
    统计后台 → Events，看每关通过率/分享与粉丝群使用率。
-   事件名统一 cat_act（如 level_clear），cat/label 另放 props 方便二维筛选。
-   tracker 未就绪（统计未配置 / 脚本没加载完 / 被广告拦截）时静默跳过，
-   绝不因为统计抛错影响玩法。
+   事件名统一 cat_act（如 level_start），cat/label 放 props 方便二维筛选，
+   extra 放数值维度（如 stars），避免把可聚合的数字塞进 label 字符串。
+   tracker 未就绪时先排队，onload 补发，不丢早期事件（如刚进关的 level_start）。
+   统计未配置 / 被广告拦截时静默跳过，绝不因为统计抛错影响玩法。
    minitool 合规版无统计（CSP 挡外链），埋点只在这份代码里。 */
 const GAME_VER = '1.1.1';
-function track(cat, act, label){
+function track(cat, act, label, extra){
   try {
+    var name = cat + '_' + act;
+    var props = { cat: cat };
+    if(label) props.label = label;
+    if(extra) for(var k in extra){ if(extra[k] !== undefined && extra[k] !== null) props[k] = extra[k]; }
     if(window.umami && typeof window.umami.track === 'function'){
-      window.umami.track(cat + '_' + act, { cat: cat, label: label || '' });
+      window.umami.track(name, props);
+    } else if(window.__umamiQ && window.__umamiQ.length < UMAMI_QMAX){
+      window.__umamiQ.push([name, props]);
     }
   } catch(e){}
 }
@@ -8000,7 +8021,9 @@ function showResult(win, stars){
     next: next,
   };
   if(mode === 'normal'){
-    track('level', win ? 'win' : 'lose', 'L' + level + (win ? ' s' + stars : ''));
+    /* 关卡号只放 label，星星/分数走 props —— 否则 label 会被劈成 "L3 s1/s2/s3"，
+       按关卡聚合通过率时就分不到一起了 */
+    track('level', win ? 'win' : 'lose', 'L' + level, { stars: win ? stars : 0, score: score });
     if(win){
       /* 记进度：星星保留历史最好成绩，并解锁下一关（不会超出关卡表） */
       save.stars[level] = Math.max(starsOf(level), stars);
@@ -8008,11 +8031,11 @@ function showResult(win, stars){
     }
     persist();
   } else if(mode === 'daily'){
-    track('daily', win ? 'win' : 'lose', 's' + stars);
+    track('daily', win ? 'win' : 'lose', '', { stars: win ? stars : 0, score: score });
     if(win && dailyStarsOf(todayStr()) < stars) dailySave.days[todayStr()] = stars;
     if(win) persistDaily();
   } else {
-    track('endless', win ? 'win' : 'lose', 'R' + endlessRound);
+    track('endless', win ? 'win' : 'lose', 'R' + endlessRound, { score: score });
     if(win){
       endlessScore += score;   /* 进下一轮，本轮分数入总账 */
     } else {
@@ -9318,6 +9341,8 @@ const PRELOAD = {
     setTimeout(function(){ try { maybeShowNotice(); } catch(e){} }, 900);
     /* 后台补载：其余关卡素材 + mascot3d 包，放行后再慢慢拉 */
     setTimeout(function(){ try { startBackgroundLoad(); } catch(e){} }, 1500);
+    /* 统计脚本最后插：不跟首屏素材、也不跟后台补载抢带宽（排队的埋点会一起补发） */
+    setTimeout(function(){ try { if(window.__loadUmami) window.__loadUmami(); } catch(e){} }, 2200);
   },
   /* 兜底：个别资源挂起（代理卡住 / 弱网无响应）时不永久黑屏 */
   force: function(){ this.done = this.total; this.reveal(); }
