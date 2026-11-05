@@ -842,6 +842,22 @@
   body.nova {
     background: radial-gradient(125% 118% at 50% 42%, #5a2a7a 0%, #401e5c 38%, #28123a 70%, #0e0618 100%) fixed;
   }
+  /* 紫晶主题（第四十二关 amethyst）：深紫罗兰渐变 */
+  body.amethyst {
+    background: radial-gradient(125% 118% at 50% 42%, #5a2e9a 0%, #3e1f6e 38%, #26124a 70%, #0b0518 100%) fixed;
+  }
+  /* 赤岩主题（第四十三关 canyon）：赭红砂岩渐变 */
+  body.canyon {
+    background: radial-gradient(125% 118% at 50% 42%, #7a3a22 0%, #5a2817 38%, #39170d 70%, #120604 100%) fixed;
+  }
+  /* 青玉主题（第四十四关 jade）：青碧玉石渐变 */
+  body.jade {
+    background: radial-gradient(125% 118% at 50% 42%, #1a6a5a 0%, #124e42 38%, #0a332b 70%, #03120f 100%) fixed;
+  }
+  /* 日蚀主题（第四十五关 eclipse）：墨黑金环渐变 */
+  body.eclipse {
+    background: radial-gradient(125% 118% at 50% 42%, #4a3a18 0%, #2e2410 38%, #1a150a 70%, #080603 100%) fixed;
+  }
   /* 磁场光环（第二十四关 magnet）：从重心荡开的青蓝光环 */
   .magnet-ring {
     position:absolute; pointer-events:none; z-index:6; border-radius:50%;
@@ -1269,9 +1285,12 @@
   #toast {
     position:fixed; top:18%; left:50%; transform:translateX(-50%) scale(.8);
     background:rgba(26,46,88,.92); color:#fff; font-weight:800; font-size:17px;
-    padding:10px 22px; border-radius:999px; opacity:0; pointer-events:none;
+    padding:10px 20px; border-radius:22px; opacity:0; pointer-events:none;
     box-shadow:0 8px 24px rgba(20,40,80,.35);
-    transition:opacity .2s, transform .2s; z-index:99; white-space:nowrap;
+    transition:opacity .2s, transform .2s; z-index:99;
+    /* 机制开场提示偏长（棱镜/宝箱/潮汐），窄屏必须折行，否则左右被裁 */
+    max-width:calc(100vw - 28px); box-sizing:border-box;
+    white-space:normal; text-align:center; line-height:1.35;
   }
   #toast.show { opacity:1; transform:translateX(-50%) scale(1); }
 
@@ -2227,6 +2246,22 @@
   /* 星爆主题（第四十一关 nova）：金紫渐变 */
   body.nova {
     background: radial-gradient(125% 118% at 50% 42%, #5a2a7a 0%, #401e5c 38%, #28123a 70%, #0e0618 100%) fixed;
+  }
+  /* 紫晶主题（第四十二关 amethyst）：深紫罗兰渐变 */
+  body.amethyst {
+    background: radial-gradient(125% 118% at 50% 42%, #5a2e9a 0%, #3e1f6e 38%, #26124a 70%, #0b0518 100%) fixed;
+  }
+  /* 赤岩主题（第四十三关 canyon）：赭红砂岩渐变 */
+  body.canyon {
+    background: radial-gradient(125% 118% at 50% 42%, #7a3a22 0%, #5a2817 38%, #39170d 70%, #120604 100%) fixed;
+  }
+  /* 青玉主题（第四十四关 jade）：青碧玉石渐变 */
+  body.jade {
+    background: radial-gradient(125% 118% at 50% 42%, #1a6a5a 0%, #124e42 38%, #0a332b 70%, #03120f 100%) fixed;
+  }
+  /* 日蚀主题（第四十五关 eclipse）：墨黑金环渐变 */
+  body.eclipse {
+    background: radial-gradient(125% 118% at 50% 42%, #4a3a18 0%, #2e2410 38%, #1a150a 70%, #080603 100%) fixed;
   }
   /* 磁场光环（第二十四关 magnet）：从重心荡开的青蓝光环 */
   .magnet-ring {
@@ -4083,10 +4118,137 @@ const LEVELS = [
     bg: 'nova',
     winImg: 'naiwa/start/start_bj.webp',
   },
+  /* ============ 第四十二关：紫晶回廊 ============
+     菱形盘 70 格（四边陡收，越靠边列通行越窄）。棱镜 prism：每 6 步一枚
+     普通子化棱镜（全场最多一枚），消掉它就把四枚棋子折射成同色 ——
+     在窄腰处一次折射往往就是一条现成的三连，核心是「攒棱镜、等窄腰」。 */
+  {
+    no: 42,
+    rows: 11,
+    cols: 11,
+    moves: 29,
+    needs: [24, 19, 14],
+    themeColor: '#9a6ae8',
+    prism: 6,
+    types: [
+      { key:'42a', img:'naiwa/1/h.webp',  color:'#b88ae8', bg:'#e8dcff' },
+      { key:'42b', img:'naiwa/3/b3.webp', color:'#e87a9a', bg:'#ffd4e0' },
+      { key:'42c', img:'naiwa/10/c.webp', color:'#4ab8e8', bg:'#c8ecff' },
+      { key:'42d', img:'naiwa/3/e3.webp', color:'#7ed49a', bg:'#d0f2dc' },
+      { key:'42e', img:'naiwa/4/b4.webp', color:'#e8b84a', bg:'#ffedc4' },
+    ],
+    shape: function(r,c){
+      var dr = r>5 ? r-5 : 5-r, dc = c>5 ? c-5 : 5-c;
+      return dr + dc <= 6;
+    },
+    rocks: [ { r:0, c:5 }, { r:10, c:5 }, { r:5, c:0 }, { r:5, c:10 } ],
+    cages: [ { r:3, c:5 }, { r:7, c:5 }, { r:5, c:3 }, { r:5, c:7 } ],
+    frozen: [ { r:2, c:4 }, { r:2, c:6 }, { r:8, c:4 }, { r:8, c:6 } ],
+    jellies: [ { r:1, c:5 }, { r:9, c:5 }, { r:5, c:1 }, { r:5, c:9 }, { r:4, c:3 }, { r:4, c:7 }, { r:6, c:3 }, { r:6, c:7 } ],
+    bg: 'amethyst',
+    winImg: 'naiwa/start/start_bj.webp',
+  },
+
+  /* ============ 第四十三关：赤岩深谷 ============
+     V 形峡谷盘 85 格：两侧高台各 8 行，中央三列下沉到最底（各 7 行），
+     中间那条沟比台面低 3 行。地陷 sink：每 5 步所有列最底一枚坠入深渊，
+     上方整列下沉补位 —— 沟底漏得最快，站在崖边的棋子永远等不到天亮。 */
+  {
+    no: 43,
+    rows: 11,
+    cols: 11,
+    moves: 30,
+    needs: [26, 21, 16],
+    themeColor: '#c96a3a',
+    sink: 5,
+    types: [
+      { key:'43a', img:'naiwa/1/c.webp',   color:'#e8a04a', bg:'#ffe4c4' },
+      { key:'43b', img:'naiwa/3/a3.webp',  color:'#e87a9a', bg:'#ffd4e0' },
+      { key:'43c', img:'naiwa/10/d.webp',  color:'#4ab8e8', bg:'#c8ecff' },
+      { key:'43d', img:'naiwa/7/c.webp',   color:'#7ed49a', bg:'#d0f2dc' },
+      { key:'43e', img:'naiwa/5/5b.webp',  color:'#b88ae8', bg:'#e8dcff' },
+    ],
+    shape: function(r,c){
+      if(c <= 3 || c >= 7) return r>=1 && r<=8;
+      return r>=4 && r<=10;
+    },
+    rocks: [ { r:1, c:2 }, { r:1, c:8 }, { r:8, c:2 }, { r:8, c:8 }, { r:4, c:5 } ],
+    cages: [ { r:1, c:0 }, { r:1, c:10 } ],
+    frozen: [ { r:4, c:4 }, { r:4, c:6 }, { r:7, c:4 }, { r:7, c:6 } ],
+    jellies: [ { r:2, c:1 }, { r:2, c:9 }, { r:5, c:3 }, { r:5, c:7 }, { r:6, c:5 }, { r:7, c:2 }, { r:7, c:8 } ],
+    bg: 'canyon',
+    winImg: 'naiwa/start/start_bj.webp',
+  },
+
+  /* ============ 第四十四关：青玉阶梯 ============
+     阶梯盘 85 格：左低右高，每列顶边比前一列高一行（最左只剩 3 格，
+     最右满 11 格）。双帮助机制同时开：秘宝宝箱每 7 步上身（砸三层出十字
+     条纹），双子连结每 6 步成链（同波双消 +2 步）—— 左手靠宝箱开路，
+     右手靠连结续命，是长盘最容易滚雪球的一关。 */
+  {
+    no: 44,
+    rows: 11,
+    cols: 11,
+    moves: 28,
+    needs: [23, 18, 13],
+    themeColor: '#3ab89a',
+    chest: 7,
+    bond: 4,
+    types: [
+      { key:'44a', img:'naiwa/1/e.webp',   color:'#4ab8e8', bg:'#c8ecff' },
+      { key:'44b', img:'naiwa/8/a.webp',   color:'#7ed49a', bg:'#d0f2dc' },
+      { key:'44c', img:'naiwa/1/h2.webp',  color:'#e8b84a', bg:'#ffedc4' },
+      { key:'44d', img:'naiwa/9/c.webp',   color:'#e87a9a', bg:'#ffd4e0' },
+      { key:'44e', img:'naiwa/4/e4.webp',  color:'#b88ae8', bg:'#e8dcff' },
+    ],
+    shape: function(r,c){
+      var top = 8 - c;
+      if(top < 0) top = 0;
+      return r >= top;
+    },
+    rocks: [ { r:10, c:0 }, { r:0, c:9 }, { r:10, c:10 } ],
+    cages: [ { r:9, c:6 }, { r:8, c:9 } ],
+    frozen: [ { r:9, c:1 }, { r:0, c:10 }, { r:3, c:8 }, { r:2, c:9 } ],
+    jellies: [ { r:10, c:2 }, { r:10, c:4 }, { r:10, c:6 }, { r:10, c:8 }, { r:9, c:5 }, { r:8, c:6 } ],
+    bg: 'jade',
+    winImg: 'naiwa/start/start_bj.webp',
+  },
+
+  /* ============ 第四十五关：日蚀终章 ============
+     切角大盘 105 格（11×11 去掉四个 2×2 角）。终局典礼：星爆每 7 步
+     把随机普通子升成特殊子，幻彩百搭每 7 步点一枚百搭 —— 两条帮助线
+     同时开火，特殊子一浪接一浪。目标拉满，但这一关本来就是让你爽的。 */
+  {
+    no: 45,
+    rows: 11,
+    cols: 11,
+    moves: 30,
+    needs: [29, 24, 19],
+    themeColor: '#d8a838',
+    surge: 6,
+    wild: 6,
+    types: [
+      { key:'45a', img:'naiwa/4/f4.webp',  color:'#e8b84a', bg:'#ffedc4' },
+      { key:'45b', img:'naiwa/1/g.webp',   color:'#e87a9a', bg:'#ffd4e0' },
+      { key:'45c', img:'naiwa/9/d.webp',   color:'#4ab8e8', bg:'#c8ecff' },
+      { key:'45d', img:'naiwa/8/d.webp',   color:'#7ed49a', bg:'#d0f2dc' },
+      { key:'45e', img:'naiwa/5/5d.webp',  color:'#b88ae8', bg:'#e8dcff' },
+    ],
+    shape: function(r,c){
+      if(r <= 1 || r >= 9) return c>=2 && c<=8;
+      return true;
+    },
+    rocks: [ { r:0, c:2 }, { r:0, c:8 }, { r:10, c:2 }, { r:10, c:8 } ],
+    cages: [ { r:5, c:2 }, { r:5, c:8 }, { r:4, c:5 }, { r:6, c:5 } ],
+    frozen: [ { r:1, c:3 }, { r:1, c:7 }, { r:9, c:3 }, { r:9, c:7 } ],
+    jellies: [ { r:2, c:0 }, { r:2, c:10 }, { r:8, c:0 }, { r:8, c:10 }, { r:0, c:5 }, { r:10, c:5 }, { r:5, c:5 } ],
+    bg: 'eclipse',
+    winImg: 'naiwa/start/start_bj.webp',
+  },
 ];
 
 /* 关卡选择面板至少铺这么多格，超出的格子显示为「敬请期待」 */
-const LEVEL_SLOTS = 41;
+const LEVEL_SLOTS = 45;
 
 /* 当前关的图标。startLevel() 时随关卡切换，其余逻辑一律读这个变量 */
 let TYPES = LEVELS[0].types;
@@ -7931,7 +8093,7 @@ function startLevelCore(def){
   boosters.swap = def.swaps || 0;   /* 妙手按关配额 */
   swapSel = null;
   /* 主题背景：按关卡 bg 字段切换（夜幕/黄昏/糖果/派对/星云），出关恢复 */
-  ['night','sunset','candy','party','galaxy','abyss','lava','mirror','doom','brass','mist','void','swamp','gravity','chaos','rubble','prism','ruin','forge','magnetic','aurora','gale','jungle','bloom','inkpond','astral','sands','tide','mirage','cavern','meadow','vault','glacier','volt','orchid','chasm','nova'].forEach(function(k){
+  ['night','sunset','candy','party','galaxy','abyss','lava','mirror','doom','brass','mist','void','swamp','gravity','chaos','rubble','prism','ruin','forge','magnetic','aurora','gale','jungle','bloom','inkpond','astral','sands','tide','mirage','cavern','meadow','vault','glacier','volt','orchid','chasm','nova','amethyst','canyon','jade','eclipse'].forEach(function(k){
     document.body.classList.toggle(k, def.bg === k);
   });
   if(def.bg) ensureSkyDecor(def.bg);
@@ -8227,7 +8389,8 @@ function openStats(){
 
 /* ===== 奶蛙池塘 =====
    累计星星里程碑制：不消耗、只解锁，直接算 sum(save.stars)，零新增存档。
-   41 关 × 3 星 = 123 星封顶，最后一件「许愿池」是全三星大奖。 */
+   45 关 × 3 星 = 135 星封顶；最后一件「许愿池」门槛仍是 123 星
+   （41 关全三星即可达成，后面新增的 4 关只是让提前达成的玩家更早拿到）。 */
 const POND_ITEMS = [
   { id:'lily',    need:3,   name:'pond_lily',    kind:'css', x:8,  y:64, w:70, float:true },
   { id:'frogA',   need:5,   name:'pond_frogA',   kind:'img', src:'naiwa/1/a.webp',          x:20, y:49, w:106, float:true },
@@ -8915,7 +9078,7 @@ function goHome(){
   document.querySelectorAll('.overlay.show').forEach(o=>closeOverlay(o.id));
   /* 主题类名清单与 startLevel 的切换清单保持一致（此前漏了 L29 之后的新主题，
      从深潭/星爆这些关回首页会留着主题背景） */
-  ['night','sunset','candy','party','galaxy','abyss','lava','mirror','doom','brass','mist','void','swamp','gravity','chaos','rubble','prism','ruin','forge','magnetic','aurora','gale','jungle','bloom','inkpond','astral','sands','tide','mirage','cavern','meadow','vault','glacier','volt','orchid','chasm','nova'].forEach(k=>document.body.classList.remove(k));
+  ['night','sunset','candy','party','galaxy','abyss','lava','mirror','doom','brass','mist','void','swamp','gravity','chaos','rubble','prism','ruin','forge','magnetic','aurora','gale','jungle','bloom','inkpond','astral','sands','tide','mirage','cavern','meadow','vault','glacier','volt','orchid','chasm','nova','amethyst','canyon','jade','eclipse'].forEach(k=>document.body.classList.remove(k));
   document.body.style.removeProperty('--theme-color');
   /* 退出特殊模式：回到正常关卡流程 */
   gameMode = 'normal'; levelOverride = null; endlessRound = 0; endlessScore = 0;
