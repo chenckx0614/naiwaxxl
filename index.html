@@ -1289,6 +1289,8 @@
   #settings-overlay:not(.in-game) .panel-btns { display:none; }
   #home-best { margin-top:8px; font-size:14px; font-weight:800; color:#7a5a2a; letter-spacing:1px; }
   #home-best:empty { display:none; }
+  /* 访客计数：拿到数字才显示，低调不抢视线 */
+  #home-visits { margin-top:6px; font-size:11px; font-weight:700; color:#8b93a8; letter-spacing:.5px; opacity:.8; }
   /* 加分时顶栏数字弹一下 */
   #score-num.bump { animation:scoreBump .34s ease; }
   @keyframes scoreBump { 0%{transform:scale(1);} 45%{transform:scale(1.3); color:#ff6b00;} 100%{transform:scale(1);} }
@@ -2501,6 +2503,42 @@ window.__loadClarity = function(){
   y.parentNode.insertBefore(t, y);
 };
 window.addEventListener('load', function(){ setTimeout(window.__loadClarity, 3000); });
+
+/* ---------- 访客计数（abacus 免注册计数器，只记人头数） ----------
+   和 Clarity 分工：Clarity 看行为，这里只看"一共来过多少人"。
+   1) 同一浏览器只上报一次（localStorage 去重），再来只走只读 /get 拿现值
+   2) 请求失败 / 被广告拦截 / 超时一律静默，绝不抛错影响玩法
+   3) 首屏放行后 2.8s 才发，排在 Clarity 后面，不跟关卡素材抢带宽
+   4) 想换计数器：改 VISIT_NS + VISIT_KEY 即可（每个组合是独立的数据桶） */
+var VISIT_API = 'https://abacus.jasoncameron.dev';
+var VISIT_NS = 'naiwaxxl', VISIT_KEY = 'visitors', VISIT_LS = 'naiwa-uv-v1';
+window.__visitDone = false;
+window.__bumpVisit = function(){
+  if(window.__visitDone) return;
+  window.__visitDone = true;
+  var seen = false;
+  try{ seen = !!localStorage.getItem(VISIT_LS); }catch(e){}
+  try{
+    var x = new XMLHttpRequest();
+    x.open('GET', VISIT_API + (seen ? '/get/' : '/hit/') + VISIT_NS + '/' + VISIT_KEY, true);
+    x.timeout = 8000;
+    x.onload = function(){
+      try{
+        var n = JSON.parse(x.responseText).value;
+        if(typeof n !== 'number' || n < 1) return;
+        if(!seen){ try{ localStorage.setItem(VISIT_LS, '1'); }catch(e){} }
+        var el = document.getElementById('home-visits');
+        if(el){
+          var en = (document.documentElement.lang === 'en');
+          el.textContent = '👣 ' + n.toLocaleString('en-US') + (en ? ' visits' : ' 位玩家到访');
+          el.style.display = '';
+        }
+      }catch(e){}
+    };
+    x.onerror = x.ontimeout = function(){ window.__visitDone = false; };  /* 失败允许下次重试 */
+    x.send();
+  }catch(e){}
+};
 </script>
 </head>
 <body>
@@ -2547,6 +2585,7 @@ window.addEventListener('load', function(){ setTimeout(window.__loadClarity, 300
   <button id="backrooms-trigger" onclick="openBackroomsSite()" title="蛙后室" data-i18n-title="backrooms"><img src="naiwa/over/jingdai.webp" alt="" draggable="false"><span class="trigger-label" data-i18n="backrooms">蛙后室</span></button>
   <div id="home-level-tag"><span id="home-level-pre">当前进度：第 </span><span id="home-level">1</span><span id="home-level-post"> 关</span></div>
   <div id="home-best"></div>
+  <div id="home-visits" style="display:none"></div>
 </div>
 
 <div id="app">
@@ -9345,6 +9384,8 @@ const PRELOAD = {
     setTimeout(function(){ try { startBackgroundLoad(); } catch(e){} }, 1500);
     /* 统计脚本最后插：不跟首屏素材、也不跟后台补载抢带宽（排队的埋点会一起补发） */
     setTimeout(function(){ try { if(window.__loadClarity) window.__loadClarity(); } catch(e){} }, 2200);
+    /* 访客计数排在 Clarity 之后：一个 XHR，失败静默 */
+    setTimeout(function(){ try { if(window.__bumpVisit) window.__bumpVisit(); } catch(e){} }, 2800);
   },
   /* 兜底：个别资源挂起（代理卡住 / 弱网无响应）时不永久黑屏 */
   force: function(){ this.done = this.total; this.reveal(); }
