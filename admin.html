@@ -139,28 +139,90 @@
   var API = 'https://abacus.jasoncameron.dev';
   var NS  = 'naiwaxxl';
   var KEY = 'visitors';
-  var PASS = 'naiwa';          /* ← 改这里换口令 */
-  var LS  = 'naiwa-admin-key';
+  var LS  = 'naiwa-admin-ok';
   var DAYS = 14;               /* 明细天数，柱状图固定画最近 7 天 */
 
   var $ = function(id){ return document.getElementById(id); };
 
-  /* ---------- 口令门（纯前端校验，只挡顺手围观） ---------- */
-  function unlock(fromUrl){
+  /* ---------- 口令门 ----------
+     源码里不存明文口令，只存 PBKDF2-SHA256(30 万轮) 的哈希；输入的口令在本机
+     现算现比，页面上任何地方都搜不到原始密码。
+     换口令：把新口令代入下面这行命令，用输出替换 PASS_HASH 即可 ↓
+     node -e "console.log(require('crypto').pbkdf2Sync('新口令','naiwa-xxl-admin-v1',300000,32,'sha256').toString('hex'))" */
+  var SALT = 'naiwa-xxl-admin-v1';
+  var ITER = 300000;
+  var PASS_HASH = '4cb7c1c605485cbb9cd5db6c54db9563a7573f71f826278c7cd2675be0d74a9f';
+  /* 会话标记绑在哈希上：换口令后，旧标签页的免密状态自动失效 */
+  var SESSION_TAG = 'v' + PASS_HASH.slice(0, 12);
+
+  function hexOf(buf){
+    var a = new Uint8Array(buf), s = '';
+    for(var i = 0; i < a.length; i++) s += ('0' + a[i].toString(16)).slice(-2);
+    return s;
+  }
+  function checkPass(v){
+    if(!v || !window.crypto || !crypto.subtle) return Promise.resolve(false);
+    var enc = new TextEncoder();
+    try{
+      return crypto.subtle.importKey('raw', enc.encode(v), { name: 'PBKDF2' }, false, ['deriveBits'])
+        .then(function(k){
+          return crypto.subtle.deriveBits(
+            { name: 'PBKDF2', salt: enc.encode(SALT), iterations: ITER, hash: 'SHA-256' }, k, 256);
+        })
+        .then(function(bits){ return hexOf(bits) === PASS_HASH; })
+        .catch(function(){ return false; });
+    }catch(e){ return Promise.resolve(false); }
+  }
+
+  function unlock(){
     $('gate').classList.add('hide');
     $('main').classList.remove('hide');
     load();
   }
-  function tryPass(v){
-    if(v === PASS){ try{ sessionStorage.setItem(LS, v); }catch(e){} unlock(); }
-    else { $('err').textContent = '口令不对'; }
+  function showGate(msg){
+    $('main').classList.add('hide');
+    $('gate').classList.remove('hide');
+    $('err').textContent = msg || '';
+    try{ $('pw').focus(); }catch(e){}
   }
+  /* 连错递增冷却：1s → 2s → 4s → 8s → 16s，挡在线暴力试 */
+  var tries = 0;
+  function tryPass(v){
+    var btn = $('go');
+    btn.disabled = true;
+    $('err').textContent = '校验中…';
+    checkPass(v).then(function(ok){
+      if(ok){
+        tries = 0;
+        $('err').textContent = '';
+        $('pw').value = '';
+        try{ sessionStorage.setItem(LS, SESSION_TAG); }catch(e){}
+        unlock();
+      }else{
+        tries++;
+        var wait = Math.pow(2, Math.min(tries - 1, 4));
+        $('err').textContent = '口令不对，' + wait + ' 秒后可再试';
+        setTimeout(function(){
+          btn.disabled = false;
+          if($('err').textContent.indexOf('秒后可再试') >= 0) $('err').textContent = '口令不对';
+        }, wait * 1000);
+      }
+    });
+  }
+
   var qs = new URLSearchParams(location.search);
   var saved = '';
   try{ saved = sessionStorage.getItem(LS) || ''; }catch(e){}
-  if(qs.get('k') === PASS){ try{ sessionStorage.setItem(LS, PASS); }catch(e){} unlock(); }
-  else if(saved === PASS) unlock();
-  else $('gate').classList.remove('hide');
+  if(saved === SESSION_TAG){
+    unlock();
+  }else if(qs.get('k')){
+    checkPass(qs.get('k')).then(function(ok){
+      if(ok){ try{ sessionStorage.setItem(LS, SESSION_TAG); }catch(e){} unlock(); }
+      else showGate('链接里的口令不对');
+    });
+  }else{
+    showGate((window.crypto && crypto.subtle) ? '' : '需要用 https 打开本页');
+  }
 
   $('go').addEventListener('click', function(){ tryPass($('pw').value.trim()); });
   $('pw').addEventListener('keydown', function(e){ if(e.key === 'Enter') tryPass(this.value.trim()); });
