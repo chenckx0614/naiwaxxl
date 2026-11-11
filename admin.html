@@ -189,8 +189,8 @@
   </div>
 
   <div class="hint">
-    数据源 <code>abacus.jasoncameron.dev</code> · 按浏览器去重，同一天多次打开算一人<br>
-    历史日期读一次就缓存 · 游戏页面本身不显示任何数字
+    数据源 <code>abacus.jasoncameron.dev</code><br>
+    按浏览器去重，同一天多次打开只算一人 · 游戏里不显示任何数字
   </div>
 </div>
 
@@ -199,9 +199,10 @@
   'use strict';
   var API = 'https://abacus.jasoncameron.dev';
   var NS  = 'naiwaxxl';
-  var KEY = 'uv2';
+  var KEY = 'uv3';
   var LS  = 'naiwa-admin-ok';
-  var CACHE_KEY = 'naiwa-stat-cache-v2';
+  var CACHE_KEY = 'naiwa-stat-cache-v3';
+  var WIN_KEY   = 'naiwa-stat-win';      /* 限速窗口落盘：刷新页面也接着用同一份额度 */
   var AUTO_KEY  = 'naiwa-admin-auto';
   var MAXDAYS = 30;            /* 一次最多回看多少天 */
 
@@ -274,20 +275,6 @@
     });
   }
 
-  var qs = new URLSearchParams(location.search);
-  var saved = '';
-  try{ saved = sessionStorage.getItem(LS) || ''; }catch(e){}
-  if(saved === SESSION_TAG){
-    unlock();
-  }else if(qs.get('k')){
-    checkPass(qs.get('k')).then(function(ok){
-      if(ok){ try{ sessionStorage.setItem(LS, SESSION_TAG); }catch(e){} unlock(); }
-      else showGate('链接里的口令不对');
-    });
-  }else{
-    showGate((window.crypto && crypto.subtle) ? '' : '需要用 https 打开本页');
-  }
-
   $('go').addEventListener('click', function(){ tryPass($('pw').value.trim()); });
   $('pw').addEventListener('keydown', function(e){ if(e.key === 'Enter') tryPass(this.value.trim()); });
   $('reload').addEventListener('click', function(){ load(true); });
@@ -306,7 +293,13 @@
     try{ return JSON.parse(localStorage.getItem(CACHE_KEY) || '{}') || {}; }catch(e){ return {}; }
   })();
   function saveCache(){
-    try{ localStorage.setItem(CACHE_KEY, JSON.stringify(cache)); }catch(e){}
+    try{
+      var cut = dayList(45)[0];                 /* 只留最近 45 天 */
+      Object.keys(cache).forEach(function(k){
+        if(k.indexOf('d3-') === 0 && k.slice(3) < cut) delete cache[k];
+      });
+      localStorage.setItem(CACHE_KEY, JSON.stringify(cache));
+    }catch(e){}
   }
   function todayKey(){
     var d = new Date();
@@ -317,8 +310,9 @@
     return fetch(API + '/get/' + NS + '/' + key, { cache: 'no-store' })
       .then(function(r){
         if(r.status === 404) return 0;                    /* 没有这个 key = 0，不是失败 */
-        if(r.status === 429 && attempt < 3){              /* 被限流：退避后重试 */
+        if(r.status === 429 && attempt < 3){              /* 被限流：退避后重试（重试也要过限速闸） */
           return new Promise(function(res){ setTimeout(res, 1500 * (attempt + 1)); })
+            .then(gate)
             .then(function(){ return readRaw(key, attempt + 1); });
         }
         if(!r.ok) return null;
@@ -326,36 +320,70 @@
       })
       .catch(function(){ return null; });
   }
-  /* 历史日期不会再变 → 永久缓存；今天的值 20 秒内复用 */
-  var TODAY = todayKey();
+  /* 缓存策略：
+     · 历史日期的桶（d2-YYYYMMDD 且不是今天）不会再变 → 永久命中，连 localStorage 都不用刷新
+     · 今天的桶和累计 uv 会变 → 20 秒内复用，超了重拉
+     两条都要落盘，否则每次打开后台都要重发 7~30 个请求（慢，还容易撞限流）。 */
+  var dayStamp = todayKey();
+  function isHistDay(key){
+    return key.indexOf('d3-') === 0 && key !== 'd3-' + dayStamp;
+  }
   function readKey(key){
     var c = cache[key];
     if(c && typeof c.v === 'number'){
-      if(key.indexOf('d2-') !== 0 && key !== KEY) return Promise.resolve(c.v);
+      if(isHistDay(key)) return Promise.resolve(c.v);
       if(Date.now() - c.t < 20000) return Promise.resolve(c.v);
     }
     return readRaw(key).then(function(v){
       if(v !== null){
         cache[key] = { v: v, t: Date.now() };
-        if(key.indexOf('d2-') !== 0) saveCache();
+        saveCache();
       }
       return v;
     });
   }
-  /* 一次只发一个：abacus 按 IP 限并发/速率，并发 6 个直接就 429 了 */
+  /* abacus 的限额是「每 IP 30 次 / 10 秒」（响应头 ratelimit-policy: 30;w=10）。
+     并发 6 个必炸；单纯 60ms 间隔跑 30 个也会炸。这里用滑动窗口事前限流：
+     10 秒内最多发 26 个，超了就等到最早那次过期。短序列（7 天 8 个）完全不受影响。 */
+  var win = (function(){
+    try{
+      return JSON.parse(localStorage.getItem(WIN_KEY) || '[]').filter(function(t){ return typeof t === 'number'; });
+    }catch(e){ return []; }
+  })();
+  function saveWin(){ try{ localStorage.setItem(WIN_KEY, JSON.stringify(win)); }catch(e){} }
+  function gate(){
+    var now = Date.now();
+    win = win.filter(function(t){ return now - t < 10000; });
+    if(win.length < 26){ win.push(now); saveWin(); return Promise.resolve(); }
+    return new Promise(function(r){ setTimeout(r, 10000 - (now - win[0]) + 60); }).then(gate);
+  }
+  /* 只给真要发网络的 key 占窗口，命中缓存的不浪费名额 */
+  function willFetch(key){
+    var c = cache[key];
+    if(!c || typeof c.v !== 'number') return true;
+    if(isHistDay(key)) return false;
+    return Date.now() - c.t >= 20000;
+  }
+  /* 3 路并发（限额是 10 秒 26 个，3 路远够不到），结果按入参顺序返回。
+     原来纯串行：8 个请求 × 每个 600ms 往返 = 5.7s 才出数，太慢。 */
+  var POOL = 3;
   function readSeq(keys, onProgress){
-    var out = [], i = 0;
-    function step(){
-      if(i >= keys.length) return Promise.resolve(out);
+    var out = new Array(keys.length), done = 0, next = 0;
+    function worker(){
+      if(next >= keys.length) return Promise.resolve();
+      var i = next++;
       var k = keys[i];
-      return readKey(k).then(function(v){
-        out.push(v);
-        i++;
-        if(onProgress) onProgress(i, keys.length);
-        return new Promise(function(res){ setTimeout(res, 60); }).then(step);
+      var wait = willFetch(k) ? gate() : Promise.resolve();
+      return wait.then(function(){ return readKey(k); }).then(function(v){
+        out[i] = v;
+        done++;
+        if(onProgress) onProgress(done, keys.length);
+        return worker();
       });
     }
-    return step();
+    var ws = [];
+    for(var w = 0; w < POOL; w++) ws.push(worker());
+    return Promise.all(ws).then(function(){ return out; });
   }
 
   /* ---------- 日期工具 ---------- */
@@ -389,7 +417,7 @@
     var prog = quiet ? null : function(done, total){
       $('updated').innerHTML = '<span class="spin"></span>正在读取 ' + done + '/' + total;
     };
-    return readSeq(todo.map(function(d){ return 'd2-' + d; }), prog).then(function(vs){
+    return readSeq(todo.map(function(d){ return 'd3-' + d; }), prog).then(function(vs){
       var ok = true;
       todo.forEach(function(d, i){
         if(typeof vs[i] === 'number') data.map[d] = vs[i];
@@ -414,7 +442,7 @@
     if(force){
       data = { uv: null, map: {}, ok: true };
       delete cache[KEY];
-      delete cache['d2-' + TODAY];
+      delete cache['d3-' + dayStamp];
     }
     var okAll = true;
     $('updated').innerHTML = '<span class="spin"></span>正在读取…';
@@ -437,9 +465,9 @@
   /* 点区间：先按现有数据画出来，缺的再补，补完重画 */
   function switchDays(n){
     viewDays = n;
+    $('reload').disabled = true;          /* 缺的天数在补，期间别让人狂点刷新 */
     render();
     ensureDays(n).then(function(ok){ render(); finish(ok); });   /* 补完一定要收掉"正在读取" */
-
   }
 
   /* ---------- 渲染 ---------- */
@@ -465,23 +493,23 @@
     var prevWk = sumOf(w14.slice(0, 7));               /* 前 7 天 */
     var wkKnown = w14.slice(0, 7).every(has);
 
+    /* 峰值只在「当前视图至少 14 天」的范围内取，副文案标出区间，免得数字口径不明 */
+    var pkN = Math.max(viewDays, 14);
     var pk = 0, pkDay = '';
-    Object.keys(data.map).forEach(function(d){
-      if(data.map[d] > pk){ pk = data.map[d]; pkDay = d; }
-    });
+    dayList(pkN).forEach(function(d){ if(valOf(d) > pk){ pk = valOf(d); pkDay = d; } });
     var loadedN = Object.keys(data.map).length;
 
     $('uv').textContent = (data.uv === null) ? '—' : data.uv.toLocaleString('en-US');
-    $('uv-f').textContent = (data.uv === null) ? '' : '近 7 天 ' + wk + ' 人';
+    $('uv-f').textContent = (data.uv === null) ? '' : '同浏览器只算一次';
 
     $('today').textContent = last.toLocaleString('en-US');
-    $('today-f').innerHTML = cmpHtml(last, yest, '较昨日 ' + yest, true);
+    $('today-f').innerHTML = cmpHtml(last, yest, '较昨日 ' + yest + ' 人次', true);
 
     $('week').innerHTML = wk.toLocaleString('en-US') + '<small>人</small>';
-    $('week-f').innerHTML = cmpHtml(wk, prevWk, '较前 7 天 ' + prevWk, wkKnown);
+    $('week-f').innerHTML = cmpHtml(wk, prevWk, '较前 7 天 ' + prevWk + ' 人次', wkKnown);
 
     $('peak').innerHTML = pk.toLocaleString('en-US') + '<small>人</small>';
-    $('peak-f').textContent = pk ? ('出现在 ' + md(pkDay)) : '还没有数据';
+    $('peak-f').textContent = pk ? ('近 ' + pkN + ' 天最高 · ' + md(pkDay)) : '还没有数据';
 
     /* 柱状图 */
     var max = Math.max.apply(null, showV.concat([1]));
@@ -518,9 +546,9 @@
     else if(zeros) rows += '<div class="row zero"><div class="d">另有 ' + zeros + ' 天</div>'
                          + '<div class="track"></div><div class="n">0</div></div>';
     $('rows').innerHTML = rows;
-    $('sumTxt').textContent = viewDays + ' 天合计 ' + tot + ' 人';
+    $('sumTxt').textContent = viewDays + ' 天合计 ' + tot + ' 人次';
     $('avgTxt').textContent = act
-      ? ('有访客 ' + act + ' 天 · 日均 ' + (tot / act).toFixed(1) + ' 人')
+      ? ('有访客 ' + act + ' 天 · 活跃日日均 ' + (tot / act).toFixed(1) + ' 人')
       : (loadedN ? '暂无访客' : '');
   }
 
@@ -539,7 +567,7 @@
     var blob = new Blob(['\ufeff' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8' });
     var a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
-    a.download = 'naiwa-visits-' + TODAY + '.csv';
+    a.download = 'naiwa-visits-' + dayStamp + '.csv';
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -551,18 +579,42 @@
     if(autoTimer) clearInterval(autoTimer);
     autoTimer = setInterval(function(){
       if(document.hidden) return;
+      var nowDay = todayKey();
+      if(nowDay !== dayStamp){          /* 过零点了：新的一天要重新拉，不然今日永远是昨天的值 */
+        dayStamp = nowDay;
+        load(false);
+        return;
+      }
       delete cache[KEY];
-      delete cache['d2-' + TODAY];
+      delete cache['d3-' + nowDay];
       readKey(KEY).then(function(uv){
         if(uv !== null) data.uv = uv;
-        return readKey('d2-' + TODAY);
+        return readKey('d3-' + nowDay);
       }).then(function(t){
-        if(t !== null) data.map[TODAY] = t;
+        if(t !== null) data.map[nowDay] = t;
         render();
         $('updated').textContent = '更新于 ' + hhmm() + ' · 每分钟自动刷新';
       }).catch(function(){});
     }, 60000);
   }
+  /* ---------- 入口：口令判断放在最后 ----------
+     必须等上面所有状态（data / viewDays / cache…）都初始化完再 unlock()，
+     否则 load() 里读 data.uv 会 TypeError（var 提升但还没赋值）。
+     之前这段放在文件前半段，结果就是「同一标签页再打开时页面空白、数字不出来」。 */
+  var qs = new URLSearchParams(location.search);
+  var saved = '';
+  try{ saved = sessionStorage.getItem(LS) || ''; }catch(e){}
+  if(saved === SESSION_TAG){
+    unlock();
+  }else if(qs.get('k')){
+    checkPass(qs.get('k')).then(function(ok){
+      if(ok){ try{ sessionStorage.setItem(LS, SESSION_TAG); }catch(e){} unlock(); }
+      else showGate('链接里的口令不对');
+    });
+  }else{
+    showGate((window.crypto && crypto.subtle) ? '' : '需要用 https 打开本页');
+  }
+
 })();
 </script>
 </body>

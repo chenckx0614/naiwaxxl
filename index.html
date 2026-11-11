@@ -2504,40 +2504,45 @@ window.addEventListener('load', function(){ setTimeout(window.__loadClarity, 300
 
 /* ---------- 访客计数（abacus 免注册计数器，后端页面 admin.html 看数） ----------
    两个数据桶，都只往上加、不加就不动：
-     · uv2          累计独立访客：同一浏览器只记一次（localStorage 去重）
-     · d2-YYYYMMDD  当天访客：同一浏览器当天记一次，第二天再访问才 +1
-   1) 请求失败 / 被广告拦截 / 超时一律静默，绝不抛错影响玩法
-   2) 首屏放行后 2.8s 才发，排在 Clarity 后面，不跟关卡素材抢带宽
+     · uv3          累计独立访客：同一浏览器只记一次（localStorage 去重）
+     · d3-YYYYMMDD  当天访客：同一浏览器当天记一次，第二天再访问才 +1
+   1) 请求失败 / 被广告拦截 / 超时一律静默，绝不抛错影响玩法；失败不落标记，下次访问重试
+   2) 首屏放行后 2.8s 才发，排在 Clarity 后面，不跟关卡素材抢带宽；页面被关掉时 pagehide 补发
    3) 页面上不显示任何数字，只有站长自己能看（admin.html?k=…） */
 var VISIT_API = 'https://abacus.jasoncameron.dev';
-var VISIT_NS = 'naiwaxxl', VISIT_KEY = 'uv2';
-var VISIT_LS = 'naiwa-uv-v2', VISIT_DAY_LS = 'naiwa-d-v2';
+var VISIT_NS = 'naiwaxxl', VISIT_KEY = 'uv3';
+var VISIT_LS = 'naiwa-uv-v3', VISIT_DAY_LS = 'naiwa-d-v3';
 window.__visitDone = false;
 window.__bumpVisit = function(){
   if(window.__visitDone) return;
   window.__visitDone = true;
   var d = new Date();
-  var day = '' + d.getFullYear() + ('0' + (d.getMonth() + 1)).slice(-2) + ('0' + d.getDate()).slice(-2);
+  var y = d.getFullYear();
+  if(y < 2024 || y > 2100) return;   /* 系统时间明显错乱：不往日期桶里写脏数据 */
+  var day = '' + y + ('0' + (d.getMonth() + 1)).slice(-2) + ('0' + d.getDate()).slice(-2);
   var base = VISIT_API + '/hit/' + VISIT_NS + '/';
-  function ping(u){
+  /* 只认 2xx：429（限流）/ 超时 / 被拦截都算失败，这样下面的标记不会落地，下次访问会重试。
+     带 _=时间戳 防中间层缓存；keepalive 让页面被关掉时请求还能发完。 */
+  function send(u){
     try{
-      var x = new XMLHttpRequest();
-      x.open('GET', u, true);
-      x.timeout = 8000;
-      x.send();
-    }catch(e){}
+      return fetch(u + (u.indexOf('?') < 0 ? '?' : '&') + '_=' + Date.now(),
+                   { cache: 'no-store', keepalive: true })
+        .then(function(r){ return r.ok; })
+        .catch(function(){ return false; });
+    }catch(e){ return Promise.resolve(false); }
   }
+  function mark(k, v){ try{ localStorage.setItem(k, v); }catch(e){} }
   var seenAll = false, seenDay = '';
   try{ seenAll = !!localStorage.getItem(VISIT_LS); seenDay = localStorage.getItem(VISIT_DAY_LS) || ''; }catch(e){}
-  if(seenDay !== day){
-    ping(base + 'd2-' + day);
-    try{ localStorage.setItem(VISIT_DAY_LS, day); }catch(e){}
-  }
-  if(!seenAll){
-    ping(base + VISIT_KEY);
-    try{ localStorage.setItem(VISIT_LS, '1'); }catch(e){}
-  }
+  if(seenDay !== day) send(base + 'd3-' + day).then(function(ok){ if(ok) mark(VISIT_DAY_LS, day); });
+  if(!seenAll)        send(base + VISIT_KEY).then(function(ok){ if(ok) mark(VISIT_LS, '1'); });
 };
+/* 早退兜底：首屏一放行就走人的（还不到 2.8s）在页面卸载前补发一次 */
+try{
+  window.addEventListener('pagehide', function(){
+    try{ if(!window.__visitDone && window.__bumpVisit) window.__bumpVisit(); }catch(e){}
+  });
+}catch(e){}
 </script>
 </head>
 <body>
@@ -9382,7 +9387,7 @@ const PRELOAD = {
     setTimeout(function(){ try { startBackgroundLoad(); } catch(e){} }, 1500);
     /* 统计脚本最后插：不跟首屏素材、也不跟后台补载抢带宽（排队的埋点会一起补发） */
     setTimeout(function(){ try { if(window.__loadClarity) window.__loadClarity(); } catch(e){} }, 2200);
-    /* 访客计数排在 Clarity 之后：一个 XHR，失败静默 */
+    /* 访客计数排在 Clarity 之后：两个小请求，失败静默，页面被关掉时 pagehide 补发 */
     setTimeout(function(){ try { if(window.__bumpVisit) window.__bumpVisit(); } catch(e){} }, 2800);
   },
   /* 兜底：个别资源挂起（代理卡住 / 弱网无响应）时不永久黑屏 */
