@@ -2478,37 +2478,29 @@
   .ll-pct { font-size:13px; font-weight:700; color:#2b7fb8; }
 </style>
 <script>
-/* ---------- Umami 统计（后台 cloud.umami.is，仅站长可见） ----------
-   1) tracker 自托管在 umami.js：官方 script.js 实测 TTFB 4.1s，直连等于白丢请求
-   2) 等首屏放行后才插（loader.reveal 调 __loadUmami），不跟关卡素材抢带宽；
+/* ---------- 统计（后台 clarity.microsoft.com，仅站长可见） ----------
+   1) 这行只定义 stub（几十字节）：事件调用立刻进 clarity.q 队列，脚本没到也不会丢
+   2) 真脚本等首屏放行后 2.2s 才插（loader.reveal 调 __loadClarity），不跟关卡素材抢带宽；
       load 事件兜底 3s，主脚本没跑到 reveal 也能补上
-   3) data-host-url 指回官方云，只有上报走外网，sendBeacon 后台发不占首屏
-   4) UMAMI_ID 为空整段跳过，本地预览/分叉站都不会污染数据 */
-var UMAMI_ID = '88a43cae-9874-4586-ab04-d981f1ba1654';
-var UMAMI_HOST = 'https://cloud.umami.is';
-var UMAMI_QMAX = 60;                     /* 队列上限：tracker 被广告拦截时不无限堆积 */
-window.__umamiQ = [];
-window.__umamiLoaded = false;
-window.__loadUmami = function(){
-  if(!UMAMI_ID || window.__umamiLoaded) return;
-  window.__umamiLoaded = true;
-  var s = document.createElement('script');
-  s.src = 'umami.js';
-  s.async = true;                        /* 动态插入的 script 本身就是 async，defer 无意义 */
-  s.setAttribute('data-website-id', UMAMI_ID);
-  s.setAttribute('data-host-url', UMAMI_HOST);
-  s.setAttribute('data-domains', 'chenckx0614.github.io');
-  s.onload = function(){
-    /* tracker 就绪，把排队的事件补发（顺序即发生顺序） */
-    var q = window.__umamiQ; window.__umamiQ = [];
-    for(var i = 0; i < q.length; i++){
-      try{ window.umami.track(q[i][0], q[i][1]); }catch(e){}
-    }
-  };
-  s.onerror = function(){ window.__umamiLoaded = false; };   /* 失败允许下次重试 */
-  document.head.appendChild(s);
+   3) CLARITY_ID 为空整段跳过，本地预览/分叉站都不会污染数据
+   4) 选它是因为免费不限量：上一家用的是按月额度，跑满 11 天就 429 了
+   minitool 合规版无统计（CSP 挡外链），这段只在 root 版 */
+var CLARITY_ID = '';                     /* ← 注册后把 Project ID 填这里（10 位字母数字） */
+window.__clarityLoaded = false;
+(function(c, a){
+  c[a] = c[a] || function(){ (c[a].q = c[a].q || []).push(arguments); };
+})(window, 'clarity');
+window.__loadClarity = function(){
+  if(!CLARITY_ID || window.__clarityLoaded) return;
+  window.__clarityLoaded = true;
+  var t = document.createElement('script');
+  t.async = 1;
+  t.src = 'https://www.clarity.ms/tag/' + CLARITY_ID;
+  t.onerror = function(){ window.__clarityLoaded = false; };  /* 失败允许下次重试 */
+  var y = document.getElementsByTagName('script')[0];
+  y.parentNode.insertBefore(t, y);
 };
-window.addEventListener('load', function(){ setTimeout(window.__loadUmami, 3000); });
+window.addEventListener('load', function(){ setTimeout(window.__loadClarity, 3000); });
 </script>
 </head>
 <body>
@@ -4661,24 +4653,27 @@ function setLang(v){
  * ============================================================ */
 let actx = null, sfxGain = null;
 
-/* ---------- 数据埋点（Umami 自定义事件，root 专属） ----------
-   统计后台 → Events，看每关通过率/分享与粉丝群使用率。
-   事件名统一 cat_act（如 level_start），cat/label 放 props 方便二维筛选，
-   extra 放数值维度（如 stars），避免把可聚合的数字塞进 label 字符串。
-   tracker 未就绪时先排队，onload 补发，不丢早期事件（如刚进关的 level_start）。
+/* ---------- 数据埋点（Clarity 自定义事件，root 专属） ----------
+   Clarity 的事件只有"名字"，没有属性，所以：
+     · 事件名统一 cat_act（level_start / level_win / level_lose …）
+     · 关卡号走 session 级 custom tag `lv`，后台按 tag 筛 + 看事件数即单关数据
+     · 整体通过率用 Funnels：level_start → level_win，一步出结果
+   Clarity 的 tag 是"同 key 后值覆盖"，所以只给 level/daily/endless 打 lv，
+   其他事件（分享、报错）不碰 tag，免得把关卡号冲掉。
    统计未配置 / 被广告拦截时静默跳过，绝不因为统计抛错影响玩法。
    minitool 合规版无统计（CSP 挡外链），埋点只在这份代码里。 */
 const GAME_VER = '1.1.1';
 function track(cat, act, label, extra){
   try {
-    var name = cat + '_' + act;
-    var props = { cat: cat };
-    if(label) props.label = label;
-    if(extra) for(var k in extra){ if(extra[k] !== undefined && extra[k] !== null) props[k] = extra[k]; }
-    if(window.umami && typeof window.umami.track === 'function'){
-      window.umami.track(name, props);
-    } else if(window.__umamiQ && window.__umamiQ.length < UMAMI_QMAX){
-      window.__umamiQ.push([name, props]);
+    if(!CLARITY_ID || typeof window.clarity !== 'function') return;
+    /* stub 阶段随手加个上限，广告拦截导致脚本永不加载时不无限堆内存 */
+    if(window.clarity.q && window.clarity.q.length >= 60) return;
+    window.clarity('event', cat + '_' + act);
+    if(label && (cat === 'level' || cat === 'daily' || cat === 'endless')){
+      window.clarity('set', 'lv', label);
+    }
+    if(extra && extra.stars !== undefined && extra.stars !== null){
+      window.clarity('set', 'stars', String(extra.stars));
     }
   } catch(e){}
 }
@@ -9349,7 +9344,7 @@ const PRELOAD = {
     /* 后台补载：其余关卡素材 + mascot3d 包，放行后再慢慢拉 */
     setTimeout(function(){ try { startBackgroundLoad(); } catch(e){} }, 1500);
     /* 统计脚本最后插：不跟首屏素材、也不跟后台补载抢带宽（排队的埋点会一起补发） */
-    setTimeout(function(){ try { if(window.__loadUmami) window.__loadUmami(); } catch(e){} }, 2200);
+    setTimeout(function(){ try { if(window.__loadClarity) window.__loadClarity(); } catch(e){} }, 2200);
   },
   /* 兜底：个别资源挂起（代理卡住 / 弱网无响应）时不永久黑屏 */
   force: function(){ this.done = this.total; this.reveal(); }
