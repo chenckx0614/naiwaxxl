@@ -858,6 +858,18 @@
   body.eclipse {
     background: radial-gradient(125% 118% at 50% 42%, #4a3a18 0%, #2e2410 38%, #1a150a 70%, #080603 100%) fixed;
   }
+  /* 泻湖主题（第四十六关 lagoon）：青碧湖水渐变 */
+  body.lagoon {
+    background: radial-gradient(125% 118% at 50% 42%, #1a6a7a 0%, #124e5c 38%, #0a3340 70%, #031018 100%) fixed;
+  }
+  /* 余烬主题（第四十七关 ember）：暗红余烬渐变 */
+  body.ember {
+    background: radial-gradient(125% 118% at 50% 42%, #8a3a1a 0%, #662711 38%, #401608 70%, #140502 100%) fixed;
+  }
+  /* 王冠主题（第四十八关 crown）：靛蓝王座渐变 */
+  body.crown {
+    background: radial-gradient(125% 118% at 50% 42%, #3a2e6a 0%, #2a2050 38%, #1a1234 70%, #080410 100%) fixed;
+  }
   /* 磁场光环（第二十四关 magnet）：从重心荡开的青蓝光环 */
   .magnet-ring {
     position:absolute; pointer-events:none; z-index:6; border-radius:50%;
@@ -2262,6 +2274,18 @@
   /* 日蚀主题（第四十五关 eclipse）：墨黑金环渐变 */
   body.eclipse {
     background: radial-gradient(125% 118% at 50% 42%, #4a3a18 0%, #2e2410 38%, #1a150a 70%, #080603 100%) fixed;
+  }
+  /* 泻湖主题（第四十六关 lagoon）：青碧湖水渐变 */
+  body.lagoon {
+    background: radial-gradient(125% 118% at 50% 42%, #1a6a7a 0%, #124e5c 38%, #0a3340 70%, #031018 100%) fixed;
+  }
+  /* 余烬主题（第四十七关 ember）：暗红余烬渐变 */
+  body.ember {
+    background: radial-gradient(125% 118% at 50% 42%, #8a3a1a 0%, #662711 38%, #401608 70%, #140502 100%) fixed;
+  }
+  /* 王冠主题（第四十八关 crown）：靛蓝王座渐变 */
+  body.crown {
+    background: radial-gradient(125% 118% at 50% 42%, #3a2e6a 0%, #2a2050 38%, #1a1234 70%, #080410 100%) fixed;
   }
   /* 磁场光环（第二十四关 magnet）：从重心荡开的青蓝光环 */
   .magnet-ring {
@@ -4245,10 +4269,104 @@ const LEVELS = [
     bg: 'eclipse',
     winImg: 'naiwa/start/start_bj.webp',
   },
+  /* ============ 第四十六关：泻湖孤峰 ============
+     峰峦盘 89 格（中央五列通天，向两侧逐级收顶，底边整排着地）。
+     磁暴 magnet：每 5 步随机一种花色被磁场吸向中心一格 —— 中央五列是
+     唯一贯穿全盘的通道，被吸上峰顶的棋子最容易在台面凑出长连。 */
+  {
+    no: 46,
+    rows: 11,
+    cols: 11,
+    moves: 28,
+    needs: [24, 19, 14],
+    themeColor: '#2a9aa8',
+    magnet: 5,
+    types: [
+      { key:'46a', img:'naiwa/9/b.webp',   color:'#2aa0b8', bg:'#c4f0f8' },
+      { key:'46b', img:'naiwa/10/e.webp',  color:'#5ac87a', bg:'#d0f2dc' },
+      { key:'46c', img:'naiwa/7/a.webp',   color:'#e8b84a', bg:'#ffedc4' },
+      { key:'46d', img:'naiwa/3/d3.webp',  color:'#e87a9a', bg:'#ffd4e0' },
+      { key:'46e', img:'naiwa/8/b.webp',   color:'#b88ae8', bg:'#e8dcff' },
+    ],
+    shape: function(r,c){
+      var tops = [7,5,3,1,0,0,0,1,3,5,7];
+      return r >= tops[c];
+    },
+    rocks: [ { r:7, c:0 }, { r:5, c:1 }, { r:7, c:10 }, { r:5, c:9 }, { r:6, c:5 } ],
+    cages: [ { r:8, c:3 }, { r:8, c:7 }, { r:2, c:5 } ],
+    frozen: [ { r:9, c:2 }, { r:9, c:8 }, { r:1, c:4 }, { r:1, c:6 } ],
+    jellies: [ { r:3, c:5 }, { r:10, c:5 }, { r:6, c:3 }, { r:6, c:7 }, { r:0, c:5 }, { r:10, c:1 }, { r:4, c:4 } ],
+    bg: 'lagoon',
+    winImg: 'naiwa/start/start_bj.webp',
+  },
+
+  /* ============ 第四十七关：余烬十字 ============
+     十字盘 96 格（中央 5×5 + 四条三格宽的臂延伸到盘边，四角留空）。
+     双奖励线：时之沙（四连及以上每波返还 1 步）+ 星愿（每 5 步一枚棋子
+     化作星辰，消掉就炸 3×3）—— 长连越打越省步，是全场最会上瘾的一关。 */
+  {
+    no: 47,
+    rows: 11,
+    cols: 11,
+    moves: 29,
+    needs: [26, 21, 16],
+    themeColor: '#e0692a',
+    sand: 1,
+    star: 5,
+    types: [
+      { key:'47a', img:'naiwa/4/c4.webp',  color:'#e0692a', bg:'#ffd8c0' },
+      { key:'47b', img:'naiwa/5/5a.webp',  color:'#e8b84a', bg:'#ffedc4' },
+      { key:'47c', img:'naiwa/9/a.webp',   color:'#4ab8e8', bg:'#c8ecff' },
+      { key:'47d', img:'naiwa/10/b.webp',  color:'#7ed49a', bg:'#d0f2dc' },
+      { key:'47e', img:'naiwa/1/i.webp',   color:'#b88ae8', bg:'#e8dcff' },
+    ],
+    shape: function(r,c){
+      var dr = r>5 ? r-5 : 5-r, dc = c>5 ? c-5 : 5-c;
+      return dr <= 2 || dc <= 2;
+    },
+    rocks: [ { r:0, c:3 }, { r:0, c:7 }, { r:10, c:3 }, { r:10, c:7 }, { r:3, c:0 }, { r:7, c:10 } ],
+    cages: [ { r:3, c:3 }, { r:7, c:7 }, { r:5, c:5 } ],
+    frozen: [ { r:0, c:4 }, { r:10, c:6 }, { r:4, c:0 }, { r:6, c:10 } ],
+    jellies: [ { r:5, c:1 }, { r:5, c:9 }, { r:1, c:5 }, { r:9, c:5 }, { r:3, c:4 }, { r:7, c:6 }, { r:4, c:4 } ],
+    bg: 'ember',
+    winImg: 'naiwa/start/start_bj.webp',
+  },
+
+  /* ============ 第四十八关：王冠终焉 ============
+     王冠盘 85 格（顶边三峰两谷，峰尖到盘底，谷口只到第 6 行）。
+     潮汐每 6 步把每列上下倒置，馈赠每 5 步送一对相邻同色 —— 上下翻涌的
+     棋盘上，你既背不住布局，又总会被塞一条现成的三连。目前的最难关。 */
+  {
+    no: 48,
+    rows: 11,
+    cols: 11,
+    moves: 31,
+    needs: [28, 23, 18],
+    themeColor: '#c8a03a',
+    tide: 6,
+    gift: 5,
+    types: [
+      { key:'48a', img:'naiwa/4/d4.webp',  color:'#e8c04a', bg:'#fff0c4' },
+      { key:'48b', img:'naiwa/8/c.webp',   color:'#8b5cf6', bg:'#e4d4ff' },
+      { key:'48c', img:'naiwa/7/d.webp',   color:'#4ab8e8', bg:'#c8ecff' },
+      { key:'48d', img:'naiwa/5/5c.webp',  color:'#e87a9a', bg:'#ffd4e0' },
+      { key:'48e', img:'naiwa/1/a.webp',   color:'#7ed49a', bg:'#d0f2dc' },
+    ],
+    shape: function(r,c){
+      var tops = [6,4,2,0,3,6,3,0,2,4,6];
+      return r >= tops[c];
+    },
+    rocks: [ { r:6, c:0 }, { r:6, c:10 }, { r:6, c:5 }, { r:0, c:3 } ],
+    cages: [ { r:7, c:2 }, { r:7, c:8 }, { r:9, c:5 } ],
+    frozen: [ { r:5, c:1 }, { r:5, c:9 }, { r:0, c:7 }, { r:10, c:0 } ],
+    jellies: [ { r:2, c:3 }, { r:9, c:1 }, { r:9, c:9 }, { r:3, c:7 }, { r:10, c:5 }, { r:4, c:3 } ],
+    bg: 'crown',
+    winImg: 'naiwa/start/start_bj.webp',
+  },
 ];
 
 /* 关卡选择面板至少铺这么多格，超出的格子显示为「敬请期待」 */
-const LEVEL_SLOTS = 45;
+const LEVEL_SLOTS = 48;
 
 /* 当前关的图标。startLevel() 时随关卡切换，其余逻辑一律读这个变量 */
 let TYPES = LEVELS[0].types;
@@ -6064,7 +6182,7 @@ async function clearSet(hit, combo, info){
   }
   /* 时之沙（第三十一关）：这一波消除里含 >=4 的连线，就返还 1 步。
      立刻刷 HUD —— 数字不动玩家会以为没生效。 */
-  const sandDef = LEVELS[level-1] || {};
+  const sandDef = currentLevelDef() || {};   /* 每日挑战/无尽走 levelOverride，不能直接索引 LEVELS */
   if(sandDef.sand && info && info.runs){
     let long = false;
     info.runs.forEach(function(run){ if(run.len >= 4) long = true; });
@@ -8093,7 +8211,7 @@ function startLevelCore(def){
   boosters.swap = def.swaps || 0;   /* 妙手按关配额 */
   swapSel = null;
   /* 主题背景：按关卡 bg 字段切换（夜幕/黄昏/糖果/派对/星云），出关恢复 */
-  ['night','sunset','candy','party','galaxy','abyss','lava','mirror','doom','brass','mist','void','swamp','gravity','chaos','rubble','prism','ruin','forge','magnetic','aurora','gale','jungle','bloom','inkpond','astral','sands','tide','mirage','cavern','meadow','vault','glacier','volt','orchid','chasm','nova','amethyst','canyon','jade','eclipse'].forEach(function(k){
+  ['night','sunset','candy','party','galaxy','abyss','lava','mirror','doom','brass','mist','void','swamp','gravity','chaos','rubble','prism','ruin','forge','magnetic','aurora','gale','jungle','bloom','inkpond','astral','sands','tide','mirage','cavern','meadow','vault','glacier','volt','orchid','chasm','nova','amethyst','canyon','jade','eclipse','lagoon','ember','crown'].forEach(function(k){
     document.body.classList.toggle(k, def.bg === k);
   });
   if(def.bg) ensureSkyDecor(def.bg);
@@ -8103,34 +8221,38 @@ function startLevelCore(def){
   $('#home').classList.add('hide');
   refreshHome();
   restart();
-  if(def.mirror) setTimeout(function(){ toast(T('mirror_note')); }, 1500);
-  if(def.rotate) setTimeout(function(){ toast(T('rotate_note')); }, 1500);
-  if(def.blind) setTimeout(function(){ toast(T('blind_note')); }, 1500);
-  if(def.devour) setTimeout(function(){ toast(T('devour_note')); }, 1500);
-  if(def.venom) setTimeout(function(){ toast(T('venom_note')); }, 1500);
-  if(def.gravity) setTimeout(function(){ toast(T('gravity_note')); }, 1500);
-  if(def.rift) setTimeout(function(){ toast(T('rift_note')); }, 1500);
-  if(def.collapse) setTimeout(function(){ toast(T('collapse_note')); }, 1500);
-  if(def.scramble) setTimeout(function(){ toast(T('scramble_note')); }, 1500);
-  if(def.fuse) setTimeout(function(){ toast(T('fuse_note')); }, 1500);
-  if(def.magnet) setTimeout(function(){ toast(T('magnet_note')); }, 1500);
-  if(def.hue) setTimeout(function(){ toast(T('hue_note')); }, 1500);
-  if(def.storm) setTimeout(function(){ toast(T('storm_note')); }, 1500);
-  if(def.vine) setTimeout(function(){ toast(T('vine_note')); }, 1500);
-  if(def.gift) setTimeout(function(){ toast(T('gift_note')); }, 1500);
-  if(def.ink) setTimeout(function(){ toast(T('ink_note')); }, 1500);
-  if(def.star) setTimeout(function(){ toast(T('star_note')); }, 1500);
-  if(def.sand) setTimeout(function(){ toast(T('sand_note')); }, 1500);
-  if(def.tide) setTimeout(function(){ toast(T('tide_note')); }, 1500);
-  if(def.wild) setTimeout(function(){ toast(T('wild_note')); }, 1500);
-  if(def.sink) setTimeout(function(){ toast(T('sink_note')); }, 1500);
-  if(def.bond) setTimeout(function(){ toast(T('bond_note')); }, 1500);
-  if(def.chest) setTimeout(function(){ toast(T('chest_note')); }, 1500);
-  if(def.frost) setTimeout(function(){ toast(T('frost_note')); }, 1500);
-  if(def.prism) setTimeout(function(){ toast(T('prism_note')); }, 1500);
-  if(def.seed) setTimeout(function(){ toast(T('seed_note')); }, 1500);
-  if(def.swaps) setTimeout(function(){ toast(T('swap_note')); }, 1500);
-  if(def.surge) setTimeout(function(){ toast(T('surge_note')); }, 1500);
+  /* 开场机制提示：过去所有提示都在 1500ms 同时触发，toast 互相覆盖，多机制关
+     （44/45/47/48）只看得到最后一条。改成按顺序错开 1.9s（显示 1.6s + 间隙 0.3s）。 */
+  var _noteSeq = 0;
+  function note(k){ setTimeout(function(){ toast(T(k)); }, 1500 + (_noteSeq++) * 1900); }
+  if(def.mirror) note('mirror_note');
+  if(def.rotate) note('rotate_note');
+  if(def.blind) note('blind_note');
+  if(def.devour) note('devour_note');
+  if(def.venom) note('venom_note');
+  if(def.gravity) note('gravity_note');
+  if(def.rift) note('rift_note');
+  if(def.collapse) note('collapse_note');
+  if(def.scramble) note('scramble_note');
+  if(def.fuse) note('fuse_note');
+  if(def.magnet) note('magnet_note');
+  if(def.hue) note('hue_note');
+  if(def.storm) note('storm_note');
+  if(def.vine) note('vine_note');
+  if(def.gift) note('gift_note');
+  if(def.ink) note('ink_note');
+  if(def.star) note('star_note');
+  if(def.sand) note('sand_note');
+  if(def.tide) note('tide_note');
+  if(def.wild) note('wild_note');
+  if(def.sink) note('sink_note');
+  if(def.bond) note('bond_note');
+  if(def.chest) note('chest_note');
+  if(def.frost) note('frost_note');
+  if(def.prism) note('prism_note');
+  if(def.seed) note('seed_note');
+  if(def.swaps) note('swap_note');
+  if(def.surge) note('surge_note');
   /* 关卡开场横幅：棋盘就位后大字砸入（每日/无尽显示专属文案） */
   if(settings.anim){
     levelIntroFX(def.no,
@@ -8389,8 +8511,8 @@ function openStats(){
 
 /* ===== 奶蛙池塘 =====
    累计星星里程碑制：不消耗、只解锁，直接算 sum(save.stars)，零新增存档。
-   45 关 × 3 星 = 135 星封顶；最后一件「许愿池」门槛仍是 123 星
-   （41 关全三星即可达成，后面新增的 4 关只是让提前达成的玩家更早拿到）。 */
+   48 关 × 3 星 = 144 星封顶；最后一件「许愿池」门槛仍是 123 星
+   （41 关全三星即可达成，后面新增的 7 关只是让提前达成的玩家更早拿到）。 */
 const POND_ITEMS = [
   { id:'lily',    need:3,   name:'pond_lily',    kind:'css', x:8,  y:64, w:70, float:true },
   { id:'frogA',   need:5,   name:'pond_frogA',   kind:'img', src:'naiwa/1/a.webp',          x:20, y:49, w:106, float:true },
@@ -9078,7 +9200,7 @@ function goHome(){
   document.querySelectorAll('.overlay.show').forEach(o=>closeOverlay(o.id));
   /* 主题类名清单与 startLevel 的切换清单保持一致（此前漏了 L29 之后的新主题，
      从深潭/星爆这些关回首页会留着主题背景） */
-  ['night','sunset','candy','party','galaxy','abyss','lava','mirror','doom','brass','mist','void','swamp','gravity','chaos','rubble','prism','ruin','forge','magnetic','aurora','gale','jungle','bloom','inkpond','astral','sands','tide','mirage','cavern','meadow','vault','glacier','volt','orchid','chasm','nova','amethyst','canyon','jade','eclipse'].forEach(k=>document.body.classList.remove(k));
+  ['night','sunset','candy','party','galaxy','abyss','lava','mirror','doom','brass','mist','void','swamp','gravity','chaos','rubble','prism','ruin','forge','magnetic','aurora','gale','jungle','bloom','inkpond','astral','sands','tide','mirage','cavern','meadow','vault','glacier','volt','orchid','chasm','nova','amethyst','canyon','jade','eclipse','lagoon','ember','crown'].forEach(k=>document.body.classList.remove(k));
   document.body.style.removeProperty('--theme-color');
   /* 退出特殊模式：回到正常关卡流程 */
   gameMode = 'normal'; levelOverride = null; endlessRound = 0; endlessScore = 0;
