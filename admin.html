@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>奶蛙消消乐 · 访客后台</title>
+<style>
+  :root{
+    --bg:#eef4fa; --card:#ffffff; --line:#dde7f2; --ink:#17334d; --ink2:#5b7391;
+    --blue:#2b7fb8; --blue-l:#5fb3e0; --green:#2ec4a0; --gold:#f0b429; --purple:#8b7bd8;
+    --bar:#bcd6ea; --bar-hi:linear-gradient(180deg,#5fb3e0,#2b7fb8);
+    --shadow:0 8px 24px rgba(30,80,130,.08);
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0d1620; --card:#152230; --line:#22354a; --ink:#e6eff8; --ink2:#8fa6c0;
+      --blue:#5fb3e0; --blue-l:#7ec8ef; --green:#3dd6b0; --gold:#f5c453; --purple:#a99bf0;
+      --bar:#2c455e; --bar-hi:linear-gradient(180deg,#7ec8ef,#2b7fb8);
+      --shadow:0 8px 24px rgba(0,0,0,.35);
+    }
+  }
+  *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  body{
+    margin:0; padding:20px 16px 48px; min-height:100vh;
+    background:var(--bg); color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+    font-variant-numeric:tabular-nums;
+  }
+  .wrap{ max-width:720px; margin:0 auto; }
+  header{ display:flex; align-items:center; gap:12px; margin:4px 0 20px; }
+  .logo{ width:38px; height:38px; border-radius:13px; background:linear-gradient(140deg,#7ed3b2,#2b7fb8);
+         display:grid; place-items:center; font-size:19px; box-shadow:var(--shadow); flex:none; }
+  h1{ font-size:17px; margin:0; letter-spacing:.5px; }
+  .sub{ font-size:12px; color:var(--ink2); margin-top:3px; }
+  .grow{ flex:1; }
+  button{ font:inherit; cursor:pointer; border:0; border-radius:11px; padding:9px 15px;
+          background:var(--blue); color:#fff; font-weight:700; font-size:13px;
+          transition:transform .12s, opacity .2s; }
+  button:active{ transform:scale(.96); }
+  button.ghost{ background:var(--card); color:var(--ink2); border:1px solid var(--line); }
+  button[disabled]{ opacity:.5; pointer-events:none; }
+
+  .cards{ display:grid; grid-template-columns:repeat(2,1fr); gap:12px; margin-bottom:14px; }
+  @media (min-width:560px){ .cards{ grid-template-columns:repeat(4,1fr); } }
+  .card{ background:var(--card); border:1px solid var(--line); border-radius:16px; padding:14px 14px 13px;
+         box-shadow:var(--shadow); }
+  .k{ font-size:11px; font-weight:700; color:var(--ink2); letter-spacing:1px; }
+  .v{ font-size:26px; font-weight:800; margin-top:6px; line-height:1.1; letter-spacing:-.5px; }
+  .v small{ font-size:12px; font-weight:700; color:var(--ink2); margin-left:3px; letter-spacing:0; }
+  .c-uv .v{ color:var(--blue); } .c-today .v{ color:var(--green); }
+  .c-week .v{ color:var(--purple); } .c-peak .v{ color:var(--gold); }
+
+  .panel{ background:var(--card); border:1px solid var(--line); border-radius:16px;
+          padding:16px 16px 10px; box-shadow:var(--shadow); margin-bottom:14px; }
+  .panel-h{ display:flex; align-items:baseline; gap:8px; margin-bottom:14px; }
+  .panel-h b{ font-size:13px; letter-spacing:.5px; }
+  .panel-h span{ font-size:11px; color:var(--ink2); }
+
+  .chart{ display:flex; align-items:flex-end; gap:6px; height:158px; padding-top:26px; }
+  .col{ flex:1; display:flex; flex-direction:column; align-items:center; gap:6px; height:100%; justify-content:flex-end; }
+  .bar{ width:100%; max-width:46px; border-radius:7px 7px 3px 3px; background:var(--bar);
+        min-height:3px; position:relative; transition:height .5s cubic-bezier(.2,.9,.3,1); }
+  .bar.hi{ background:var(--bar-hi); }
+  .bar .n{ position:absolute; top:-17px; left:50%; transform:translateX(-50%);
+           font-size:11px; font-weight:800; color:var(--ink2); white-space:nowrap; }
+  .bar.hi .n{ color:var(--blue); }
+  .x{ font-size:10px; color:var(--ink2); font-weight:700; letter-spacing:.5px; }
+  .x.today{ color:var(--green); }
+
+  .rows{ display:flex; flex-direction:column; }
+  .row{ display:flex; align-items:center; gap:10px; padding:9px 0; border-top:1px solid var(--line); font-size:13px; }
+  .row:first-child{ border-top:0; }
+  .row .d{ color:var(--ink2); font-weight:700; font-size:12px; width:96px; flex:none; }
+  .row .track{ flex:1; height:7px; border-radius:99px; background:var(--bar); overflow:hidden; }
+  .row .fill{ height:100%; border-radius:99px; background:var(--bar-hi); width:0; transition:width .5s ease-out; }
+  .row .n{ width:52px; text-align:right; font-weight:800; }
+
+  .gate{ max-width:340px; margin:18vh auto 0; background:var(--card); border:1px solid var(--line);
+         border-radius:18px; padding:24px 20px; box-shadow:var(--shadow); text-align:center; }
+  .gate h2{ font-size:15px; margin:0 0 6px; }
+  .gate p{ font-size:12px; color:var(--ink2); margin:0 0 16px; line-height:1.6; }
+  .gate input{ width:100%; padding:11px 13px; border-radius:11px; border:1px solid var(--line);
+               background:var(--bg); color:var(--ink); font:inherit; font-size:14px; margin-bottom:10px; text-align:center; }
+  .gate button{ width:100%; padding:11px; }
+  .err{ color:#e05252; font-size:12px; font-weight:700; margin-top:10px; min-height:16px; }
+
+  .hint{ font-size:11px; color:var(--ink2); text-align:center; line-height:1.7; margin-top:18px; }
+  .hint code{ background:var(--card); border:1px solid var(--line); border-radius:5px; padding:1px 5px; font-size:10px; }
+  .hide{ display:none !important; }
+</style>
+</head>
+<body>
+
+<div id="gate" class="gate hide">
+  <h2>访客后台</h2>
+  <p>奶蛙消消乐 · 只有站长能看</p>
+  <input id="pw" type="password" placeholder="访问口令" autocomplete="off">
+  <button id="go">进入</button>
+  <div class="err" id="err"></div>
+</div>
+
+<div id="main" class="wrap hide">
+  <header>
+    <div class="logo">🐸</div>
+    <div class="grow">
+      <h1>访客后台</h1>
+      <div class="sub" id="updated">正在读取…</div>
+    </div>
+    <button class="ghost" id="reload">刷新</button>
+  </header>
+
+  <div class="cards">
+    <div class="card c-uv"><div class="k">累计访客</div><div class="v" id="uv">–</div></div>
+    <div class="card c-today"><div class="k">今日访客</div><div class="v" id="today">–</div></div>
+    <div class="card c-week"><div class="k">近 7 天</div><div class="v" id="week">–<small>人</small></div></div>
+    <div class="card c-peak"><div class="k">单日峰值</div><div class="v" id="peak">–<small>人</small></div></div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-h"><b>近 7 天访客</b><span>按浏览器去重，同一天多次打开只算一人</span></div>
+    <div class="chart" id="chart"></div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-h"><b>近 14 天明细</b><span id="sum14"></span></div>
+    <div class="rows" id="rows"></div>
+  </div>
+
+  <div class="hint">
+    数据源 <code>abacus.jasoncameron.dev</code> · 独立访客按浏览器去重<br>
+    游戏页面本身不显示任何统计数字
+  </div>
+</div>
+
+<script>
+(function(){
+  'use strict';
+  var API = 'https://abacus.jasoncameron.dev';
+  var NS  = 'naiwaxxl';
+  var KEY = 'visitors';
+  var PASS = 'naiwa';          /* ← 改这里换口令 */
+  var LS  = 'naiwa-admin-key';
+  var DAYS = 14;               /* 明细天数，柱状图固定画最近 7 天 */
+
+  var $ = function(id){ return document.getElementById(id); };
+
+  /* ---------- 口令门（纯前端校验，只挡顺手围观） ---------- */
+  function unlock(fromUrl){
+    $('gate').classList.add('hide');
+    $('main').classList.remove('hide');
+    load();
+  }
+  function tryPass(v){
+    if(v === PASS){ try{ sessionStorage.setItem(LS, v); }catch(e){} unlock(); }
+    else { $('err').textContent = '口令不对'; }
+  }
+  var qs = new URLSearchParams(location.search);
+  var saved = '';
+  try{ saved = sessionStorage.getItem(LS) || ''; }catch(e){}
+  if(qs.get('k') === PASS){ try{ sessionStorage.setItem(LS, PASS); }catch(e){} unlock(); }
+  else if(saved === PASS) unlock();
+  else $('gate').classList.remove('hide');
+
+  $('go').addEventListener('click', function(){ tryPass($('pw').value.trim()); });
+  $('pw').addEventListener('keydown', function(e){ if(e.key === 'Enter') tryPass(this.value.trim()); });
+  $('reload').addEventListener('click', load);
+
+  /* ---------- 取数 ---------- */
+  function read(key){
+    return fetch(API + '/get/' + NS + '/' + key, { cache: 'no-store' })
+      .then(function(r){ return r.ok ? r.json() : null; })
+      .then(function(d){ return (d && typeof d.value === 'number') ? d.value : 0; })
+      .catch(function(){ return null; });   /* null = 请求失败，区别于 0 */
+  }
+  function ymd(d){
+    return '' + d.getFullYear() + ('0' + (d.getMonth() + 1)).slice(-2) + ('0' + d.getDate()).slice(-2);
+  }
+  function md(s){ return s.slice(4, 6) + '/' + s.slice(6, 8); }
+
+  function load(){
+    var days = [], i, d;
+    for(i = DAYS - 1; i >= 0; i--){
+      d = new Date(); d.setDate(d.getDate() - i);
+      days.push(ymd(d));
+    }
+    $('reload').disabled = true;
+    $('updated').textContent = '正在读取…';
+
+    Promise.all([read(KEY)].concat(days.map(function(s){ return read('d-' + s); })))
+      .then(function(res){
+        var uv = res[0];
+        var vals = res.slice(1);
+        var ok = vals.every(function(v){ return v !== null; });
+        var series = vals.map(function(v){ return v || 0; });
+
+        $('uv').textContent = (uv === null) ? '—' : uv.toLocaleString('en-US');
+        $('today').textContent = series[series.length - 1].toLocaleString('en-US');
+        var wk = series.slice(-7).reduce(function(a, b){ return a + b; }, 0);
+        $('week').innerHTML = wk.toLocaleString('en-US') + '<small>人</small>';
+        var pk = Math.max.apply(null, series);
+        $('peak').innerHTML = pk.toLocaleString('en-US') + '<small>人</small>';
+
+        /* 柱状图：只画近 7 天 */
+        var last7 = series.slice(-7), lastDays = days.slice(-7);
+        var max = Math.max.apply(null, last7.concat([1]));
+        var html = '';
+        for(i = 0; i < 7; i++){
+          var h = Math.max(3, Math.round(last7[i] / max * 100));
+          var hi = (i === 6);
+          html += '<div class="col"><div class="bar' + (hi ? ' hi' : '') + '" style="height:' + h + '%">'
+                + '<span class="n">' + last7[i] + '</span></div>'
+                + '<div class="x' + (hi ? ' today' : '') + '">' + md(lastDays[i]) + '</div></div>';
+        }
+        $('chart').innerHTML = html;
+
+        /* 明细表 */
+        var rows = '', sum = 0;
+        for(i = DAYS - 1; i >= 0; i--){
+          sum += series[i];
+          rows += '<div class="row"><div class="d">' + md(days[i]) + (i === DAYS - 1 ? ' 今天' : '') + '</div>'
+                + '<div class="track"><div class="fill" style="width:' + Math.round(series[i] / Math.max(pk, 1) * 100) + '%"></div></div>'
+                + '<div class="n">' + series[i] + '</div></div>';
+        }
+        $('rows').innerHTML = rows;
+        $('sum14').textContent = '合计 ' + sum + ' 人次';
+
+        var now = new Date();
+        $('updated').textContent = '更新于 ' + ('0' + now.getHours()).slice(-2) + ':' + ('0' + now.getMinutes()).slice(-2)
+          + (ok ? '' : ' · 部分数据读取失败');
+        $('reload').disabled = false;
+      })
+      .catch(function(e){
+        if(window.console) console.error('[admin]', e && (e.stack || e.message || e));
+        $('updated').textContent = '读取失败，点刷新重试';
+        $('reload').disabled = false;
+      });
+  }
+})();
+</script>
+</body>
+</html>
