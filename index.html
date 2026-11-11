@@ -2504,14 +2504,14 @@ window.addEventListener('load', function(){ setTimeout(window.__loadClarity, 300
 
 /* ---------- 访客计数（abacus 免注册计数器，后端页面 admin.html 看数） ----------
    两个数据桶，都只往上加、不加就不动：
-     · visitors     累计独立访客：同一浏览器只记一次（localStorage 去重）
-     · d-YYYYMMDD   当天访客：同一浏览器当天记一次，第二天再访问才 +1
+     · uv2          累计独立访客：同一浏览器只记一次（localStorage 去重）
+     · d2-YYYYMMDD  当天访客：同一浏览器当天记一次，第二天再访问才 +1
    1) 请求失败 / 被广告拦截 / 超时一律静默，绝不抛错影响玩法
    2) 首屏放行后 2.8s 才发，排在 Clarity 后面，不跟关卡素材抢带宽
    3) 页面上不显示任何数字，只有站长自己能看（admin.html?k=…） */
 var VISIT_API = 'https://abacus.jasoncameron.dev';
-var VISIT_NS = 'naiwaxxl', VISIT_KEY = 'visitors';
-var VISIT_LS = 'naiwa-uv-v1', VISIT_DAY_LS = 'naiwa-d-v1';
+var VISIT_NS = 'naiwaxxl', VISIT_KEY = 'uv2';
+var VISIT_LS = 'naiwa-uv-v2', VISIT_DAY_LS = 'naiwa-d-v2';
 window.__visitDone = false;
 window.__bumpVisit = function(){
   if(window.__visitDone) return;
@@ -2530,7 +2530,7 @@ window.__bumpVisit = function(){
   var seenAll = false, seenDay = '';
   try{ seenAll = !!localStorage.getItem(VISIT_LS); seenDay = localStorage.getItem(VISIT_DAY_LS) || ''; }catch(e){}
   if(seenDay !== day){
-    ping(base + 'd-' + day);
+    ping(base + 'd2-' + day);
     try{ localStorage.setItem(VISIT_DAY_LS, day); }catch(e){}
   }
   if(!seenAll){
